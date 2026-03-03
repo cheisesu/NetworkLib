@@ -144,10 +144,7 @@ public class RawSocket: @unchecked Sendable {
                 handler?()
                 return
             }
-            if self.internalState == _InternalState.none {
-                self.internalState = .closed
-                handler?()
-            } else if let cancellingCallback = self.cancellingCallback {
+            if let cancellingCallback = self.cancellingCallback {
                 if let handler {
                     self.cancellingCallback = {
                         cancellingCallback()
@@ -231,8 +228,26 @@ public class RawSocket: @unchecked Sendable {
     private func cancelUnsafe() {
         print("[socket] cancel unsafe")
         timeOutEvent?.cancel()
-        guard connection.state != .cancelled else { return }
-        guard ![.cancelling, .closed].contains(internalState) else { return }
+        if connection.state == .cancelled {
+            let callback = cancellingCallback
+            cancellingCallback = nil
+            callback?()
+            return
+        }
+        if internalState == _InternalState.none {
+            internalState = .closed
+            connection.cancel()
+            let callback = cancellingCallback
+            cancellingCallback = nil
+            callback?()
+            return
+        }
+        if [.cancelling, .closed].contains(internalState) {
+            let callback = cancellingCallback
+            cancellingCallback = nil
+            callback?()
+            return
+        }
         internalState = .cancelling
         connection.cancel()
     }
