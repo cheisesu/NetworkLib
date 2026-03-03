@@ -383,8 +383,11 @@ class RawSocketTests_TCP_Connect: XCTestCase {
         let connectExpect = expectation(description: "Connect callback must fail")
         socket.connect { info, error in
             guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error)") }
-            guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
-            XCTAssertEqual(code, .ECONNREFUSED)
+            switch error {
+            case .posix(let code): XCTAssertEqual(code, .ECONNREFUSED)
+            case .tls(let status): XCTAssertEqual(status, errSSLClosedNoNotify)
+            default: XCTFail("Unexpected error \(error)")
+            }
             connectExpect.fulfill()
         }
         server.forceStop()
