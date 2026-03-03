@@ -2,7 +2,7 @@ import XCTest
 import Network
 @testable import NetworkLib
 
-class RawSocketTests_Cancel: XCTestCase {
+class RawSocketTests_TCP_Cancel: XCTestCase {
     override func setUp() {
         continueAfterFailure = false
     }

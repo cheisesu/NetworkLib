@@ -13,7 +13,7 @@ import Network
  + server cancels connection during receive
  */
 
-class RawSocketTests_Receive: XCTestCase {
+class RawSocketTests_TCP_Receive: XCTestCase {
     override func setUp() {
         continueAfterFailure = false
     }

@@ -14,7 +14,7 @@ import Network
    + connect ready, timeout not triggerring
  */
 
-class RawSocketTests_Connect: XCTestCase {
+class RawSocketTests_TCP_Connect: XCTestCase {
     override func setUp() {
         continueAfterFailure = false
     }

@@ -4,7 +4,7 @@ import Network
 
 // TODO: - send when deallocated
 
-class RawSocketTests_Send: XCTestCase {
+class RawSocketTests_TCP_Send: XCTestCase {
     override func setUp() {
         continueAfterFailure = false
     }
