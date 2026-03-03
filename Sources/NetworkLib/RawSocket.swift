@@ -52,7 +52,7 @@ public class RawSocket: @unchecked Sendable {
                 timeout: TimeInterval = 10, sni: String?) throws
     {
         internalState = .none
-        let accessQueue = DispatchQueue(label: "raw.socket.access", target: .global())
+        let accessQueue = DispatchQueue(label: "com.network.lib.raw-socket", target: .global())
         accessKey = DispatchSpecificKey()
         accessQueue.setSpecific(key: accessKey, value: ObjectIdentifier(accessQueue))
         self.accessQueue = accessQueue

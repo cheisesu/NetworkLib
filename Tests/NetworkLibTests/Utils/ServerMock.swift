@@ -34,7 +34,7 @@ final class ServerMock: @unchecked Sendable {
 
     init(transport: NetTransport, isSecure: Bool, flow: Flow = .none) throws {
         let secIdentity = try loadIdentityFromP12()
-        let queue = DispatchQueue(label: "com.mock.server", target: .global())
+        let queue = DispatchQueue(label: "com.network.lib.server-mock", target: .global())
         self.queue = queue
         self.flow = flow
         connections = [:]
@@ -138,7 +138,7 @@ final class ServerMock: @unchecked Sendable {
         if flow == .waitConnect {
             Thread.sleep(forTimeInterval: 0.5)
         }
-        newConnection.start(queue: DispatchQueue(label: "com.mock.server.connection", target: .global()))
+        newConnection.start(queue: DispatchQueue(label: "com.network.lib.server-mock.connection", target: .global()))
     }
 
     private func echoReceiveCycle(for connection: NWConnection) {
