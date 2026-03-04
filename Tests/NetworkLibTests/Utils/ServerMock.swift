@@ -25,6 +25,7 @@ final class ServerMock: @unchecked Sendable {
         case none
         case echo
         case cancel
+        case acceptAndCancel
         case waitConnect
     }
     private let listener: NWListener
@@ -126,6 +127,7 @@ final class ServerMock: @unchecked Sendable {
                 case .none: break
                 case .echo: self?.echoReceiveCycle(for: newConnection)
                 case .cancel: break
+                case .acceptAndCancel: break
                 case .waitConnect: break
                 }
             case .cancelled:
@@ -138,7 +140,10 @@ final class ServerMock: @unchecked Sendable {
         if flow == .waitConnect {
             Thread.sleep(forTimeInterval: 0.5)
         }
-        newConnection.start(queue: DispatchQueue(label: "com.network.lib.server-mock.connection", target: .global()))
+        newConnection.start(queue: DispatchQueue(label: "com.network.lib.server-mock.connection", qos: .background, target: .global()))
+        if flow == .acceptAndCancel {
+            newConnection.cancel()
+        }
     }
 
     private func echoReceiveCycle(for connection: NWConnection) {
