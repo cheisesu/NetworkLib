@@ -242,10 +242,13 @@ public class RawSocket: @unchecked Sendable {
             callback?()
             return
         }
-        if [.cancelling, .closed].contains(internalState) {
+        if [.closed].contains(internalState) {
             let callback = cancellingCallback
             cancellingCallback = nil
             callback?()
+            return
+        }
+        if internalState == .cancelling {
             return
         }
         internalState = .cancelling
