@@ -479,6 +479,69 @@ class RawSocketTests_UDP_Connect: XCTestCase {
         }
         await fulfillment(of: [connectExpect], timeout: 3)
     }
+
+    // MARK: CONNECTION INFO
+
+    func test_Connect_WithUrl_Success_InfoCorrect() async throws {
+        let timeout: TimeInterval = 0
+        let server = try ServerMock(transport: transport, isSecure: true)
+        defer { server.stop() }
+        let port = try await server.start()
+
+        let url = try XCTUnwrap(URL(string: "https://127.0.0.1:\(port)"))
+        let socket = try RawSocket(url: url, maxDataBlock: 256,
+                                   transport: transport, timeout: timeout, sni: "localhost")
+        defer { socket.cancel() }
+
+        let connectExpect = expectation(description: "Connect callback called")
+        socket.connect { [transport] info, error in
+            XCTAssertNil(error)
+            XCTAssertEqual(info?.transport, transport)
+            XCTAssertEqual(info?.internface?.name, "lo0")
+            XCTAssertEqual(info?.remoteEndpoint, .url(url))
+            switch info?.localEndpoint {
+            case .hostPort(let host, _):
+                switch host {
+                case .ipv4(let ip):
+                    XCTAssertEqual(ip, IPv4Address("127.0.0.1"))
+                default: XCTFail("Incorrect local host")
+                }
+            default: XCTFail("Incorrect local endpoint")
+            }
+            connectExpect.fulfill()
+        }
+        await fulfillment(of: [connectExpect], timeout: 3)
+    }
+
+    func test_Connect_Success_InfoCorrect() async throws {
+        let timeout: TimeInterval = 0
+        let server = try ServerMock(transport: transport, isSecure: true)
+        defer { server.stop() }
+        let port = try await server.start()
+
+        let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
+                                   transport: transport, timeout: timeout, sni: "localhost")
+        defer { socket.cancel() }
+
+        let connectExpect = expectation(description: "Connect callback called")
+        socket.connect { [transport] info, error in
+            XCTAssertNil(error)
+            XCTAssertEqual(info?.transport, transport)
+            XCTAssertEqual(info?.internface?.name, "lo0")
+            XCTAssertEqual(info?.remoteEndpoint, NWEndpoint.hostPort(host: "127.0.0.1", port: port))
+            switch info?.localEndpoint {
+            case .hostPort(let host, _):
+                switch host {
+                case .ipv4(let ip):
+                    XCTAssertEqual(ip, IPv4Address("127.0.0.1"))
+                default: XCTFail("Incorrect local host")
+                }
+            default: XCTFail("Incorrect local endpoint")
+            }
+            connectExpect.fulfill()
+        }
+        await fulfillment(of: [connectExpect], timeout: 3)
+    }
 }
 
 // MARK: - NOT APPLICABLE TESTS DUE TO UDP
