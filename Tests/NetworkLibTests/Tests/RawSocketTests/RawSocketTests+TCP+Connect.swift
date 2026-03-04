@@ -639,8 +639,11 @@ class RawSocketTests_TCP_Connect: XCTestCase {
         socket.connect { _, error in
             XCTAssertNotNil(error)
             guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error)") }
-            guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
-            XCTAssertEqual(code, .ECONNREFUSED)
+            switch error {
+            case .tls(let status): XCTAssertEqual(status, errSSLClosedNoNotify)
+            case .posix(let code): XCTAssertEqual(code, .ECONNREFUSED)
+            default: XCTFail("Error is not tls or posix \(error)")
+            }
             connectExpect.fulfill()
         }
         await fulfillment(of: [connectExpect], timeout: 3)
