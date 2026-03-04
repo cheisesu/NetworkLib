@@ -718,7 +718,7 @@ class RawSocketTests_TCP_Connect: XCTestCase {
 
     func test_Connect_ServerSecureAndSocketInsecure_WhenConnecting_ServerStops_CallbackReturnsError() async throws {
         let timeout: TimeInterval = 0
-        let server = try ServerMock(transport: transport, isSecure: true)
+        let server = try ServerMock(transport: transport, isSecure: true, flow: .waitConnect)
         defer { server.stop() }
         let port = try await server.start()
 
@@ -734,7 +734,7 @@ class RawSocketTests_TCP_Connect: XCTestCase {
             XCTAssertEqual(code, .ECONNREFUSED)
             connectExpect.fulfill()
         }
-        server.stop()
+        server.forceStop()
         await fulfillment(of: [connectExpect], timeout: 3)
     }
 
