@@ -233,7 +233,7 @@ class RawSocketTests_UDP_Cancel: XCTestCase {
         await fulfillment(of: [cancelExpect], timeout: 3)
     }
 
-    func test_Cancel_WhenNotConnected_MultipleCallbacks_CallbacksCalled() async throws {
+    func test_Cancel_WhenNotConnected_MultipleCallbacks_CallbacksCalledInOrder() async throws {
         let timeout: TimeInterval = 0
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
@@ -242,18 +242,18 @@ class RawSocketTests_UDP_Cancel: XCTestCase {
         let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
                                    transport: transport, timeout: timeout, sni: "localhost")
 
-        let cancelExpect = expectation(description: "Callback called")
-        cancelExpect.expectedFulfillmentCount = 2
+        let cancel1Expect = expectation(description: "First callback called")
+        let cancel2Expect = expectation(description: "Second callback called")
         socket.cancel {
-            cancelExpect.fulfill()
+            cancel1Expect.fulfill()
         }
         socket.cancel {
-            cancelExpect.fulfill()
+            cancel2Expect.fulfill()
         }
-        await fulfillment(of: [cancelExpect], timeout: 1)
+        await fulfillment(of: [cancel1Expect, cancel2Expect], timeout: 1, enforceOrder: true)
     }
 
-    func test_Cancel_WhenConnecting_MultipleCallbacks_CallbacksCalled() async throws {
+    func test_Cancel_WhenConnecting_MultipleCallbacks_CallbacksCalledInOrder() async throws {
         let timeout: TimeInterval = 0
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
@@ -262,20 +262,20 @@ class RawSocketTests_UDP_Cancel: XCTestCase {
         let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
                                    transport: transport, timeout: timeout, sni: "localhost")
 
-        let cancelExpect = expectation(description: "Callback called")
-        cancelExpect.expectedFulfillmentCount = 2
+        let cancel1Expect = expectation(description: "First callback called")
+        let cancel2Expect = expectation(description: "Second callback called")
         socket.connect { _, _ in
         }
         socket.cancel {
-            cancelExpect.fulfill()
+            cancel1Expect.fulfill()
         }
         socket.cancel {
-            cancelExpect.fulfill()
+            cancel2Expect.fulfill()
         }
-        await fulfillment(of: [cancelExpect], timeout: 1)
+        await fulfillment(of: [cancel1Expect, cancel2Expect], timeout: 1, enforceOrder: true)
     }
 
-    func test_Cancel_WhenConnected_MultipleCallbacks_CallbacksCalled() async throws {
+    func test_Cancel_WhenConnected_MultipleCallbacks_CallbacksCalledInOrder() async throws {
         let timeout: TimeInterval = 0
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
@@ -285,21 +285,21 @@ class RawSocketTests_UDP_Cancel: XCTestCase {
                                    transport: transport, timeout: timeout, sni: "localhost")
         defer { socket.cancel() }
 
-        let cancelExpect = expectation(description: "Callback called")
-        cancelExpect.expectedFulfillmentCount = 2
+        let cancel1Expect = expectation(description: "First callback called")
+        let cancel2Expect = expectation(description: "Second callback called")
         socket.connect { _, error in
             XCTAssertNil(error)
             socket.cancel {
-                cancelExpect.fulfill()
+                cancel1Expect.fulfill()
             }
             socket.cancel {
-                cancelExpect.fulfill()
+                cancel2Expect.fulfill()
             }
         }
-        await fulfillment(of: [cancelExpect], timeout: 3)
+        await fulfillment(of: [cancel1Expect, cancel2Expect], timeout: 1, enforceOrder: true)
     }
 
-    func test_Cancel_WhenCancelled_MultipleCallbacks_CallbacksCalled() async throws {
+    func test_Cancel_WhenCancelled_MultipleCallbacks_CallbacksCalledInOrder() async throws {
         let timeout: TimeInterval = 0
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
@@ -309,17 +309,17 @@ class RawSocketTests_UDP_Cancel: XCTestCase {
                                    transport: transport, timeout: timeout, sni: "localhost")
         defer { socket.cancel() }
 
-        let cancelExpect = expectation(description: "Callback called")
-        cancelExpect.expectedFulfillmentCount = 2
+        let cancel1Expect = expectation(description: "First callback called")
+        let cancel2Expect = expectation(description: "Second callback called")
         socket.cancel {
             socket.cancel {
-                cancelExpect.fulfill()
+                cancel1Expect.fulfill()
             }
             socket.cancel {
-                cancelExpect.fulfill()
+                cancel2Expect.fulfill()
             }
         }
-        await fulfillment(of: [cancelExpect], timeout: 1)
+        await fulfillment(of: [cancel1Expect, cancel2Expect], timeout: 1, enforceOrder: true)
     }
 
     func test_Cancel_WhenDeinited_CallbacksCalled() async throws {
