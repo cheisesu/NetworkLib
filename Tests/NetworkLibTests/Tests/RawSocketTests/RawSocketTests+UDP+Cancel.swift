@@ -3,12 +3,13 @@ import Network
 @testable import NetworkLib
 
 class RawSocketTests_UDP_Cancel: XCTestCase {
+    private let transport: NetTransport = .udp
+
     override func setUp() {
         continueAfterFailure = false
     }
 
     func test_Cancel_WhenNotConnected_OneBlock_CallbackCalled() async throws {
-        let transport: NetTransport = .udp
         let timeout: TimeInterval = 0
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
@@ -25,7 +26,6 @@ class RawSocketTests_UDP_Cancel: XCTestCase {
     }
 
     func test_Cancel_WhenConnecting_OneBlock_CallbackCalled() async throws {
-        let transport: NetTransport = .udp
         let timeout: TimeInterval = 0
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
@@ -44,7 +44,6 @@ class RawSocketTests_UDP_Cancel: XCTestCase {
     }
 
     func test_Cancel_WhenConnected_OneBlock_CallbackCalled() async throws {
-        let transport: NetTransport = .udp
         let timeout: TimeInterval = 0
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
@@ -65,7 +64,6 @@ class RawSocketTests_UDP_Cancel: XCTestCase {
     }
 
     func test_Cancel_WhenCancelled_OneBlock_CallbackCalled() async throws {
-        let transport: NetTransport = .udp
         let timeout: TimeInterval = 0
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
@@ -84,7 +82,6 @@ class RawSocketTests_UDP_Cancel: XCTestCase {
     }
 
     func test_Cancel_WhenNotConnected_WithoutAndWithBlock_CallbackCalled() async throws {
-        let transport: NetTransport = .udp
         let timeout: TimeInterval = 0
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
@@ -102,7 +99,6 @@ class RawSocketTests_UDP_Cancel: XCTestCase {
     }
 
     func test_Cancel_WhenConnecting_WithoutAndWithBlock_CallbackCalled() async throws {
-        let transport: NetTransport = .udp
         let timeout: TimeInterval = 0
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
@@ -122,7 +118,6 @@ class RawSocketTests_UDP_Cancel: XCTestCase {
     }
 
     func test_Cancel_WhenConnected_WithoutAndWithBlock_CallbackCalled() async throws {
-        let transport: NetTransport = .udp
         let timeout: TimeInterval = 0
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
@@ -144,7 +139,6 @@ class RawSocketTests_UDP_Cancel: XCTestCase {
     }
 
     func test_Cancel_WhenCancelled_WithoutAndWithBlock_CallbackCalled() async throws {
-        let transport: NetTransport = .udp
         let timeout: TimeInterval = 0
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
@@ -164,7 +158,6 @@ class RawSocketTests_UDP_Cancel: XCTestCase {
     }
 
     func test_Cancel_WhenNotConnected_WithAndWithoutBlock_CallbackCalled() async throws {
-        let transport: NetTransport = .udp
         let timeout: TimeInterval = 0
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
@@ -182,7 +175,6 @@ class RawSocketTests_UDP_Cancel: XCTestCase {
     }
 
     func test_Cancel_WhenConnecting_WithAndWithoutBlock_CallbackCalled() async throws {
-        let transport: NetTransport = .udp
         let timeout: TimeInterval = 0
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
@@ -202,7 +194,6 @@ class RawSocketTests_UDP_Cancel: XCTestCase {
     }
 
     func test_Cancel_WhenConnected_WithAndWithoutBlock_CallbackCalled() async throws {
-        let transport: NetTransport = .udp
         let timeout: TimeInterval = 0
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
@@ -224,7 +215,6 @@ class RawSocketTests_UDP_Cancel: XCTestCase {
     }
 
     func test_Cancel_WhenCancelled_WithAndWithoutBlock_CallbackCalled() async throws {
-        let transport: NetTransport = .udp
         let timeout: TimeInterval = 0
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
@@ -244,7 +234,6 @@ class RawSocketTests_UDP_Cancel: XCTestCase {
     }
 
     func test_Cancel_WhenNotConnected_MultipleCallbacks_CallbacksCalled() async throws {
-        let transport: NetTransport = .udp
         let timeout: TimeInterval = 0
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
@@ -265,7 +254,6 @@ class RawSocketTests_UDP_Cancel: XCTestCase {
     }
 
     func test_Cancel_WhenConnecting_MultipleCallbacks_CallbacksCalled() async throws {
-        let transport: NetTransport = .udp
         let timeout: TimeInterval = 0
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
@@ -288,7 +276,6 @@ class RawSocketTests_UDP_Cancel: XCTestCase {
     }
 
     func test_Cancel_WhenConnected_MultipleCallbacks_CallbacksCalled() async throws {
-        let transport: NetTransport = .udp
         let timeout: TimeInterval = 0
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
@@ -313,7 +300,6 @@ class RawSocketTests_UDP_Cancel: XCTestCase {
     }
 
     func test_Cancel_WhenCancelled_MultipleCallbacks_CallbacksCalled() async throws {
-        let transport: NetTransport = .udp
         let timeout: TimeInterval = 0
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
@@ -337,7 +323,6 @@ class RawSocketTests_UDP_Cancel: XCTestCase {
     }
 
     func test_Cancel_WhenDeinited_CallbacksCalled() async throws {
-        let transport: NetTransport = .udp
         let timeout: TimeInterval = 0
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
@@ -357,7 +342,6 @@ class RawSocketTests_UDP_Cancel: XCTestCase {
     }
 
     func test_Cancel_DeinitOnSameQueue_CallbacksCalled() async throws {
-        let transport: NetTransport = .udp
         let timeout: TimeInterval = 0
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
@@ -382,7 +366,6 @@ class RawSocketTests_UDP_Cancel: XCTestCase {
     }
 
     func test_Cancel_DeinitOnDifferentQueue_CallbacksCalled() async throws {
-        let transport: NetTransport = .udp
         let timeout: TimeInterval = 0
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }

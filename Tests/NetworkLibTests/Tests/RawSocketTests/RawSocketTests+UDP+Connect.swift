@@ -3,6 +3,8 @@ import Network
 @testable import NetworkLib
 
 class RawSocketTests_UDP_Connect: XCTestCase {
+    private let transport: NetTransport = .udp
+
     override func setUp() {
         continueAfterFailure = false
     }
@@ -11,7 +13,6 @@ class RawSocketTests_UDP_Connect: XCTestCase {
 
     /// Checks initialization with connection url from ip and port, and https
     func test_Connect_WithUrlIpHttps_BothSecure_SuccessConnect() async throws {
-        let transport: NetTransport = .udp
         let timeout: TimeInterval = 0
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
@@ -32,7 +33,6 @@ class RawSocketTests_UDP_Connect: XCTestCase {
 
     /// Checks initialization with connection with url from ip and port, and http
     func test_Connect_WithUrlIpHttp_BothSecure_SuccessConnect() async throws {
-        let transport: NetTransport = .udp
         let timeout: TimeInterval = 0
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
@@ -53,7 +53,6 @@ class RawSocketTests_UDP_Connect: XCTestCase {
 
     /// Checks initialization with connection with url from ip and port, without scheme
     func test_Connect_WithUrlIpNoScheme_BothSecure_SuccessConnect() async throws {
-        let transport: NetTransport = .udp
         let timeout: TimeInterval = 0
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
@@ -74,7 +73,6 @@ class RawSocketTests_UDP_Connect: XCTestCase {
 
     /// Checks initialization with connection with url by domain name with port
     func test_Connect_WithUrlName_BothSecure_SuccessConnect() async throws {
-        let transport: NetTransport = .udp
         let timeout: TimeInterval = 0
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
@@ -96,7 +94,6 @@ class RawSocketTests_UDP_Connect: XCTestCase {
     // MARK: SUCCESS CONNECTS
 
     func test_Connect_BothSecure_SuccessConnect() async throws {
-        let transport: NetTransport = .udp
         let timeout: TimeInterval = 0
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
@@ -115,7 +112,6 @@ class RawSocketTests_UDP_Connect: XCTestCase {
     }
     
     func test_Connect_BothInsecure_SuccessConnect() async throws {
-        let transport: NetTransport = .udp
         let timeout: TimeInterval = 0
         let server = try ServerMock(transport: transport, isSecure: false)
         defer { server.stop() }
@@ -134,7 +130,6 @@ class RawSocketTests_UDP_Connect: XCTestCase {
     }
     
     func test_Connect_Success_BothSecure_ThenCancel_ConnectCallbackIsCalledOnlyOnce() async throws {
-        let transport: NetTransport = .udp
         let timeout: TimeInterval = 0
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
@@ -158,7 +153,6 @@ class RawSocketTests_UDP_Connect: XCTestCase {
     }
     
     func test_Connect_Success_BothInsecure_ThenCancel_ConnectCallbackIsCalledOnlyOnce() async throws {
-        let transport: NetTransport = .udp
         let timeout: TimeInterval = 0
         let server = try ServerMock(transport: transport, isSecure: false)
         defer { server.stop() }
@@ -184,7 +178,6 @@ class RawSocketTests_UDP_Connect: XCTestCase {
     // MARK: TIMEOUTS
 
     func test_Connect_TimeOut_CallbackReturnsError() async throws {
-        let transport: NetTransport = .udp
         let timeout: TimeInterval = 0.2
         let server = try ServerMock(transport: transport, isSecure: false)
         defer { server.stop() }
@@ -208,7 +201,6 @@ class RawSocketTests_UDP_Connect: XCTestCase {
     // MARK: DEINITS
 
     func test_Connect_DeinitBeforeConnect_CallbackReturnsError() async throws {
-        let transport: NetTransport = .udp
         let timeout: TimeInterval = 0
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
@@ -232,7 +224,6 @@ class RawSocketTests_UDP_Connect: XCTestCase {
     }
     
     func test_Connect_DeinitOnSameQueue_CallbackReturnsError() async throws {
-        let transport: NetTransport = .udp
         let timeout: TimeInterval = 0
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
@@ -258,7 +249,6 @@ class RawSocketTests_UDP_Connect: XCTestCase {
     }
     
     func test_Connect_DeinitOnDifferentQueue_CallbackReturnsError() async throws {
-        let transport: NetTransport = .udp
         let timeout: TimeInterval = 0
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
@@ -289,7 +279,6 @@ class RawSocketTests_UDP_Connect: XCTestCase {
     // MARK: ERRORS IN DIFFERENT STATES
 
     func test_Connect_WhenConnecting_CallbackReturnsError() async throws {
-        let transport: NetTransport = .udp
         let timeout: TimeInterval = 0
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
@@ -316,7 +305,6 @@ class RawSocketTests_UDP_Connect: XCTestCase {
     }
 
     func test_Connect_WhenConnected_CallbackReturnsError() async throws {
-        let transport: NetTransport = .udp
         let timeout: TimeInterval = 0
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
@@ -341,7 +329,6 @@ class RawSocketTests_UDP_Connect: XCTestCase {
     }
 
     func test_Connect_WhenCancelling_CallbackReturnsError() async throws {
-        let transport: NetTransport = .udp
         let timeout: TimeInterval = 0
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
@@ -367,7 +354,6 @@ class RawSocketTests_UDP_Connect: XCTestCase {
     }
 
     func test_Connect_WhenCancelling_NotProducesConnectAnymore_CallbackReturnsError() async throws {
-        let transport: NetTransport = .udp
         let timeout: TimeInterval = 0
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
@@ -404,7 +390,6 @@ class RawSocketTests_UDP_Connect: XCTestCase {
     }
 
     func test_Connect_WhenCancelledAfterConnect_CallbackReturnsError() async throws {
-        let transport: NetTransport = .udp
         let timeout: TimeInterval = 0
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
@@ -431,7 +416,6 @@ class RawSocketTests_UDP_Connect: XCTestCase {
     }
 
     func test_Connect_WhenCancelledBeforeConnect_InCancelCallback_CallbackReturnsError() async throws {
-        let transport: NetTransport = .udp
         let timeout: TimeInterval = 0
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
@@ -455,7 +439,6 @@ class RawSocketTests_UDP_Connect: XCTestCase {
     }
 
     func test_Connect_WhenCancelledBeforeConnect_CallbackReturnsError() async throws {
-        let transport: NetTransport = .udp
         let timeout: TimeInterval = 0
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
@@ -480,7 +463,6 @@ class RawSocketTests_UDP_Connect: XCTestCase {
     // MARK: ENDPOINT ERRORS
 
     func test_Connect_WhenWrongIp_CallbackReturnsError() async throws {
-        let transport: NetTransport = .udp
         let timeout: TimeInterval = 0
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
