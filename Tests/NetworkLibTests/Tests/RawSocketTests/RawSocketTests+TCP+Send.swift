@@ -247,6 +247,43 @@ class RawSocketTests_TCP_Send: XCTestCase {
         await fulfillment(of: [sendExpect], timeout: 2)
     }
 
+    func test_Send_MultipleAfterServerCancelsConnection_CallbackReturnsError() async throws {
+        let timeout: TimeInterval = 0
+        let dataToSend = Data(repeating: 0xde, count: 16 * 1024 * 1024)
+        let server = try ServerMock(transport: transport, isSecure: true)
+        defer { server.stop() }
+        let port = try await server.start()
+
+        let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
+                                   transport: transport, timeout: timeout, sni: "localhost")
+        defer { socket.cancel() }
+
+        let connectExpect = expectation(description: "Callback callback called")
+        socket.connect { _, error in
+            XCTAssertNil(error)
+            connectExpect.fulfill()
+        }
+        await fulfillment(of: [connectExpect], timeout: 3)
+        let sendExpect = expectation(description: "Send callback called")
+        sendExpect.expectedFulfillmentCount = 2
+        server.forceStop()
+        socket.send(dataToSend) { error in
+            XCTAssertNotNil(error)
+            guard let error = error as? NWError else { return XCTFail("Error is not NWError") }
+            guard case .posix(let code) = error else { return XCTFail("Error is not posix") }
+            XCTAssertTrue([.EPIPE, .ENOTCONN].contains(code))
+            sendExpect.fulfill()
+        }
+        socket.send(dataToSend) { error in
+            XCTAssertNotNil(error)
+            guard let error = error as? NWError else { return XCTFail("Error is not NWError") }
+            guard case .posix(let code) = error else { return XCTFail("Error is not posix") }
+            XCTAssertTrue([.EPIPE, .ENOTCONN].contains(code))
+            sendExpect.fulfill()
+        }
+        await fulfillment(of: [sendExpect], timeout: 2)
+    }
+
     // MARK: PROTOCOL ERRORS
 
     func test_Send_LargeData_CallbackSuccess() async throws {
