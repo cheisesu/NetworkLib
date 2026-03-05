@@ -220,6 +220,32 @@ class RawSocketTests_UDP_Send: XCTestCase {
         await fulfillment(of: [sendExpect], timeout: 3)
     }
 
+    func test_Send_AfterServerCancelledConnection_CallbackSuccess() async throws {
+        let timeout: TimeInterval = 0
+        let dataToSend = Data("Hello".utf8)
+        let server = try ServerMock(transport: transport, isSecure: true)
+        defer { server.stop() }
+        let port = try await server.start()
+
+        let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
+                                   transport: transport, timeout: timeout, sni: "localhost")
+        defer { socket.cancel() }
+
+        let sendExpect = expectation(description: "Send callback called")
+        socket.connect { _, error in
+            XCTAssertNil(error)
+            server.forceStop()
+            socket.send(dataToSend) { error in
+                XCTAssertNil(error)
+            }
+            socket.send(dataToSend) { error in
+                XCTAssertNil(error)
+                sendExpect.fulfill()
+            }
+        }
+        await fulfillment(of: [sendExpect], timeout: 3)
+    }
+
     // MARK: PROTOCOL ERRORS
 
     func test_Send_LargeData_CallbackReturnsError() async throws {
