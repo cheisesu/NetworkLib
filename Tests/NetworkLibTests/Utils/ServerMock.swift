@@ -149,11 +149,16 @@ final class ServerMock: @unchecked Sendable {
     private func echoReceiveCycle(for connection: NWConnection) {
         connection.receive(minimumIncompleteLength: 1, maximumLength: .max) { [weak self] content, contentContext, isComplete, error in
             if let content {
-                connection.send(content: content, completion: .contentProcessed({ _ in }))
+                print("[server_connection] received content", content)
+                connection.send(content: content, completion: .contentProcessed({
+                    print("[server_connection] sent echo", content, $0)
+                }))
                 self?.echoReceiveCycle(for: connection)
-            } else if error != nil {
+            } else if let error {
+                print("[server_connection] received error", error)
                 connection.cancel()
             } else if isComplete {
+                print("[server_connection] completed")
             } else {
                 assertionFailure("Undefined behaviour")
             }
