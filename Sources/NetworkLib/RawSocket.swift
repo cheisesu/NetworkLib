@@ -196,14 +196,18 @@ public class RawSocket: @unchecked Sendable {
             }
             timeOutEvent?.touch()
             connection.receive(minimumIncompleteLength: 1, maximumLength: maxDataBlock) { [weak self] content, contentContext, isComplete, error in
-                self?.timeOutEvent?.detouch()
+                guard let self else {
+                    completion(nil, NWError.posix(.EPERM))
+                    return
+                }
+                self.timeOutEvent?.detouch()
                 if let content {
                     completion(content, nil)
                 } else if let error {
-                    self?.cancelUnsafe()
+                    self.cancelUnsafe()
                     completion(nil, error)
                 } else if isComplete {
-                    completion(nil, self?.cancellingError)
+                    completion(nil, self.cancellingError)
                 } else {
                     assertionFailure("Undefined behaviour")
                     completion(nil, nil)
