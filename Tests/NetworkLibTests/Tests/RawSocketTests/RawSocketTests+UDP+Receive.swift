@@ -63,6 +63,44 @@ class RawSocketTests_UDP_Receive: XCTestCase {
         await fulfillment(of: [receiveExpect], timeout: 3, enforceOrder: true)
     }
 
+    func test_Receive_SmallMaxSize_BigPortion_MultipleCalls_CallbackReturnsRelatedData() async throws {
+        let timeout: TimeInterval = 0
+        let dataToSend = Data(repeating: 0xde, count: 415)
+        let maxDataBlock: Int = 256
+        let server = try ServerMock(transport: transport, isSecure: true, flow: .echo)
+        defer { server.stop() }
+        let port = try await server.start()
+
+        let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: maxDataBlock,
+                                   transport: transport, timeout: timeout, sni: "localhost")
+        defer { socket.cancel() }
+
+        let receiveExpect = expectation(description: "For callback on receive")
+        receiveExpect.expectedFulfillmentCount = 2
+        socket.connect { info, error in
+            socket.send(dataToSend, nil)
+            socket.receiveNext { data1, error in
+                XCTAssertNotNil(data1)
+                XCTAssertNil(error)
+                let data1Count = data1!.count
+                XCTAssertLessThanOrEqual(data1Count, maxDataBlock)
+                let sendPortion = dataToSend[dataToSend.startIndex..<(dataToSend.startIndex + data1Count)]
+                XCTAssertEqual(data1, sendPortion)
+                receiveExpect.fulfill()
+                socket.receiveNext { data2, error in
+                    XCTAssertNotNil(data2)
+                    XCTAssertNil(error)
+                    let data2Count = data2!.count
+                    XCTAssertLessThanOrEqual(dataToSend.count - data1Count - data2Count, dataToSend.count - maxDataBlock)
+                    let sendPortion = dataToSend[(dataToSend.startIndex + data1Count)..<(dataToSend.startIndex + data1Count + data2Count)]
+                    XCTAssertEqual(data2, sendPortion)
+                    receiveExpect.fulfill()
+                }
+            }
+        }
+        await fulfillment(of: [receiveExpect], timeout: 3, enforceOrder: true)
+    }
+
     func test_Receive_BigMaxSize_BigPortion_CallbackReturnsFull() async throws {
         let timeout: TimeInterval = 0
         let dataToSend = Data(repeating: 0xde, count: 2048)
