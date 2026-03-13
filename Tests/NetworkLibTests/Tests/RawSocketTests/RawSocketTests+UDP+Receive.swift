@@ -97,6 +97,45 @@ class RawSocketTests_UDP_Receive: XCTestCase {
         await fulfillment(of: [receiveExpect], timeout: 3, enforceOrder: true)
     }
 
+    func test_Receive_SmallMaxSize_BigPortion_MultipleCalls_CallbackReturnsRelatedDataAndNextNotCalled() async throws {
+        let timeout: TimeInterval = 0
+        let dataToSend1 = Data(repeating: 0xde, count: 256)
+        let dataToSend2 = Data(repeating: 0xde, count: 129)
+        let dataToSend = dataToSend1 + dataToSend2
+        let maxDataBlock: Int = 256
+        let server = try ServerMock(transport: transport, isSecure: true, flow: .echo)
+        defer { server.stop() }
+        let port = try await server.start()
+
+        let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: maxDataBlock,
+                                   transport: transport, timeout: timeout, sni: "localhost")
+        defer { socket.cancel() }
+
+        let receiveExpect = expectation(description: "For callback on receive called")
+        let notReceiveExpect = expectation(description: "For callback on receive not called")
+        notReceiveExpect.isInverted = true
+        receiveExpect.expectedFulfillmentCount = 2
+        socket.connect { info, error in
+            socket.send(dataToSend, nil)
+            socket.receiveNext { data1, error in
+                XCTAssertNotNil(data1)
+                XCTAssertNil(error)
+                XCTAssertEqual(data1, dataToSend1)
+                receiveExpect.fulfill()
+                socket.receiveNext { data2, error in
+                    XCTAssertNotNil(data2)
+                    XCTAssertNil(error)
+                    XCTAssertEqual(data2, dataToSend2)
+                    receiveExpect.fulfill()
+                    socket.receiveNext { _, _ in
+                        notReceiveExpect.fulfill()
+                    }
+                }
+            }
+        }
+        await fulfillment(of: [receiveExpect, notReceiveExpect], timeout: 3, enforceOrder: true)
+    }
+
     func test_Receive_BigMaxSize_BigPortion_CallbackReturnsFull() async throws {
         let timeout: TimeInterval = 0
         let dataToSend = Data(repeating: 0xde, count: 2048)
