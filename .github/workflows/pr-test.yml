@@ -15,14 +15,14 @@ jobs:
         swift: ["6"]
     steps:
       - name: Setup Swift
-        uses: swift-actions/setup-swift@v2
+        uses: swift-actions/setup-swift@v3
         with:
           swift-version: ${{ matrix.swift }}
-          skip-signature-verification: true
+          skip-verify-signature: true
       - name: Swift-version
         run: swift --version
       - name: Check out repository code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Build
         run: swift build
       - name: Test
