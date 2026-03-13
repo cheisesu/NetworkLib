@@ -65,7 +65,9 @@ class RawSocketTests_UDP_Receive: XCTestCase {
 
     func test_Receive_SmallMaxSize_BigPortion_MultipleCalls_CallbackReturnsRelatedData() async throws {
         let timeout: TimeInterval = 0
-        let dataToSend = Data(repeating: 0xde, count: 415)
+        let dataToSend1 = Data(repeating: 0xde, count: 256)
+        let dataToSend2 = Data(repeating: 0xde, count: 129)
+        let dataToSend = dataToSend1 + dataToSend2
         let maxDataBlock: Int = 256
         let server = try ServerMock(transport: transport, isSecure: true, flow: .echo)
         defer { server.stop() }
@@ -82,18 +84,12 @@ class RawSocketTests_UDP_Receive: XCTestCase {
             socket.receiveNext { data1, error in
                 XCTAssertNotNil(data1)
                 XCTAssertNil(error)
-                let data1Count = data1!.count
-                XCTAssertLessThanOrEqual(data1Count, maxDataBlock)
-                let sendPortion = dataToSend[dataToSend.startIndex..<(dataToSend.startIndex + data1Count)]
-                XCTAssertEqual(data1, sendPortion)
+                XCTAssertEqual(data1, dataToSend1)
                 receiveExpect.fulfill()
                 socket.receiveNext { data2, error in
                     XCTAssertNotNil(data2)
                     XCTAssertNil(error)
-                    let data2Count = data2!.count
-                    XCTAssertLessThanOrEqual(dataToSend.count - data1Count - data2Count, dataToSend.count - maxDataBlock)
-                    let sendPortion = dataToSend[(dataToSend.startIndex + data1Count)..<(dataToSend.startIndex + data1Count + data2Count)]
-                    XCTAssertEqual(data2, sendPortion)
+                    XCTAssertEqual(data2, dataToSend2)
                     receiveExpect.fulfill()
                 }
             }
