@@ -46,7 +46,6 @@
         "RawSocketTests_TCP_Connect\/test_SuccessConnect_BothSecure_ThenCancel_ConnectCallbackIsCalledOnlyOnce()",
         "RawSocketTests_TCP_Connect\/test_TimeOutConnect_WhenServersNonTlsAndConnectionTls()",
         "RawSocketTests_TCP_Connect_Old",
-        "RawSocketTests_TCP_Receive",
         "RawSocketTests_TCP_Receive\/test_ReceiveNext_ByBlocksData_NeedsSeveralCalls()",
         "RawSocketTests_TCP_Receive\/test_ReceiveNext_DeinitSocket_CallbackFails()",
         "RawSocketTests_TCP_Receive\/test_ReceiveNext_DuringConnecting_CallbackSuccess()",
