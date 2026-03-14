@@ -23,6 +23,13 @@ jobs:
         run: swift --version
       - name: Check out repository code
         uses: actions/checkout@v6
+      - name: Setup keychain
+        run: |
+          security create-keychain -p "7_d4!nfF54" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "7_d4!nfF54" build.keychain
+          security set-keychain-settings -t 3600 -l ~/Library/Keychains/build.keychain
+          security import Tests/NetworkLibTests/Resources/localhost.p12 -k build.keychain -P "localhost"
       - name: Build
         run: swift build
       - name: Test
