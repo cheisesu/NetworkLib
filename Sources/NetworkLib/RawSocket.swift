@@ -32,7 +32,7 @@ public class RawSocket: @unchecked Sendable {
     private let transport: NetTransport
     private var internalState: _InternalState {
         didSet {
-            print("[socket] internal state changed", internalState)
+            printDebug("[socket] internal state changed", internalState)
         }
     }
     private let timeOutEvent: TimeOutRecursiveEvent?
@@ -85,14 +85,14 @@ public class RawSocket: @unchecked Sendable {
 
         // - after init
         timeOutEvent?.setHandler { [weak self] event in
-            print("[socket] timeout event handler")
+            printDebug("[socket] timeout event handler")
             self?.cancellingError = NWError.posix(.ETIMEDOUT)
             self?.cancelUnsafe()
         }
     }
 
     deinit {
-        print("[socket] deinit")
+        printDebug("[socket] deinit")
         if DispatchQueue.getSpecific(key: accessKey) == ObjectIdentifier(accessQueue) {
             cancelUnsafe()
 
@@ -106,7 +106,7 @@ public class RawSocket: @unchecked Sendable {
             }
         } else {
             accessQueue.sync {
-                print("[socket] queue sync on deinit")
+                printDebug("[socket] queue sync on deinit")
                 cancelUnsafe()
                 if let connectingCallback {
                     connectingCallback(nil, NWError.posix(.EPERM))
@@ -124,7 +124,7 @@ public class RawSocket: @unchecked Sendable {
 
     public func connect(_ block: @escaping @Sendable (ConnectionInfo?, Error?) -> Void) {
         accessQueue.async { [weak self] in
-            print("[socket] queue async connect with timeout")
+            printDebug("[socket] queue async connect with timeout")
             guard let self else {
                 block(nil, NWError.posix(.EPERM))
                 return
@@ -139,7 +139,7 @@ public class RawSocket: @unchecked Sendable {
 
     public func cancel(_ handler: (@Sendable () -> Void)? = nil) {
         accessQueue.async { [weak self] in
-            print("[socket] queue async close")
+            printDebug("[socket] queue async close")
             guard let self else {
                 handler?()
                 return
@@ -164,7 +164,7 @@ public class RawSocket: @unchecked Sendable {
                 completion?(NWError.posix(.EPERM))
                 return
             }
-            print("[socket] send", data)
+            printDebug("[socket] send", data)
             if internalState == .none {
                 completion?(NWError.posix(.ENOTCONN))
                 return
@@ -184,7 +184,7 @@ public class RawSocket: @unchecked Sendable {
     public func receiveNext(_ completion: @escaping @Sendable (Data?, Error?) -> Void) {
         accessQueue.async { [weak self, maxDataBlock] in
             guard let self else { return completion(nil, NWError.posix(.EPERM)) }
-            print("[socket] receive next")
+            printDebug("[socket] receive next")
 
             if internalState == .none {
                 completion(nil, NWError.posix(.ENOTCONN))
@@ -230,7 +230,7 @@ public class RawSocket: @unchecked Sendable {
     }
 
     private func cancelUnsafe() {
-        print("[socket] cancel unsafe")
+        printDebug("[socket] cancel unsafe")
         timeOutEvent?.cancel()
         if connection.state == .cancelled {
             let callback = cancellingCallback
@@ -260,7 +260,7 @@ public class RawSocket: @unchecked Sendable {
     }
 
     private func stateUpdateHandler(_ newState: NWConnection.State) {
-        print("[socket] new state", newState)
+        printDebug("[socket] new state", newState)
         switch newState {
         case .setup: break
         case let .waiting(error):

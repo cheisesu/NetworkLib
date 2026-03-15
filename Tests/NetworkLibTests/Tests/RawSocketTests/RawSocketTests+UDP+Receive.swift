@@ -181,7 +181,7 @@ class RawSocketTests_UDP_Receive: XCTestCase {
             socket.receiveNext { data, error in
                 XCTAssertNil(data)
                 XCTAssertNotNil(error)
-                guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error)") }
+                guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
                 guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
                 XCTAssertEqual(code, .ETIMEDOUT)
                 receiveExpect.fulfill()
@@ -207,7 +207,7 @@ class RawSocketTests_UDP_Receive: XCTestCase {
         socket.receiveNext { data, error in
             XCTAssertNil(data)
             XCTAssertNotNil(error)
-            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error)") }
+            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
             guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
             XCTAssertEqual(code, .ENOTCONN)
             receiveExpect.fulfill()
@@ -233,7 +233,7 @@ class RawSocketTests_UDP_Receive: XCTestCase {
             socket.receiveNext { data, error in
                 XCTAssertNil(data)
                 XCTAssertNotNil(error)
-                guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error)") }
+                guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
                 guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
                 XCTAssertEqual(code, .ECANCELED)
                 receiveExpect.fulfill()
@@ -258,7 +258,7 @@ class RawSocketTests_UDP_Receive: XCTestCase {
         socket.receiveNext { data, error in
             XCTAssertNil(data)
             XCTAssertNotNil(error)
-            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error)") }
+            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
             guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
             XCTAssertEqual(code, .ECANCELED)
             receiveExpect.fulfill()
@@ -284,7 +284,7 @@ class RawSocketTests_UDP_Receive: XCTestCase {
                 socket.receiveNext { data, error in
                     XCTAssertNil(data)
                     XCTAssertNotNil(error)
-                    guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error)") }
+                    guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
                     guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
                     XCTAssertEqual(code, .ECANCELED)
                     receiveExpect.fulfill()
@@ -296,33 +296,33 @@ class RawSocketTests_UDP_Receive: XCTestCase {
 
     func test_Receive_WhenCancelledWhenWaitingReceive_CallbackReturnsError() async throws {
         throw XCTSkip("Fails some times with nil error in receive")
-        let timeout: TimeInterval = 0
-        let maxDataBlock: Int = .max
-        let dataToSend = Data(repeating: 0xde, count: 2048)
-        let server = try ServerMock(transport: transport, isSecure: true, flow: .echo)
-        defer { server.stop() }
-        let port = try await server.start()
-
-        let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: maxDataBlock,
-                                   transport: transport, timeout: timeout, sni: "localhost")
-        defer { socket.cancel() }
-
-        let receiveExpect = expectation(description: "For callback on receive")
-        socket.connect { _, error in
-            XCTAssertNil(error)
-            socket.send(dataToSend) { _ in
-                socket.cancel()
-            }
-            socket.receiveNext { data, error in
-                XCTAssertNil(data)
-                XCTAssertNotNil(error)
-                guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error)") }
-                guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
-                XCTAssertEqual(code, .ECANCELED)
-                receiveExpect.fulfill()
-            }
-        }
-        await fulfillment(of: [receiveExpect], timeout: 3, enforceOrder: true)
+//        let timeout: TimeInterval = 0
+//        let maxDataBlock: Int = .max
+//        let dataToSend = Data(repeating: 0xde, count: 2048)
+//        let server = try ServerMock(transport: transport, isSecure: true, flow: .echo)
+//        defer { server.stop() }
+//        let port = try await server.start()
+//
+//        let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: maxDataBlock,
+//                                   transport: transport, timeout: timeout, sni: "localhost")
+//        defer { socket.cancel() }
+//
+//        let receiveExpect = expectation(description: "For callback on receive")
+//        socket.connect { _, error in
+//            XCTAssertNil(error)
+//            socket.send(dataToSend) { _ in
+//                socket.cancel()
+//            }
+//            socket.receiveNext { data, error in
+//                XCTAssertNil(data)
+//                XCTAssertNotNil(error)
+//                guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
+//                guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
+//                XCTAssertEqual(code, .ECANCELED)
+//                receiveExpect.fulfill()
+//            }
+//        }
+//        await fulfillment(of: [receiveExpect], timeout: 3, enforceOrder: true)
     }
 
     // MARK: SUCCESS IN DIFFERENT STATE
@@ -473,7 +473,6 @@ class RawSocketTests_UDP_Receive: XCTestCase {
 
     func test_Receive_DeinitDuringScheduling_CallbackReturnsError() async throws {
         let timeout: TimeInterval = 0
-        let dataToSend = Data("Hello".utf8)
         let maxDataBlock: Int = .max
         let server = try ServerMock(transport: transport, isSecure: true, flow: .none)
         defer { server.stop() }
@@ -484,7 +483,7 @@ class RawSocketTests_UDP_Receive: XCTestCase {
                               transport: transport, timeout: timeout, sni: "localhost"))
         defer { box.get()?.cancel() }
 
-        let connectExpect = expectation(description: "For callback on receive")
+        let connectExpect = expectation(description: "For callback on connect")
         let receiveExpect = expectation(description: "For callback on receive")
         box.get()?.connect { _, error in
             XCTAssertNil(error)
@@ -494,7 +493,7 @@ class RawSocketTests_UDP_Receive: XCTestCase {
         box.get()?.receiveNext { data, error in
             XCTAssertNil(data)
             XCTAssertNotNil(error)
-            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error)") }
+            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
             guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
             XCTAssertEqual(code, .EPERM)
             receiveExpect.fulfill()
@@ -526,7 +525,7 @@ class RawSocketTests_UDP_Receive: XCTestCase {
         box.get()?.receiveNext { data, error in
             XCTAssertNil(data)
             XCTAssertNotNil(error)
-            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error)") }
+            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
             guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
             XCTAssertEqual(code, .EPERM)
             receiveExpect.fulfill()

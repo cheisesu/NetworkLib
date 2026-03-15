@@ -17,7 +17,10 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "NetworkLib"
+            name: "NetworkLib",
+            swiftSettings: [
+                .unsafeFlags(["-warnings-as-errors"])
+            ]
         ),
         .testTarget(
             name: "NetworkLibTests",
@@ -26,6 +29,9 @@ let package = Package(
                 .copy("Resources/localhost.crt"),
                 .copy("Resources/localhost.key"),
                 .copy("Resources/localhost.p12"),
+            ],
+            swiftSettings: [
+                .unsafeFlags(["-warnings-as-errors"])
             ]
         ),
     ],

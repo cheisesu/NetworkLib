@@ -190,7 +190,7 @@ class RawSocketTests_UDP_Connect: XCTestCase {
         let connectExpect = expectation(description: "Connect callback called with error")
         socket.connect { info, error in
             XCTAssertNotNil(error)
-            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error)") }
+            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
             guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
             XCTAssertEqual(code, .ETIMEDOUT)
             connectExpect.fulfill()
@@ -214,7 +214,7 @@ class RawSocketTests_UDP_Connect: XCTestCase {
         let connectExpect = expectation(description: "Connect callback called with error")
         box.get()?.connect { info, error in
             XCTAssertNotNil(error)
-            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error)") }
+            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
             guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
             XCTAssertEqual(code, .EPERM)
             connectExpect.fulfill()
@@ -237,7 +237,7 @@ class RawSocketTests_UDP_Connect: XCTestCase {
         let connectExpect = expectation(description: "Connect callback called with error")
         box.get()?.connect { info, error in
             XCTAssertNotNil(error)
-            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error)") }
+            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
             guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
             XCTAssertEqual(code, .EPERM)
             connectExpect.fulfill()
@@ -262,7 +262,7 @@ class RawSocketTests_UDP_Connect: XCTestCase {
         let connectExpect = expectation(description: "Connect callback called with error")
         box.get()?.connect { info, error in
             XCTAssertNotNil(error)
-            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error)") }
+            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
             guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
             XCTAssertEqual(code, .EPERM)
             connectExpect.fulfill()
@@ -295,7 +295,7 @@ class RawSocketTests_UDP_Connect: XCTestCase {
         let connectExpect = expectation(description: "Connect callback called with error")
         socket.connect { _, error in
             XCTAssertNotNil(error)
-            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error)") }
+            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
             guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
             XCTAssertEqual(code, .EALREADY)
             connectExpect.fulfill()
@@ -319,7 +319,7 @@ class RawSocketTests_UDP_Connect: XCTestCase {
             XCTAssertNil(error)
             socket.connect { _, error in
                 XCTAssertNotNil(error)
-                guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error)") }
+                guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
                 guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
                 XCTAssertEqual(code, .EISCONN)
                 connectExpect.fulfill()
@@ -344,7 +344,7 @@ class RawSocketTests_UDP_Connect: XCTestCase {
             socket.cancel()
             socket.connect { _, error in
                 XCTAssertNotNil(error)
-                guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error)") }
+                guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
                 guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
                 XCTAssertEqual(code, .ECANCELED)
                 connectExpect.fulfill()
@@ -370,7 +370,7 @@ class RawSocketTests_UDP_Connect: XCTestCase {
             socket.cancel()
             socket.connect { _, error in
                 XCTAssertNotNil(error)
-                guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error)") }
+                guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
                 guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
                 XCTAssertEqual(code, .ECANCELED)
                 connectExpect.fulfill()
@@ -380,7 +380,7 @@ class RawSocketTests_UDP_Connect: XCTestCase {
             // So there's the second check for propied state
             socket.connect { _, error in
                 XCTAssertNotNil(error)
-                guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error)") }
+                guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
                 guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
                 XCTAssertEqual(code, .ECANCELED)
                 connectExpect.fulfill()
@@ -405,7 +405,7 @@ class RawSocketTests_UDP_Connect: XCTestCase {
             socket.cancel {
                 socket.connect { _, error in
                     XCTAssertNotNil(error)
-                    guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error)") }
+                    guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
                     guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
                     XCTAssertEqual(code, .ECANCELED)
                     connectExpect.fulfill()
@@ -429,7 +429,7 @@ class RawSocketTests_UDP_Connect: XCTestCase {
         socket.cancel {
             socket.connect { _, error in
                 XCTAssertNotNil(error)
-                guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error)") }
+                guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
                 guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
                 XCTAssertEqual(code, .ECANCELED)
                 connectExpect.fulfill()
@@ -452,7 +452,7 @@ class RawSocketTests_UDP_Connect: XCTestCase {
         socket.cancel()
         socket.connect { _, error in
             XCTAssertNotNil(error)
-            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error)") }
+            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
             guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
             XCTAssertEqual(code, .ECANCELED)
             connectExpect.fulfill()

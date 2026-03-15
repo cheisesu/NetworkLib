@@ -73,7 +73,7 @@ class RawSocketTests_UDP_Send: XCTestCase {
         let sendExpect = expectation(description: "Send callback called")
         socket.send(dataToSend) { error in
             XCTAssertNotNil(error)
-            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error)") }
+            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
             guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
             XCTAssertEqual(code, .ENOTCONN)
             sendExpect.fulfill()
@@ -98,7 +98,7 @@ class RawSocketTests_UDP_Send: XCTestCase {
             socket.cancel()
             socket.send(dataToSend) { error in
                 XCTAssertNotNil(error)
-                guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error)") }
+                guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
                 guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
                 XCTAssertEqual(code, .ECANCELED)
                 sendExpect.fulfill()
@@ -124,7 +124,7 @@ class RawSocketTests_UDP_Send: XCTestCase {
             socket.cancel {
                 socket.send(dataToSend) { error in
                     XCTAssertNotNil(error)
-                    guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error)") }
+                    guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
                     guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
                     XCTAssertEqual(code, .ECANCELED)
                     sendExpect.fulfill()
@@ -149,7 +149,7 @@ class RawSocketTests_UDP_Send: XCTestCase {
         socket.cancel {
             socket.send(dataToSend) { error in
                 XCTAssertNotNil(error)
-                guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error)") }
+                guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
                 guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
                 XCTAssertEqual(code, .ECANCELED)
                 sendExpect.fulfill()
@@ -180,7 +180,7 @@ class RawSocketTests_UDP_Send: XCTestCase {
         let sendExpect = expectation(description: "Send callback called")
         socket?.send(dataToSend) { error in
             XCTAssertNotNil(error)
-            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error)") }
+            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
             guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
             XCTAssertEqual(code, .EPERM)
             sendExpect.fulfill()
@@ -264,7 +264,7 @@ class RawSocketTests_UDP_Send: XCTestCase {
             XCTAssertNil(error)
             socket.send(dataToSend) { error in
                 XCTAssertNotNil(error)
-                guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error)") }
+                guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
                 guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
                 XCTAssertEqual(code, .EMSGSIZE)
                 sendExpect.fulfill()

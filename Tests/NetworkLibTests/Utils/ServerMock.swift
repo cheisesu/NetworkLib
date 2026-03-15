@@ -75,7 +75,7 @@ final class ServerMock: @unchecked Sendable {
     func start() async throws -> NWEndpoint.Port {
         try await withCheckedThrowingContinuation { continuation in
             listener.stateUpdateHandler = { newState in
-                print("[server] new state", newState)
+                printDebug("[server] new state", newState)
                 switch newState {
                 case let .failed(error), let .waiting(error): continuation.resume(throwing: error)
                 case .ready:
@@ -119,7 +119,7 @@ final class ServerMock: @unchecked Sendable {
         let id = UUID()
         connections[id] = newConnection
         newConnection.stateUpdateHandler = { [flow, weak self] state in
-            print("[server_connection] new state", state)
+            printDebug("[server_connection] new state", state)
             switch state {
             case .failed, .waiting: newConnection.cancel()
             case .ready:
@@ -149,16 +149,16 @@ final class ServerMock: @unchecked Sendable {
     private func echoReceiveCycle(for connection: NWConnection) {
         connection.receive(minimumIncompleteLength: 1, maximumLength: .max) { [weak self] content, contentContext, isComplete, error in
             if let content {
-                print("[server_connection] received content", content)
+                printDebug("[server_connection] received content", content)
                 connection.send(content: content, completion: .contentProcessed({
-                    print("[server_connection] sent echo", content, $0)
+                    printDebug("[server_connection] sent echo", content, String(describing: $0))
                 }))
                 self?.echoReceiveCycle(for: connection)
             } else if let error {
-                print("[server_connection] received error", error)
+                printDebug("[server_connection] received error", error)
                 connection.cancel()
             } else if isComplete {
-                print("[server_connection] completed")
+                printDebug("[server_connection] completed")
             } else {
                 assertionFailure("Undefined behaviour")
             }

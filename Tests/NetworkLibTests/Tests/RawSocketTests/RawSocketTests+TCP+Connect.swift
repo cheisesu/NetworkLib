@@ -190,7 +190,7 @@ class RawSocketTests_TCP_Connect: XCTestCase {
         let connectExpect = expectation(description: "Connect callback called with error")
         socket.connect { info, error in
             XCTAssertNotNil(error)
-            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error)") }
+            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
             guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
             XCTAssertEqual(code, .ETIMEDOUT)
             connectExpect.fulfill()
@@ -211,7 +211,7 @@ class RawSocketTests_TCP_Connect: XCTestCase {
         let connectExpect = expectation(description: "Connect callback not called")
         socket.connect { _, error in
             XCTAssertNotNil(error)
-            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error)") }
+            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
             guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
             XCTAssertEqual(code, .ETIMEDOUT)
             connectExpect.fulfill()
@@ -235,7 +235,7 @@ class RawSocketTests_TCP_Connect: XCTestCase {
         let connectExpect = expectation(description: "Connect callback called with error")
         box.get()?.connect { info, error in
             XCTAssertNotNil(error)
-            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error)") }
+            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
             guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
             XCTAssertEqual(code, .EPERM)
             connectExpect.fulfill()
@@ -258,7 +258,7 @@ class RawSocketTests_TCP_Connect: XCTestCase {
         let connectExpect = expectation(description: "Connect callback called with error")
         box.get()?.connect { info, error in
             XCTAssertNotNil(error)
-            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error)") }
+            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
             guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
             XCTAssertEqual(code, .EPERM)
             connectExpect.fulfill()
@@ -283,7 +283,7 @@ class RawSocketTests_TCP_Connect: XCTestCase {
         let connectExpect = expectation(description: "Connect callback called with error")
         box.get()?.connect { info, error in
             XCTAssertNotNil(error)
-            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error)") }
+            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
             guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
             XCTAssertEqual(code, .EPERM)
             connectExpect.fulfill()
@@ -316,7 +316,7 @@ class RawSocketTests_TCP_Connect: XCTestCase {
         let connectExpect = expectation(description: "Connect callback called with error")
         socket.connect { _, error in
             XCTAssertNotNil(error)
-            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error)") }
+            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
             guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
             XCTAssertEqual(code, .EALREADY)
             connectExpect.fulfill()
@@ -340,7 +340,7 @@ class RawSocketTests_TCP_Connect: XCTestCase {
             XCTAssertNil(error)
             socket.connect { _, error in
                 XCTAssertNotNil(error)
-                guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error)") }
+                guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
                 guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
                 XCTAssertEqual(code, .EISCONN)
                 connectExpect.fulfill()
@@ -365,7 +365,7 @@ class RawSocketTests_TCP_Connect: XCTestCase {
             socket.cancel()
             socket.connect { _, error in
                 XCTAssertNotNil(error)
-                guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error)") }
+                guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
                 guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
                 XCTAssertEqual(code, .ECANCELED)
                 connectExpect.fulfill()
@@ -391,7 +391,7 @@ class RawSocketTests_TCP_Connect: XCTestCase {
             socket.cancel()
             socket.connect { _, error in
                 XCTAssertNotNil(error)
-                guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error)") }
+                guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
                 guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
                 XCTAssertEqual(code, .ECANCELED)
                 connectExpect.fulfill()
@@ -401,7 +401,7 @@ class RawSocketTests_TCP_Connect: XCTestCase {
             // So there's the second check for propied state
             socket.connect { _, error in
                 XCTAssertNotNil(error)
-                guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error)") }
+                guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
                 guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
                 XCTAssertEqual(code, .ECANCELED)
                 connectExpect.fulfill()
@@ -426,7 +426,7 @@ class RawSocketTests_TCP_Connect: XCTestCase {
             socket.cancel {
                 socket.connect { _, error in
                     XCTAssertNotNil(error)
-                    guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error)") }
+                    guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
                     guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
                     XCTAssertEqual(code, .ECANCELED)
                     connectExpect.fulfill()
@@ -450,7 +450,7 @@ class RawSocketTests_TCP_Connect: XCTestCase {
         socket.cancel {
             socket.connect { _, error in
                 XCTAssertNotNil(error)
-                guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error)") }
+                guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
                 guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
                 XCTAssertEqual(code, .ECANCELED)
                 connectExpect.fulfill()
@@ -473,7 +473,7 @@ class RawSocketTests_TCP_Connect: XCTestCase {
         socket.cancel()
         socket.connect { _, error in
             XCTAssertNotNil(error)
-            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error)") }
+            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
             guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
             XCTAssertEqual(code, .ECANCELED)
             connectExpect.fulfill()
@@ -534,7 +534,7 @@ class RawSocketTests_TCP_Connect: XCTestCase {
         let connectExpect = expectation(description: "Connect callback called")
         socket.connect { info, error in
             XCTAssertNotNil(error)
-            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error)") }
+            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
             guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
             XCTAssertEqual(code, .ECONNRESET)
             connectExpect.fulfill()
@@ -544,24 +544,24 @@ class RawSocketTests_TCP_Connect: XCTestCase {
 
     func test_Connect_BothSecure_WhenServerDisconnectsConnectionRightAfterAccept_CallbackReturnsError() async throws {
         throw XCTSkip("Fails some times")
-        let timeout: TimeInterval = 0
-        let server = try ServerMock(transport: transport, isSecure: true, flow: .acceptAndCancel)
-        defer { server.stop() }
-        let port = try await server.start()
-
-        let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
-                                   transport: transport, timeout: timeout, sni: "localhost")
-        defer { socket.cancel() }
-
-        let connectExpect = expectation(description: "Connect callback called")
-        socket.connect { info, error in
-            XCTAssertNotNil(error)
-            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error)") }
-            guard case .tls(let status) = error else { return XCTFail("Error is not tls \(error)") }
-            XCTAssertEqual(status, errSSLClosedNoNotify)
-            connectExpect.fulfill()
-        }
-        await fulfillment(of: [connectExpect], timeout: 3)
+//        let timeout: TimeInterval = 0
+//        let server = try ServerMock(transport: transport, isSecure: true, flow: .acceptAndCancel)
+//        defer { server.stop() }
+//        let port = try await server.start()
+//
+//        let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
+//                                   transport: transport, timeout: timeout, sni: "localhost")
+//        defer { socket.cancel() }
+//
+//        let connectExpect = expectation(description: "Connect callback called")
+//        socket.connect { info, error in
+//            XCTAssertNotNil(error)
+//            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
+//            guard case .tls(let status) = error else { return XCTFail("Error is not tls \(error)") }
+//            XCTAssertEqual(status, errSSLClosedNoNotify)
+//            connectExpect.fulfill()
+//        }
+//        await fulfillment(of: [connectExpect], timeout: 3)
     }
 
     func test_Connect_BothInsecure_WhenServerDisconnectsConnectionRightAfterAccept_CallbackReturnsError() async throws {
@@ -581,7 +581,7 @@ class RawSocketTests_TCP_Connect: XCTestCase {
         let connectExpect = expectation(description: "Connect callback called")
         socket.connect { info, error in
             XCTAssertNotNil(error)
-            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error)") }
+            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
             guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
             XCTAssertEqual(code, .ECONNREFUSED)
             connectExpect.fulfill()
@@ -639,7 +639,7 @@ class RawSocketTests_TCP_Connect: XCTestCase {
         let connectExpect = expectation(description: "Connect callback called")
         socket.connect { _, error in
             XCTAssertNotNil(error)
-            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error)") }
+            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
             switch error {
             case .tls(let status): XCTAssertEqual(status, errSSLClosedNoNotify)
             case .posix(let code): XCTAssertEqual(code, .ECONNREFUSED)
@@ -659,7 +659,7 @@ class RawSocketTests_TCP_Connect: XCTestCase {
         let connectExpect = expectation(description: "Connect callback called")
         socket.connect { _, error in
             XCTAssertNotNil(error)
-            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error)") }
+            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
             guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
             XCTAssertEqual(code, .ECONNREFUSED)
             connectExpect.fulfill()
@@ -680,7 +680,7 @@ class RawSocketTests_TCP_Connect: XCTestCase {
         let connectExpect = expectation(description: "Connect callback called")
         socket.connect { _, error in
             XCTAssertNotNil(error)
-            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error)") }
+            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
             switch error {
             case .tls(let status): XCTAssertEqual(status, errSSLClosedNoNotify)
             case .posix(let code): XCTAssertEqual(code, .ECONNRESET)
@@ -690,7 +690,7 @@ class RawSocketTests_TCP_Connect: XCTestCase {
         }
         socket.connect { _, error in
             XCTAssertNotNil(error)
-            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error)") }
+            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
             guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
             XCTAssertEqual(code, .EALREADY)
             server.stop()
@@ -700,54 +700,54 @@ class RawSocketTests_TCP_Connect: XCTestCase {
 
     func test_Connect_BothInsecure_WhenConnecting_ServerStops_CallbackReturnsError() async throws {
         throw XCTSkip("Fails some times")
-        let timeout: TimeInterval = 0
-        let server = try ServerMock(transport: transport, isSecure: false)
-        defer { server.stop() }
-        let port = try await server.start()
-
-        let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
-                                   transport: transport, timeout: timeout, sni: nil)
-        defer { socket.cancel() }
-
-        let connectExpect = expectation(description: "Connect callback called")
-        socket.connect { _, error in
-            XCTAssertNotNil(error)
-            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error)") }
-            guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
-            XCTAssertEqual(code, .ECONNREFUSED)
-            connectExpect.fulfill()
-        }
-        server.stop()
-        await fulfillment(of: [connectExpect], timeout: 3)
+//        let timeout: TimeInterval = 0
+//        let server = try ServerMock(transport: transport, isSecure: false)
+//        defer { server.stop() }
+//        let port = try await server.start()
+//
+//        let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
+//                                   transport: transport, timeout: timeout, sni: nil)
+//        defer { socket.cancel() }
+//
+//        let connectExpect = expectation(description: "Connect callback called")
+//        socket.connect { _, error in
+//            XCTAssertNotNil(error)
+//            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
+//            guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
+//            XCTAssertEqual(code, .ECONNREFUSED)
+//            connectExpect.fulfill()
+//        }
+//        server.stop()
+//        await fulfillment(of: [connectExpect], timeout: 3)
     }
 
     func test_Connect_ServerInsecureAndSocketSecure_WhenConnecting_ServerStops_CallbackReturnsError() async throws {
         throw XCTSkip("Fails some times")
-        let timeout: TimeInterval = 0
-        let server = try ServerMock(transport: transport, isSecure: false)
-        defer { server.stop() }
-        let port = try await server.start()
-
-        let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
-                                   transport: transport, timeout: timeout, sni: "localhost")
-        defer { socket.cancel() }
-
-        let connectExpect = expectation(description: "Connect callback called")
-        socket.connect { _, error in
-            XCTAssertNotNil(error)
-            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error)") }
-            guard case .tls(let status) = error else { return XCTFail("Error is not tls \(error)") }
-            XCTAssertEqual(status, errSSLClosedNoNotify)
-            connectExpect.fulfill()
-        }
-        socket.connect { _, error in
-            XCTAssertNotNil(error)
-            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error)") }
-            guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
-            XCTAssertEqual(code, .EALREADY)
-            server.stop()
-        }
-        await fulfillment(of: [connectExpect], timeout: 3)
+//        let timeout: TimeInterval = 0
+//        let server = try ServerMock(transport: transport, isSecure: false)
+//        defer { server.stop() }
+//        let port = try await server.start()
+//
+//        let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
+//                                   transport: transport, timeout: timeout, sni: "localhost")
+//        defer { socket.cancel() }
+//
+//        let connectExpect = expectation(description: "Connect callback called")
+//        socket.connect { _, error in
+//            XCTAssertNotNil(error)
+//            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
+//            guard case .tls(let status) = error else { return XCTFail("Error is not tls \(error)") }
+//            XCTAssertEqual(status, errSSLClosedNoNotify)
+//            connectExpect.fulfill()
+//        }
+//        socket.connect { _, error in
+//            XCTAssertNotNil(error)
+//            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
+//            guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
+//            XCTAssertEqual(code, .EALREADY)
+//            server.stop()
+//        }
+//        await fulfillment(of: [connectExpect], timeout: 3)
     }
 
     func test_Connect_ServerSecureAndSocketInsecure_WhenConnecting_ServerStops_CallbackReturnsError() async throws {
