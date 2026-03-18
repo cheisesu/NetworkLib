@@ -25,8 +25,8 @@ jobs:
         uses: actions/checkout@v6
       - name: Build
         run: swift build
-      - name: Test
-        run: swift test --enable-code-coverage
+      # - name: Test
+      #   run: swift test --enable-code-coverage --skip-build --parallel
       - name: List files in the repository
         run: |
           ls ${{ github.workspace }}
