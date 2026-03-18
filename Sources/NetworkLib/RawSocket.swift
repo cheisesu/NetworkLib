@@ -36,7 +36,7 @@ public class RawSocket: @unchecked Sendable {
         }
     }
     private let timeOutEvent: TimeOutRecursiveEvent?
-    private var cancellingError: Error?
+    private var cancellingError: NWError?
     private var connectingCallback: (@Sendable (ConnectionInfo?, Error?) -> Void)?
     private var cancellingCallbacks: [(@Sendable () -> Void)]
 
@@ -96,20 +96,13 @@ public class RawSocket: @unchecked Sendable {
         printDebug("[socket] deinit")
         if DispatchQueue.getSpecific(key: accessKey) == ObjectIdentifier(accessQueue) {
             cancelUnsafe()
-
-            if let connectingCallback {
-                connectingCallback(nil, NWError.posix(.EPERM))
-                self.connectingCallback = nil
-            }
+            finishConnectionUnsafe(info: nil, code: .EPERM)
             callAllCancelsUnsafe()
         } else {
             accessQueue.sync {
                 printDebug("[socket] queue sync on deinit")
                 cancelUnsafe()
-                if let connectingCallback {
-                    connectingCallback(nil, NWError.posix(.EPERM))
-                    self.connectingCallback = nil
-                }
+                finishConnectionUnsafe(info: nil, code: .EPERM)
                 callAllCancelsUnsafe()
             }
         }
@@ -247,9 +240,7 @@ public class RawSocket: @unchecked Sendable {
         case .setup: break
         case let .waiting(error):
             timeOutEvent?.cancel()
-            let callback = connectingCallback
-            connectingCallback = nil
-            callback?(nil, error)
+            finishConnectionUnsafe(info: nil, error)
             cancelUnsafe()
         case .preparing: break
         case .ready:
@@ -257,21 +248,14 @@ public class RawSocket: @unchecked Sendable {
             let info = ConnectionInfo(transport: transport, remoteEndpoint: connection.endpoint,
                                       localEndpoint: connection.currentPath?.localEndpoint,
                                       internface: connection.currentPath?.availableInterfaces.first)
-            let callback = connectingCallback
-            connectingCallback = nil
-            callback?(info, nil)
+            finishConnectionUnsafe(info: info, nil)
         case let .failed(error):
             timeOutEvent?.cancel()
-            let callback = connectingCallback
-            connectingCallback = nil
-            callback?(nil, error)
+            finishConnectionUnsafe(info: nil, error)
             cancelUnsafe()
         case .cancelled:
             timeOutEvent?.cancel()
-            if let connectingCallback {
-                self.connectingCallback = nil
-                connectingCallback(nil, cancellingError ?? NWError.posix(.ECANCELED))
-            }
+            finishConnectionUnsafe(info: nil, cancellingError ?? .posix(.ECANCELED))
             callAllCancelsUnsafe()
             internalState = .closed
         @unknown default: break
@@ -284,5 +268,16 @@ public class RawSocket: @unchecked Sendable {
         for callback in callbacks {
             callback()
         }
+    }
+    
+    private func finishConnectionUnsafe(info: ConnectionInfo?, code: POSIXErrorCode?) {
+        let error: NWError? = if let code { .posix(code) } else { nil }
+        finishConnectionUnsafe(info: info, error)
+    }
+    
+    private func finishConnectionUnsafe(info: ConnectionInfo?, _ error: NWError?) {
+        let callback = connectingCallback
+        connectingCallback = nil
+        callback?(info, error)
     }
 }
