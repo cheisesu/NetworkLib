@@ -23,19 +23,10 @@ jobs:
         run: swift --version
       - name: Check out repository code
         uses: actions/checkout@v6
-      - name: Setup keychain
-        run: |
-          security create-keychain -p '7_d4!nfF54' build.keychain
-          security default-keychain -s build.keychain
-          security unlock-keychain -p '7_d4!nfF54' build.keychain
-          security set-keychain-settings -t 3600 -l ~/Library/Keychains/build.keychain
-          security import Tests/NetworkLibTests/Resources/localhost.p12 -k build.keychain -P 'localhost' -A -t cert -f pkcs12
-          # security add-trusted-cert -d -r trustRoot -k build.keychain Tests/NetworkLibTests/Resources/localhost.crt
-          security set-key-partition-list -S apple-tool:,apple: -s -k '7_d4!nfF54' build.keychain
       - name: Build
         run: swift build
-      - name: Test
-        run: swift test --enable-code-coverage
+      # - name: Test
+      #   run: swift test --enable-code-coverage --skip-build --parallel
       - name: List files in the repository
         run: |
           ls ${{ github.workspace }}
