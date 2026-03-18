@@ -38,7 +38,7 @@ public class RawSocket: @unchecked Sendable {
     private let timeOutEvent: TimeOutRecursiveEvent?
     private var cancellingError: Error?
     private var connectingCallback: (@Sendable (ConnectionInfo?, Error?) -> Void)?
-    private var cancellingCallback: (() -> Void)?
+    private var cancellingCallbacks: [(@Sendable () -> Void)]
 
     // MARK: - INITIALIZATION
 
@@ -56,6 +56,7 @@ public class RawSocket: @unchecked Sendable {
         accessKey = DispatchSpecificKey()
         accessQueue.setSpecific(key: accessKey, value: ObjectIdentifier(accessQueue))
         self.accessQueue = accessQueue
+        cancellingCallbacks = []
         timeOutEvent = TimeOutRecursiveEvent(timeOut: timeout, on: accessQueue)
         self.maxDataBlock = maxDataBlock
         self.transport = transport
@@ -100,10 +101,7 @@ public class RawSocket: @unchecked Sendable {
                 connectingCallback(nil, NWError.posix(.EPERM))
                 self.connectingCallback = nil
             }
-            if let cancellingCallback {
-                cancellingCallback()
-                self.cancellingCallback = nil
-            }
+            callAllCancelsUnsafe()
         } else {
             accessQueue.sync {
                 printDebug("[socket] queue sync on deinit")
@@ -112,10 +110,7 @@ public class RawSocket: @unchecked Sendable {
                     connectingCallback(nil, NWError.posix(.EPERM))
                     self.connectingCallback = nil
                 }
-                if let cancellingCallback {
-                    cancellingCallback()
-                    self.cancellingCallback = nil
-                }
+                callAllCancelsUnsafe()
             }
         }
     }
@@ -144,15 +139,8 @@ public class RawSocket: @unchecked Sendable {
                 handler?()
                 return
             }
-            if let cancellingCallback = self.cancellingCallback {
-                if let handler {
-                    self.cancellingCallback = {
-                        cancellingCallback()
-                        handler()
-                    }
-                }
-            } else {
-                self.cancellingCallback = handler
+            if let handler {
+                cancellingCallbacks.append(handler)
             }
             self.cancelUnsafe()
         }
@@ -233,23 +221,17 @@ public class RawSocket: @unchecked Sendable {
         printDebug("[socket] cancel unsafe")
         timeOutEvent?.cancel()
         if connection.state == .cancelled {
-            let callback = cancellingCallback
-            cancellingCallback = nil
-            callback?()
+            callAllCancelsUnsafe()
             return
         }
         if internalState == _InternalState.none {
             internalState = .closed
             connection.cancel()
-            let callback = cancellingCallback
-            cancellingCallback = nil
-            callback?()
+            callAllCancelsUnsafe()
             return
         }
         if [.closed].contains(internalState) {
-            let callback = cancellingCallback
-            cancellingCallback = nil
-            callback?()
+            callAllCancelsUnsafe()
             return
         }
         if internalState == .cancelling {
@@ -290,12 +272,17 @@ public class RawSocket: @unchecked Sendable {
                 self.connectingCallback = nil
                 connectingCallback(nil, cancellingError ?? NWError.posix(.ECANCELED))
             }
-            if let cancellingCallback {
-                self.cancellingCallback = nil
-                cancellingCallback()
-            }
+            callAllCancelsUnsafe()
             internalState = .closed
         @unknown default: break
+        }
+    }
+    
+    private func callAllCancelsUnsafe() {
+        let callbacks = cancellingCallbacks
+        cancellingCallbacks = []
+        for callback in callbacks {
+            callback()
         }
     }
 }
