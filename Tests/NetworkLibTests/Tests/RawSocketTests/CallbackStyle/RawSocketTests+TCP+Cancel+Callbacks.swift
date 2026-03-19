@@ -2,7 +2,7 @@ import XCTest
 import Network
 @testable import NetworkLib
 
-class RawSocketTests_TCP_Cancel: XCTestCase {
+class RawSocketTests_TCP_Cancel_Callbacks: XCTestCase {
     private let transport: NetTransport = .tcp
 
     override func setUp() {

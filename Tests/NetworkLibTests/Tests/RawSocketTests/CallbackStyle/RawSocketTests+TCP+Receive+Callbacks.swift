@@ -2,7 +2,7 @@ import XCTest
 import Network
 @testable import NetworkLib
 
-class RawSocketTests_TCP_Receive: XCTestCase {
+class RawSocketTests_TCP_Receive_Callbacks: XCTestCase {
     private let transport: NetTransport = .tcp
 
     override func setUp() {

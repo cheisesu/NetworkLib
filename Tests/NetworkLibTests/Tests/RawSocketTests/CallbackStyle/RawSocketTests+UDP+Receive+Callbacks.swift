@@ -2,7 +2,7 @@ import XCTest
 import Network
 @testable import NetworkLib
 
-class RawSocketTests_UDP_Receive: XCTestCase {
+class RawSocketTests_UDP_Receive_Callbacks: XCTestCase {
     private let transport: NetTransport = .udp
 
     override func setUp() {
