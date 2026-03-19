@@ -13,7 +13,7 @@ public struct ConnectionInfo: Sendable, Equatable {
     public let transport: NetTransport
     public let remoteEndpoint: NWEndpoint
     public let localEndpoint: NWEndpoint?
-    public let internface: NWInterface?
+    public let interface: NWInterface?
 }
 
 public class RawSocket: @unchecked Sendable {
@@ -35,7 +35,7 @@ public class RawSocket: @unchecked Sendable {
             printDebug("[socket] internal state changed", internalState)
         }
     }
-    private let timeOutEvent: TimeOutRecursiveEvent?
+    private let timeoutEvent: TimeoutRecursiveEvent?
     private var cancellingError: NWError?
     private var connectingCallback: (@Sendable (ConnectionInfo?, Error?) -> Void)?
     private var cancellingCallbacks: [(@Sendable () -> Void)]
@@ -57,7 +57,7 @@ public class RawSocket: @unchecked Sendable {
         accessQueue.setSpecific(key: accessKey, value: ObjectIdentifier(accessQueue))
         self.accessQueue = accessQueue
         cancellingCallbacks = []
-        timeOutEvent = TimeOutRecursiveEvent(timeOut: timeout, on: accessQueue)
+        timeoutEvent = TimeoutRecursiveEvent(timeout: timeout, on: accessQueue)
         self.maxDataBlock = maxDataBlock
         self.transport = transport
         let tls: NWProtocolTLS.Options? = {
@@ -85,7 +85,7 @@ public class RawSocket: @unchecked Sendable {
         }
 
         // - after init
-        timeOutEvent?.setHandler { [weak self] event in
+        timeoutEvent?.setHandler { [weak self] event in
             printDebug("[socket] timeout event handler")
             self?.cancellingError = NWError.posix(.ETIMEDOUT)
             self?.cancelUnsafe()
@@ -117,9 +117,8 @@ public class RawSocket: @unchecked Sendable {
                 block(nil, NWError.posix(.EPERM))
                 return
             }
-            self.timeOutEvent?.touch()
             self.connectUnsafeNoTimer { [weak self] info, error in
-                self?.timeOutEvent?.detouch()
+                self?.timeoutEvent?.detouch()
                 block(info, error)
             }
         }
@@ -150,9 +149,9 @@ public class RawSocket: @unchecked Sendable {
                 completion?(error)
                 return
             }
-            timeOutEvent?.touch()
+            timeoutEvent?.touch()
             connection.send(content: data, completion: .contentProcessed({ [weak self] error in
-                self?.timeOutEvent?.detouch()
+                self?.timeoutEvent?.detouch()
                 completion?(self?.cancellingError ?? error)
             }))
         }
@@ -168,13 +167,13 @@ public class RawSocket: @unchecked Sendable {
                 return
             }
             
-            timeOutEvent?.touch()
+            timeoutEvent?.touch()
             connection.receive(minimumIncompleteLength: 1, maximumLength: maxDataBlock) { [weak self] content, contentContext, isComplete, error in
                 guard let self else {
                     completion(nil, NWError.posix(.EPERM))
                     return
                 }
-                self.timeOutEvent?.detouch()
+                self.timeoutEvent?.detouch()
                 if let content {
                     completion(content, nil)
                 } else if let error {
@@ -183,8 +182,8 @@ public class RawSocket: @unchecked Sendable {
                 } else if isComplete {
                     completion(nil, self.cancellingError)
                 } else {
-                    assertionFailure("Undefined behaviour")
-                    completion(nil, nil)
+                    assertionFailure("Unexpected receive state: content=nil, isComplete=false, error=nil")
+                    completion(nil, NWError.posix(.EIO))
                 }
             }
         }
@@ -193,6 +192,7 @@ public class RawSocket: @unchecked Sendable {
     // MARK: - PRIVATE METHODS
 
     private func connectUnsafeNoTimer(_ block: @escaping @Sendable (ConnectionInfo?, Error?) -> Void) {
+        timeoutEvent?.touch()
         if internalState == .closed || internalState == .cancelling {
             return block(nil, NWError.posix(.ECANCELED))
         }
@@ -205,8 +205,8 @@ public class RawSocket: @unchecked Sendable {
 
     private func cancelUnsafe() {
         printDebug("[socket] cancel unsafe")
-        timeOutEvent?.cancel()
-        if internalState == _InternalState.none {
+        timeoutEvent?.cancel()
+        if internalState == _InternalState.none { // cause state may not be called
             internalState = .closed
             connection.cancel()
             callAllCancelsUnsafe()
@@ -228,7 +228,7 @@ public class RawSocket: @unchecked Sendable {
         switch newState {
         case .setup: break
         case let .waiting(error):
-            timeOutEvent?.cancel()
+            timeoutEvent?.cancel()
             finishConnectionUnsafe(info: nil, error)
             cancelUnsafe()
         case .preparing: break
@@ -236,14 +236,14 @@ public class RawSocket: @unchecked Sendable {
             internalState = .connected
             let info = ConnectionInfo(transport: transport, remoteEndpoint: connection.endpoint,
                                       localEndpoint: connection.currentPath?.localEndpoint,
-                                      internface: connection.currentPath?.availableInterfaces.first)
+                                      interface: connection.currentPath?.availableInterfaces.first)
             finishConnectionUnsafe(info: info, nil)
         case let .failed(error):
-            timeOutEvent?.cancel()
+            timeoutEvent?.cancel()
             finishConnectionUnsafe(info: nil, error)
             cancelUnsafe()
         case .cancelled:
-            timeOutEvent?.cancel()
+            timeoutEvent?.cancel()
             finishConnectionUnsafe(info: nil, cancellingError ?? .posix(.ECANCELED))
             callAllCancelsUnsafe()
             internalState = .closed
