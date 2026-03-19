@@ -146,12 +146,8 @@ public class RawSocket: @unchecked Sendable {
                 return
             }
             printDebug("[socket] send", data)
-            if internalState == .none {
-                completion?(NWError.posix(.ENOTCONN))
-                return
-            }
-            if ![.connected, .connecting].contains(internalState) {
-                completion?(cancellingError ?? NWError.posix(.ECANCELED))
+            if let error = activeOperationCheckErrorUnsafe() {
+                completion?(error)
                 return
             }
             timeOutEvent?.touch()
@@ -166,15 +162,12 @@ public class RawSocket: @unchecked Sendable {
         accessQueue.async { [weak self, maxDataBlock] in
             guard let self else { return completion(nil, NWError.posix(.EPERM)) }
             printDebug("[socket] receive next")
-
-            if internalState == .none {
-                completion(nil, NWError.posix(.ENOTCONN))
+            
+            if let error = activeOperationCheckErrorUnsafe() {
+                completion(nil, error)
                 return
             }
-            if ![.connected, .connecting].contains(internalState) {
-                completion(nil, cancellingError ?? NWError.posix(.ECANCELED))
-                return
-            }
+            
             timeOutEvent?.touch()
             connection.receive(minimumIncompleteLength: 1, maximumLength: maxDataBlock) { [weak self] content, contentContext, isComplete, error in
                 guard let self else {
@@ -279,5 +272,15 @@ public class RawSocket: @unchecked Sendable {
         let callback = connectingCallback
         connectingCallback = nil
         callback?(info, error)
+    }
+    
+    private func activeOperationCheckErrorUnsafe() -> NWError? {
+        if internalState == .none {
+            return .posix(.ENOTCONN)
+        }
+        if ![.connected, .connecting].contains(internalState) {
+            return cancellingError ?? NWError.posix(.ECANCELED)
+        }
+        return nil
     }
 }
