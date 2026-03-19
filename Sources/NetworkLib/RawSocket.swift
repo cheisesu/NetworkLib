@@ -193,7 +193,7 @@ public class RawSocket: @unchecked Sendable {
     // MARK: - PRIVATE METHODS
 
     private func connectUnsafeNoTimer(_ block: @escaping @Sendable (ConnectionInfo?, Error?) -> Void) {
-        if connection.state == .cancelled || internalState == .closed || internalState == .cancelling {
+        if internalState == .closed || internalState == .cancelling {
             return block(nil, NWError.posix(.ECANCELED))
         }
         if internalState == .connecting { return block(nil, NWError.posix(.EALREADY)) }
@@ -206,10 +206,6 @@ public class RawSocket: @unchecked Sendable {
     private func cancelUnsafe() {
         printDebug("[socket] cancel unsafe")
         timeOutEvent?.cancel()
-        if connection.state == .cancelled {
-            callAllCancelsUnsafe()
-            return
-        }
         if internalState == _InternalState.none {
             internalState = .closed
             connection.cancel()
