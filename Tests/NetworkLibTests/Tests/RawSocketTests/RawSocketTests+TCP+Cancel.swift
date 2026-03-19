@@ -51,7 +51,7 @@ class RawSocketTests_TCP_Cancel: XCTestCase {
 
         let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
                                    transport: transport, timeout: timeout, sni: "localhost")
-        defer { socket.cancel() }
+        defer { socket.cancel(nil) }
 
         let cancelExpect = expectation(description: "Callback called")
         socket.connect { _, error in
@@ -91,7 +91,7 @@ class RawSocketTests_TCP_Cancel: XCTestCase {
                                    transport: transport, timeout: timeout, sni: "localhost")
 
         let cancelExpect = expectation(description: "Callback called")
-        socket.cancel()
+        socket.cancel(nil)
         socket.cancel {
             cancelExpect.fulfill()
         }
@@ -110,7 +110,7 @@ class RawSocketTests_TCP_Cancel: XCTestCase {
         let cancelExpect = expectation(description: "Callback called")
         socket.connect { _, _ in
         }
-        socket.cancel()
+        socket.cancel(nil)
         socket.cancel {
             cancelExpect.fulfill()
         }
@@ -125,12 +125,12 @@ class RawSocketTests_TCP_Cancel: XCTestCase {
 
         let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
                                    transport: transport, timeout: timeout, sni: "localhost")
-        defer { socket.cancel() }
+        defer { socket.cancel(nil) }
 
         let cancelExpect = expectation(description: "Callback called")
         socket.connect { _, error in
             XCTAssertNil(error)
-            socket.cancel()
+            socket.cancel(nil)
             socket.cancel {
                 cancelExpect.fulfill()
             }
@@ -149,7 +149,7 @@ class RawSocketTests_TCP_Cancel: XCTestCase {
 
         let cancelExpect = expectation(description: "Callback called")
         socket.cancel {
-            socket.cancel()
+            socket.cancel(nil)
             socket.cancel {
                 cancelExpect.fulfill()
             }
@@ -170,7 +170,7 @@ class RawSocketTests_TCP_Cancel: XCTestCase {
         socket.cancel {
             cancelExpect.fulfill()
         }
-        socket.cancel()
+        socket.cancel(nil)
         await fulfillment(of: [cancelExpect], timeout: 1)
     }
 
@@ -189,7 +189,7 @@ class RawSocketTests_TCP_Cancel: XCTestCase {
         socket.cancel {
             cancelExpect.fulfill()
         }
-        socket.cancel()
+        socket.cancel(nil)
         await fulfillment(of: [cancelExpect], timeout: 1)
     }
 
@@ -201,7 +201,7 @@ class RawSocketTests_TCP_Cancel: XCTestCase {
 
         let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
                                    transport: transport, timeout: timeout, sni: "localhost")
-        defer { socket.cancel() }
+        defer { socket.cancel(nil) }
 
         let cancelExpect = expectation(description: "Callback called")
         socket.connect { _, error in
@@ -209,7 +209,7 @@ class RawSocketTests_TCP_Cancel: XCTestCase {
             socket.cancel {
                 cancelExpect.fulfill()
             }
-            socket.cancel()
+            socket.cancel(nil)
         }
         await fulfillment(of: [cancelExpect], timeout: 3)
     }
@@ -228,7 +228,7 @@ class RawSocketTests_TCP_Cancel: XCTestCase {
             socket.cancel {
                 cancelExpect.fulfill()
             }
-            socket.cancel()
+            socket.cancel(nil)
         }
         await fulfillment(of: [cancelExpect], timeout: 3)
     }
@@ -283,7 +283,7 @@ class RawSocketTests_TCP_Cancel: XCTestCase {
 
         let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
                                    transport: transport, timeout: timeout, sni: "localhost")
-        defer { socket.cancel() }
+        defer { socket.cancel(nil) }
 
         let cancel1Expect = expectation(description: "First callback called")
         let cancel2Expect = expectation(description: "Second callback called")
@@ -307,7 +307,7 @@ class RawSocketTests_TCP_Cancel: XCTestCase {
 
         let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
                                    transport: transport, timeout: timeout, sni: "localhost")
-        defer { socket.cancel() }
+        defer { socket.cancel(nil) }
 
         let cancel1Expect = expectation(description: "First callback called")
         let cancel2Expect = expectation(description: "Second callback called")
@@ -331,7 +331,7 @@ class RawSocketTests_TCP_Cancel: XCTestCase {
         let box = _SocketBox()
         box.set(try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
                               transport: transport, timeout: timeout, sni: "localhost"))
-        defer { box.get()?.cancel() }
+        defer { box.get()?.cancel(nil) }
 
         let cancelExpect = expectation(description: "Callback called")
         box.get()?.cancel {
@@ -350,7 +350,7 @@ class RawSocketTests_TCP_Cancel: XCTestCase {
         let box = _SocketBox()
         box.set(try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
                               transport: transport, timeout: timeout, sni: "localhost"))
-        defer { box.get()?.cancel() }
+        defer { box.get()?.cancel(nil) }
 
         let cancelExpect = expectation(description: "Callback called")
         box.get()?.connect { _, error in
@@ -374,7 +374,7 @@ class RawSocketTests_TCP_Cancel: XCTestCase {
         let box = _SocketBox()
         box.set(try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
                               transport: transport, timeout: timeout, sni: "localhost"))
-        defer { box.get()?.cancel() }
+        defer { box.get()?.cancel(nil) }
 
         let cancelExpect = expectation(description: "Callback called")
         box.get()?.connect { _, error in

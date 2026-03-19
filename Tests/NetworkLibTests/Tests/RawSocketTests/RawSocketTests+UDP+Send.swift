@@ -20,7 +20,7 @@ class RawSocketTests_UDP_Send: XCTestCase {
 
         let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
                                    transport: transport, timeout: timeout, sni: "localhost")
-        defer { socket.cancel() }
+        defer { socket.cancel(nil) }
 
         let sendExpect = expectation(description: "Send callback called")
         socket.connect { _, error in
@@ -44,7 +44,7 @@ class RawSocketTests_UDP_Send: XCTestCase {
 
         let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
                                    transport: transport, timeout: timeout, sni: "localhost")
-        defer { socket.cancel() }
+        defer { socket.cancel(nil) }
 
         let sendExpect = expectation(description: "Send callback called")
         socket.connect { _, error in
@@ -68,7 +68,7 @@ class RawSocketTests_UDP_Send: XCTestCase {
 
         let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
                                    transport: transport, timeout: timeout, sni: "localhost")
-        defer { socket.cancel() }
+        defer { socket.cancel(nil) }
 
         let sendExpect = expectation(description: "Send callback called")
         socket.send(dataToSend) { error in
@@ -90,12 +90,12 @@ class RawSocketTests_UDP_Send: XCTestCase {
 
         let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
                                    transport: transport, timeout: timeout, sni: "localhost")
-        defer { socket.cancel() }
+        defer { socket.cancel(nil) }
 
         let sendExpect = expectation(description: "Send callback called")
         socket.connect { _, error in
             XCTAssertNil(error)
-            socket.cancel()
+            socket.cancel(nil)
             socket.send(dataToSend) { error in
                 XCTAssertNotNil(error)
                 guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
@@ -116,7 +116,7 @@ class RawSocketTests_UDP_Send: XCTestCase {
 
         let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
                                    transport: transport, timeout: timeout, sni: "localhost")
-        defer { socket.cancel() }
+        defer { socket.cancel(nil) }
 
         let sendExpect = expectation(description: "Send callback called")
         socket.connect { _, error in
@@ -143,7 +143,7 @@ class RawSocketTests_UDP_Send: XCTestCase {
 
         let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
                                    transport: transport, timeout: timeout, sni: "localhost")
-        defer { socket.cancel() }
+        defer { socket.cancel(nil) }
 
         let sendExpect = expectation(description: "Send callback called")
         socket.cancel {
@@ -169,7 +169,7 @@ class RawSocketTests_UDP_Send: XCTestCase {
 
         var socket: RawSocket? = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
                                                transport: transport, timeout: timeout, sni: "localhost")
-        defer { socket?.cancel() }
+        defer { socket?.cancel(nil) }
 
         let connectExpect = expectation(description: "Connect callback called")
         socket?.connect { _, error in
@@ -206,7 +206,7 @@ class RawSocketTests_UDP_Send: XCTestCase {
 
         let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
                                    transport: transport, timeout: timeout, sni: "localhost")
-        defer { socket.cancel() }
+        defer { socket.cancel(nil) }
 
         let sendExpect = expectation(description: "Send callback called")
         socket.connect { _, error in
@@ -229,7 +229,7 @@ class RawSocketTests_UDP_Send: XCTestCase {
 
         let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
                                    transport: transport, timeout: timeout, sni: "localhost")
-        defer { socket.cancel() }
+        defer { socket.cancel(nil) }
 
         let sendExpect = expectation(description: "Send callback called")
         socket.connect { _, error in
@@ -257,7 +257,7 @@ class RawSocketTests_UDP_Send: XCTestCase {
 
         let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
                                    transport: transport, timeout: timeout, sni: "localhost")
-        defer { socket.cancel() }
+        defer { socket.cancel(nil) }
 
         let sendExpect = expectation(description: "Send callback called")
         socket.connect { _, error in
@@ -292,7 +292,7 @@ class RawSocketTests_UDP_Send: XCTestCase {
 
         let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
                                    transport: transport, timeout: timeout, sni: nil)
-        defer { socket.cancel() }
+        defer { socket.cancel(nil) }
 
         let sendExpect = expectation(description: "Send callback called")
         socket.connect { _, error in
