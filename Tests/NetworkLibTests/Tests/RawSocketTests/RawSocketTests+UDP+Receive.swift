@@ -495,7 +495,7 @@ class RawSocketTests_UDP_Receive: XCTestCase {
             XCTAssertNotNil(error)
             guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
             guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
-            XCTAssertEqual(code, .EPERM)
+            XCTAssertEqual(code, .ECANCELED)
             receiveExpect.fulfill()
         }
         box.set(nil)
@@ -527,7 +527,7 @@ class RawSocketTests_UDP_Receive: XCTestCase {
             XCTAssertNotNil(error)
             guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
             guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
-            XCTAssertEqual(code, .EPERM)
+            XCTAssertEqual(code, .ECANCELED)
             receiveExpect.fulfill()
         }
         box.get()?.send(dataToSend) { _ in
