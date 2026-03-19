@@ -182,7 +182,7 @@ class RawSocketTests_TCP_Send: XCTestCase {
             XCTAssertNotNil(error)
             guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
             guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
-            XCTAssertEqual(code, .EPERM)
+            XCTAssertEqual(code, .ECANCELED)
             sendExpect.fulfill()
         }
         socket = nil

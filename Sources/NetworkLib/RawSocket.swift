@@ -93,13 +93,13 @@ public class RawSocket: @unchecked Sendable {
         printDebug("[socket] deinit")
         if DispatchQueue.getSpecific(key: accessKey) == ObjectIdentifier(accessQueue) {
             cancelUnsafe()
-            finishConnectionUnsafe(code: .EPERM)
+            finishConnectionUnsafe(code: .ECANCELED)
             callAllCancelsUnsafe()
         } else {
             accessQueue.sync {
                 printDebug("[socket] queue sync on deinit")
                 cancelUnsafe()
-                finishConnectionUnsafe(code: .EPERM)
+                finishConnectionUnsafe(code: .ECANCELED)
                 callAllCancelsUnsafe()
             }
         }
@@ -111,7 +111,7 @@ public class RawSocket: @unchecked Sendable {
         accessQueue.async { [weak self] in
             printDebug("[socket] queue async connect with timeout")
             guard let self else {
-                block(.failure(NWError.posix(.EPERM)))
+                block(.failure(NWError.posix(.ECANCELED)))
                 return
             }
             self.connectUnsafeNoTimer { [weak self] result in
@@ -138,7 +138,7 @@ public class RawSocket: @unchecked Sendable {
     public func send(_ data: Data, _ completion: (@Sendable (Error?) -> Void)?) {
         accessQueue.async { [weak self] in
             guard let self else {
-                completion?(NWError.posix(.EPERM))
+                completion?(NWError.posix(.ECANCELED))
                 return
             }
             printDebug("[socket] send", data)
@@ -156,7 +156,7 @@ public class RawSocket: @unchecked Sendable {
 
     public func receiveNext(_ completion: @escaping @Sendable (Data?, Error?) -> Void) {
         accessQueue.async { [weak self, maxDataBlock] in
-            guard let self else { return completion(nil, NWError.posix(.EPERM)) }
+            guard let self else { return completion(nil, NWError.posix(.ECANCELED)) }
             printDebug("[socket] receive next")
             
             if let error = activeOperationCheckErrorUnsafe() {
@@ -167,7 +167,7 @@ public class RawSocket: @unchecked Sendable {
             timeoutEvent?.touch()
             connection.receive(minimumIncompleteLength: 1, maximumLength: maxDataBlock) { [weak self] content, contentContext, isComplete, error in
                 guard let self else {
-                    completion(nil, NWError.posix(.EPERM))
+                    completion(nil, NWError.posix(.ECANCELED))
                     return
                 }
                 self.timeoutEvent?.detouch()
