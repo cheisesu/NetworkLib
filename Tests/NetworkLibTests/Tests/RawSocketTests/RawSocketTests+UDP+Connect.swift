@@ -497,7 +497,7 @@ class RawSocketTests_UDP_Connect: XCTestCase {
         socket.connect { [transport] info, error in
             XCTAssertNil(error)
             XCTAssertEqual(info?.transport, transport)
-            XCTAssertEqual(info?.internface?.name, "lo0")
+            XCTAssertEqual(info?.interface?.name, "lo0")
             XCTAssertEqual(info?.remoteEndpoint, .url(url))
             switch info?.localEndpoint {
             case .hostPort(let host, _):
@@ -527,7 +527,7 @@ class RawSocketTests_UDP_Connect: XCTestCase {
         socket.connect { [transport] info, error in
             XCTAssertNil(error)
             XCTAssertEqual(info?.transport, transport)
-            XCTAssertEqual(info?.internface?.name, "lo0")
+            XCTAssertEqual(info?.interface?.name, "lo0")
             XCTAssertEqual(info?.remoteEndpoint, NWEndpoint.hostPort(host: "127.0.0.1", port: port))
             switch info?.localEndpoint {
             case .hostPort(let host, _):

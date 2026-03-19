@@ -1,15 +1,15 @@
 import Foundation
 
-final class TimeOutRecursiveEvent: @unchecked Sendable {
+final class TimeoutRecursiveEvent: @unchecked Sendable {
     private let syncLock: NSLock
     private let timer: DispatchSourceTimer
     private var token: Int64
-    private let timeOut: TimeInterval
+    private let timeout: TimeInterval
     private let queue: DispatchQueue
 
-    init?(timeOut: TimeInterval, on queue: DispatchQueue) {
-        guard timeOut > 0 else { return nil }
-        self.timeOut = timeOut
+    init?(timeout: TimeInterval, on queue: DispatchQueue) {
+        guard timeout > 0 else { return nil }
+        self.timeout = timeout
         self.queue = queue
         timer = DispatchSource.makeTimerSource(queue: queue)
         syncLock = NSLock()
@@ -23,7 +23,7 @@ final class TimeOutRecursiveEvent: @unchecked Sendable {
         cancel()
     }
 
-    func setHandler(_ handler: @escaping @Sendable (TimeOutRecursiveEvent) -> Void) {
+    func setHandler(_ handler: @escaping @Sendable (TimeoutRecursiveEvent) -> Void) {
         syncLock.lock()
         defer { syncLock.unlock() }
 
@@ -40,7 +40,7 @@ final class TimeOutRecursiveEvent: @unchecked Sendable {
         defer { syncLock.unlock() }
         guard !timer.isCancelled else { return }
         token &+= 1
-        timer.schedule(deadline: .now() + timeOut)
+        timer.schedule(deadline: .now() + timeout)
         timer.activate()
     }
 
@@ -49,7 +49,7 @@ final class TimeOutRecursiveEvent: @unchecked Sendable {
         defer { syncLock.unlock() }
         guard !timer.isCancelled else { return }
         token = max(0, token - 1)
-        timer.schedule(deadline: .now() + timeOut)
+        timer.schedule(deadline: .now() + timeout)
         timer.activate()
     }
 

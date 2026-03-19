@@ -1,9 +1,6 @@
 import Foundation
 import Network
 
-// TODO: add closing if no activity by timeout and special option
-// TODO: replace eperm error on another one for nil self
-
 public enum NetTransport: Sendable {
     case tcp
     case udp
@@ -13,7 +10,7 @@ public struct ConnectionInfo: Sendable, Equatable {
     public let transport: NetTransport
     public let remoteEndpoint: NWEndpoint
     public let localEndpoint: NWEndpoint?
-    public let internface: NWInterface?
+    public let interface: NWInterface?
 }
 
 public class RawSocket: @unchecked Sendable {
@@ -35,10 +32,10 @@ public class RawSocket: @unchecked Sendable {
             printDebug("[socket] internal state changed", internalState)
         }
     }
-    private let timeOutEvent: TimeOutRecursiveEvent?
-    private var cancellingError: Error?
-    private var connectingCallback: (@Sendable (ConnectionInfo?, Error?) -> Void)?
-    private var cancellingCallback: (() -> Void)?
+    private let timeoutEvent: TimeoutRecursiveEvent?
+    private var cancellingError: NWError?
+    private var connectingCallback: (@Sendable (Result<ConnectionInfo, Error>) -> Void)?
+    private var cancellingCallbacks: [(@Sendable () -> Void)]
 
     // MARK: - INITIALIZATION
 
@@ -56,7 +53,8 @@ public class RawSocket: @unchecked Sendable {
         accessKey = DispatchSpecificKey()
         accessQueue.setSpecific(key: accessKey, value: ObjectIdentifier(accessQueue))
         self.accessQueue = accessQueue
-        timeOutEvent = TimeOutRecursiveEvent(timeOut: timeout, on: accessQueue)
+        cancellingCallbacks = []
+        timeoutEvent = TimeoutRecursiveEvent(timeout: timeout, on: accessQueue)
         self.maxDataBlock = maxDataBlock
         self.transport = transport
         let tls: NWProtocolTLS.Options? = {
@@ -84,7 +82,7 @@ public class RawSocket: @unchecked Sendable {
         }
 
         // - after init
-        timeOutEvent?.setHandler { [weak self] event in
+        timeoutEvent?.setHandler { [weak self] event in
             printDebug("[socket] timeout event handler")
             self?.cancellingError = NWError.posix(.ETIMEDOUT)
             self?.cancelUnsafe()
@@ -95,44 +93,30 @@ public class RawSocket: @unchecked Sendable {
         printDebug("[socket] deinit")
         if DispatchQueue.getSpecific(key: accessKey) == ObjectIdentifier(accessQueue) {
             cancelUnsafe()
-
-            if let connectingCallback {
-                connectingCallback(nil, NWError.posix(.EPERM))
-                self.connectingCallback = nil
-            }
-            if let cancellingCallback {
-                cancellingCallback()
-                self.cancellingCallback = nil
-            }
+            finishConnectionUnsafe(code: .EPERM)
+            callAllCancelsUnsafe()
         } else {
             accessQueue.sync {
                 printDebug("[socket] queue sync on deinit")
                 cancelUnsafe()
-                if let connectingCallback {
-                    connectingCallback(nil, NWError.posix(.EPERM))
-                    self.connectingCallback = nil
-                }
-                if let cancellingCallback {
-                    cancellingCallback()
-                    self.cancellingCallback = nil
-                }
+                finishConnectionUnsafe(code: .EPERM)
+                callAllCancelsUnsafe()
             }
         }
     }
 
     // MARK: - PUBLIC METHODS
 
-    public func connect(_ block: @escaping @Sendable (ConnectionInfo?, Error?) -> Void) {
+    public func connect(_ block: @escaping @Sendable (Result<ConnectionInfo, Error>) -> Void) {
         accessQueue.async { [weak self] in
             printDebug("[socket] queue async connect with timeout")
             guard let self else {
-                block(nil, NWError.posix(.EPERM))
+                block(.failure(NWError.posix(.EPERM)))
                 return
             }
-            self.timeOutEvent?.touch()
-            self.connectUnsafeNoTimer { [weak self] info, error in
-                self?.timeOutEvent?.detouch()
-                block(info, error)
+            self.connectUnsafeNoTimer { [weak self] result in
+                self?.timeoutEvent?.detouch()
+                block(result)
             }
         }
     }
@@ -144,15 +128,8 @@ public class RawSocket: @unchecked Sendable {
                 handler?()
                 return
             }
-            if let cancellingCallback = self.cancellingCallback {
-                if let handler {
-                    self.cancellingCallback = {
-                        cancellingCallback()
-                        handler()
-                    }
-                }
-            } else {
-                self.cancellingCallback = handler
+            if let handler {
+                cancellingCallbacks.append(handler)
             }
             self.cancelUnsafe()
         }
@@ -165,17 +142,13 @@ public class RawSocket: @unchecked Sendable {
                 return
             }
             printDebug("[socket] send", data)
-            if internalState == .none {
-                completion?(NWError.posix(.ENOTCONN))
+            if let error = activeOperationCheckErrorUnsafe() {
+                completion?(error)
                 return
             }
-            if ![.connected, .connecting].contains(internalState) {
-                completion?(cancellingError ?? NWError.posix(.ECANCELED))
-                return
-            }
-            timeOutEvent?.touch()
+            timeoutEvent?.touch()
             connection.send(content: data, completion: .contentProcessed({ [weak self] error in
-                self?.timeOutEvent?.detouch()
+                self?.timeoutEvent?.detouch()
                 completion?(self?.cancellingError ?? error)
             }))
         }
@@ -185,22 +158,19 @@ public class RawSocket: @unchecked Sendable {
         accessQueue.async { [weak self, maxDataBlock] in
             guard let self else { return completion(nil, NWError.posix(.EPERM)) }
             printDebug("[socket] receive next")
-
-            if internalState == .none {
-                completion(nil, NWError.posix(.ENOTCONN))
+            
+            if let error = activeOperationCheckErrorUnsafe() {
+                completion(nil, error)
                 return
             }
-            if ![.connected, .connecting].contains(internalState) {
-                completion(nil, cancellingError ?? NWError.posix(.ECANCELED))
-                return
-            }
-            timeOutEvent?.touch()
+            
+            timeoutEvent?.touch()
             connection.receive(minimumIncompleteLength: 1, maximumLength: maxDataBlock) { [weak self] content, contentContext, isComplete, error in
                 guard let self else {
                     completion(nil, NWError.posix(.EPERM))
                     return
                 }
-                self.timeOutEvent?.detouch()
+                self.timeoutEvent?.detouch()
                 if let content {
                     completion(content, nil)
                 } else if let error {
@@ -209,8 +179,8 @@ public class RawSocket: @unchecked Sendable {
                 } else if isComplete {
                     completion(nil, self.cancellingError)
                 } else {
-                    assertionFailure("Undefined behaviour")
-                    completion(nil, nil)
+                    assertionFailure("Unexpected receive state: content=nil, isComplete=false, error=nil")
+                    completion(nil, NWError.posix(.EIO))
                 }
             }
         }
@@ -218,12 +188,13 @@ public class RawSocket: @unchecked Sendable {
 
     // MARK: - PRIVATE METHODS
 
-    private func connectUnsafeNoTimer(_ block: @escaping @Sendable (ConnectionInfo?, Error?) -> Void) {
-        if connection.state == .cancelled || internalState == .closed || internalState == .cancelling {
-            return block(nil, NWError.posix(.ECANCELED))
+    private func connectUnsafeNoTimer(_ block: @escaping @Sendable (Result<ConnectionInfo, Error>) -> Void) {
+        timeoutEvent?.touch()
+        if internalState == .closed || internalState == .cancelling {
+            return block(.failure(NWError.posix(.ECANCELED)))
         }
-        if internalState == .connecting { return block(nil, NWError.posix(.EALREADY)) }
-        if internalState == .connected { return block(nil, NWError.posix(.EISCONN)) }
+        if internalState == .connecting { return block(.failure(NWError.posix(.EALREADY))) }
+        if internalState == .connected { return block(.failure(NWError.posix(.EISCONN))) }
         connectingCallback = block
         internalState = .connecting
         connection.start(queue: accessQueue)
@@ -231,25 +202,15 @@ public class RawSocket: @unchecked Sendable {
 
     private func cancelUnsafe() {
         printDebug("[socket] cancel unsafe")
-        timeOutEvent?.cancel()
-        if connection.state == .cancelled {
-            let callback = cancellingCallback
-            cancellingCallback = nil
-            callback?()
-            return
-        }
-        if internalState == _InternalState.none {
+        timeoutEvent?.cancel()
+        if internalState == _InternalState.none { // cause state update may not be called
             internalState = .closed
             connection.cancel()
-            let callback = cancellingCallback
-            cancellingCallback = nil
-            callback?()
+            callAllCancelsUnsafe()
             return
         }
         if [.closed].contains(internalState) {
-            let callback = cancellingCallback
-            cancellingCallback = nil
-            callback?()
+            callAllCancelsUnsafe()
             return
         }
         if internalState == .cancelling {
@@ -264,38 +225,54 @@ public class RawSocket: @unchecked Sendable {
         switch newState {
         case .setup: break
         case let .waiting(error):
-            timeOutEvent?.cancel()
-            let callback = connectingCallback
-            connectingCallback = nil
-            callback?(nil, error)
+            timeoutEvent?.cancel()
+            finishConnectionUnsafe(.failure(error))
             cancelUnsafe()
         case .preparing: break
         case .ready:
             internalState = .connected
             let info = ConnectionInfo(transport: transport, remoteEndpoint: connection.endpoint,
                                       localEndpoint: connection.currentPath?.localEndpoint,
-                                      internface: connection.currentPath?.availableInterfaces.first)
-            let callback = connectingCallback
-            connectingCallback = nil
-            callback?(info, nil)
+                                      interface: connection.currentPath?.availableInterfaces.first)
+            finishConnectionUnsafe(.success(info))
         case let .failed(error):
-            timeOutEvent?.cancel()
-            let callback = connectingCallback
-            connectingCallback = nil
-            callback?(nil, error)
+            timeoutEvent?.cancel()
+            finishConnectionUnsafe(.failure(error))
             cancelUnsafe()
         case .cancelled:
-            timeOutEvent?.cancel()
-            if let connectingCallback {
-                self.connectingCallback = nil
-                connectingCallback(nil, cancellingError ?? NWError.posix(.ECANCELED))
-            }
-            if let cancellingCallback {
-                self.cancellingCallback = nil
-                cancellingCallback()
-            }
+            timeoutEvent?.cancel()
+            finishConnectionUnsafe(.failure(cancellingError ?? .posix(.ECANCELED)))
+            callAllCancelsUnsafe()
             internalState = .closed
         @unknown default: break
         }
+    }
+    
+    private func callAllCancelsUnsafe() {
+        let callbacks = cancellingCallbacks
+        cancellingCallbacks = []
+        for callback in callbacks {
+            callback()
+        }
+    }
+    
+    private func finishConnectionUnsafe(code: POSIXErrorCode) {
+        finishConnectionUnsafe(.failure(NWError.posix(code)))
+    }
+    
+    private func finishConnectionUnsafe(_ result: Result<ConnectionInfo, Error>) {
+        let callback = connectingCallback
+        connectingCallback = nil
+        callback?(result)
+    }
+    
+    private func activeOperationCheckErrorUnsafe() -> NWError? {
+        if internalState == .none {
+            return .posix(.ENOTCONN)
+        }
+        if ![.connected, .connecting].contains(internalState) {
+            return cancellingError ?? NWError.posix(.ECANCELED)
+        }
+        return nil
     }
 }
