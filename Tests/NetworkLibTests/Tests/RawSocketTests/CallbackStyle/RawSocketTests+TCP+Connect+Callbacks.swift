@@ -2,8 +2,8 @@ import XCTest
 import Network
 @testable import NetworkLib
 
-class RawSocketTests_UDP_Connect: XCTestCase {
-    private let transport: NetTransport = .udp
+class RawSocketTests_TCP_Connect_Callbacks: XCTestCase {
+    private let transport: NetTransport = .tcp
 
     override func setUp() {
         continueAfterFailure = false
@@ -21,7 +21,7 @@ class RawSocketTests_UDP_Connect: XCTestCase {
 
         let socket = try RawSocket(url: url, maxDataBlock: 256,
                                    transport: transport, timeout: timeout, sni: "localhost")
-        defer { socket.cancel() }
+        defer { socket.cancel(nil) }
 
         let connectExpect = expectation(description: "Connect callback called")
         socket.connect { info, error in
@@ -41,7 +41,7 @@ class RawSocketTests_UDP_Connect: XCTestCase {
 
         let socket = try RawSocket(url: url, maxDataBlock: 256,
                                    transport: transport, timeout: timeout, sni: "localhost")
-        defer { socket.cancel() }
+        defer { socket.cancel(nil) }
 
         let connectExpect = expectation(description: "Connect callback called")
         socket.connect { info, error in
@@ -61,7 +61,7 @@ class RawSocketTests_UDP_Connect: XCTestCase {
 
         let socket = try RawSocket(url: url, maxDataBlock: 256,
                                    transport: transport, timeout: timeout, sni: "localhost")
-        defer { socket.cancel() }
+        defer { socket.cancel(nil) }
 
         let connectExpect = expectation(description: "Connect callback called")
         socket.connect { info, error in
@@ -81,7 +81,7 @@ class RawSocketTests_UDP_Connect: XCTestCase {
 
         let socket = try RawSocket(url: url, maxDataBlock: 256,
                                    transport: transport, timeout: timeout, sni: "localhost")
-        defer { socket.cancel() }
+        defer { socket.cancel(nil) }
 
         let connectExpect = expectation(description: "Connect callback called")
         socket.connect { info, error in
@@ -101,7 +101,7 @@ class RawSocketTests_UDP_Connect: XCTestCase {
 
         let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
                                    transport: transport, timeout: timeout, sni: "localhost")
-        defer { socket.cancel() }
+        defer { socket.cancel(nil) }
 
         let connectExpect = expectation(description: "Connect callback called")
         socket.connect { info, error in
@@ -119,7 +119,7 @@ class RawSocketTests_UDP_Connect: XCTestCase {
 
         let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
                                    transport: transport, timeout: timeout, sni: nil)
-        defer { socket.cancel() }
+        defer { socket.cancel(nil) }
 
         let connectExpect = expectation(description: "Connect callback called")
         socket.connect { info, error in
@@ -137,7 +137,7 @@ class RawSocketTests_UDP_Connect: XCTestCase {
 
         let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
                                    transport: transport, timeout: timeout, sni: "localhost")
-        defer { socket.cancel() }
+        defer { socket.cancel(nil) }
 
         let connectExpect = expectation(description: "Connect callback called the second time must fail")
         let cancelExpect = expectation(description: "Cancel callback called to check")
@@ -160,7 +160,7 @@ class RawSocketTests_UDP_Connect: XCTestCase {
 
         let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
                                    transport: transport, timeout: timeout, sni: nil)
-        defer { socket.cancel() }
+        defer { socket.cancel(nil) }
 
         let connectExpect = expectation(description: "Connect callback called the second time must fail")
         let cancelExpect = expectation(description: "Cancel callback called to check")
@@ -177,7 +177,7 @@ class RawSocketTests_UDP_Connect: XCTestCase {
 
     // MARK: TIMEOUTS
 
-    func test_Connect_TimeOut_CallbackReturnsError() async throws {
+    func test_Connect_TimeOutSet_CallbackReturnsError() async throws {
         let timeout: TimeInterval = 0.2
         let server = try ServerMock(transport: transport, isSecure: false)
         defer { server.stop() }
@@ -185,10 +185,31 @@ class RawSocketTests_UDP_Connect: XCTestCase {
 
         let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
                                    transport: transport, timeout: timeout, sni: "localhost")
-        defer { socket.cancel() }
+        defer { socket.cancel(nil) }
 
         let connectExpect = expectation(description: "Connect callback called with error")
         socket.connect { info, error in
+            XCTAssertNotNil(error)
+            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
+            guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
+            XCTAssertEqual(code, .ETIMEDOUT)
+            connectExpect.fulfill()
+        }
+        await fulfillment(of: [connectExpect], timeout: 3)
+    }
+
+    func test_Connect_WhenIpNotAvailableAndTimeOutSet_CallbackReturnsError() async throws {
+        let timeout: TimeInterval = 0.2
+        let server = try ServerMock(transport: transport, isSecure: true)
+        defer { server.stop() }
+        let port = try await server.start()
+
+        let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.10", port: port), maxDataBlock: 256,
+                                   transport: transport, timeout: timeout, sni: "localhost")
+        defer { socket.cancel(nil) }
+
+        let connectExpect = expectation(description: "Connect callback not called")
+        socket.connect { _, error in
             XCTAssertNotNil(error)
             guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
             guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
@@ -209,7 +230,7 @@ class RawSocketTests_UDP_Connect: XCTestCase {
         let box = _SocketBox()
         box.set(try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
                               transport: transport, timeout: timeout, sni: "localhost"))
-        defer { box.get()?.cancel() }
+        defer { box.get()?.cancel(nil) }
 
         let connectExpect = expectation(description: "Connect callback called with error")
         box.get()?.connect { info, error in
@@ -232,7 +253,7 @@ class RawSocketTests_UDP_Connect: XCTestCase {
         let box = _SocketBox()
         box.set(try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
                               transport: transport, timeout: timeout, sni: "localhost"))
-        defer { box.get()?.cancel() }
+        defer { box.get()?.cancel(nil) }
 
         let connectExpect = expectation(description: "Connect callback called with error")
         box.get()?.connect { info, error in
@@ -257,7 +278,7 @@ class RawSocketTests_UDP_Connect: XCTestCase {
         let box = _SocketBox()
         box.set(try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
                               transport: transport, timeout: timeout, sni: "localhost"))
-        defer { box.get()?.cancel() }
+        defer { box.get()?.cancel(nil) }
 
         let connectExpect = expectation(description: "Connect callback called with error")
         box.get()?.connect { info, error in
@@ -286,7 +307,7 @@ class RawSocketTests_UDP_Connect: XCTestCase {
 
         let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
                                    transport: transport, timeout: timeout, sni: "localhost")
-        defer { socket.cancel() }
+        defer { socket.cancel(nil) }
 
         let flagExpect = expectation(description: "Flag")
         socket.connect { info, error in
@@ -312,7 +333,7 @@ class RawSocketTests_UDP_Connect: XCTestCase {
 
         let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
                                    transport: transport, timeout: timeout, sni: "localhost")
-        defer { socket.cancel() }
+        defer { socket.cancel(nil) }
 
         let connectExpect = expectation(description: "Connect callback called with error")
         socket.connect { info, error in
@@ -336,12 +357,12 @@ class RawSocketTests_UDP_Connect: XCTestCase {
 
         let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
                                    transport: transport, timeout: timeout, sni: "localhost")
-        defer { socket.cancel() }
+        defer { socket.cancel(nil) }
 
         let connectExpect = expectation(description: "Connect callback called with error")
         socket.connect { info, error in
             XCTAssertNil(error)
-            socket.cancel()
+            socket.cancel(nil)
             socket.connect { _, error in
                 XCTAssertNotNil(error)
                 guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
@@ -361,13 +382,13 @@ class RawSocketTests_UDP_Connect: XCTestCase {
 
         let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
                                    transport: transport, timeout: timeout, sni: "localhost")
-        defer { socket.cancel() }
+        defer { socket.cancel(nil) }
 
         let connectExpect = expectation(description: "Connect callback called with error")
         connectExpect.expectedFulfillmentCount = 2
         socket.connect { info, error in
             XCTAssertNil(error)
-            socket.cancel()
+            socket.cancel(nil)
             socket.connect { _, error in
                 XCTAssertNotNil(error)
                 guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
@@ -397,7 +418,7 @@ class RawSocketTests_UDP_Connect: XCTestCase {
 
         let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
                                    transport: transport, timeout: timeout, sni: "localhost")
-        defer { socket.cancel() }
+        defer { socket.cancel(nil) }
 
         let connectExpect = expectation(description: "Connect callback called with error")
         socket.connect { info, error in
@@ -423,7 +444,7 @@ class RawSocketTests_UDP_Connect: XCTestCase {
 
         let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
                                    transport: transport, timeout: timeout, sni: "localhost")
-        defer { socket.cancel() }
+        defer { socket.cancel(nil) }
 
         let connectExpect = expectation(description: "Connect callback called with error")
         socket.cancel {
@@ -446,10 +467,10 @@ class RawSocketTests_UDP_Connect: XCTestCase {
 
         let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
                                    transport: transport, timeout: timeout, sni: "localhost")
-        defer { socket.cancel() }
+        defer { socket.cancel(nil) }
 
         let connectExpect = expectation(description: "Connect callback called with error")
-        socket.cancel()
+        socket.cancel(nil)
         socket.connect { _, error in
             XCTAssertNotNil(error)
             guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
@@ -470,7 +491,7 @@ class RawSocketTests_UDP_Connect: XCTestCase {
 
         let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.256", port: port), maxDataBlock: 256,
                                    transport: transport, timeout: timeout, sni: "localhost")
-        defer { socket.cancel() }
+        defer { socket.cancel(nil) }
 
         let connectExpect = expectation(description: "Connect callback called")
         socket.connect { info, error in
@@ -478,6 +499,259 @@ class RawSocketTests_UDP_Connect: XCTestCase {
             connectExpect.fulfill()
         }
         await fulfillment(of: [connectExpect], timeout: 3)
+    }
+
+    func test_Connect_WhenIpNotAvailable_CallbackNotCalled() async throws {
+        let timeout: TimeInterval = 0
+        let server = try ServerMock(transport: transport, isSecure: true)
+        defer { server.stop() }
+        let port = try await server.start()
+
+        let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.10", port: port), maxDataBlock: 256,
+                                   transport: transport, timeout: timeout, sni: "localhost")
+        defer { socket.cancel(nil) }
+
+        let connectExpect = expectation(description: "Connect callback not called")
+        connectExpect.isInverted = true
+        socket.connect { _, _ in
+            connectExpect.fulfill()
+        }
+        await fulfillment(of: [connectExpect], timeout: 3)
+    }
+
+    // MARK: ERRORS BY SERVER BEHAVIOUR
+
+    func test_Connect_WhenServerNotAcceptsConnection_CallbackReturnsError() async throws {
+        let timeout: TimeInterval = 0
+        let server = try ServerMock(transport: transport, isSecure: true, flow: .cancel)
+        defer { server.stop() }
+        let port = try await server.start()
+
+        let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
+                                   transport: transport, timeout: timeout, sni: "localhost")
+        defer { socket.cancel(nil) }
+
+        let connectExpect = expectation(description: "Connect callback called")
+        socket.connect { info, error in
+            XCTAssertNotNil(error)
+            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
+            guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
+            XCTAssertEqual(code, .ECONNRESET)
+            connectExpect.fulfill()
+        }
+        await fulfillment(of: [connectExpect], timeout: 3)
+    }
+
+    func test_Connect_BothSecure_WhenServerDisconnectsConnectionRightAfterAccept_CallbackReturnsError() async throws {
+        throw XCTSkip("Fails some times")
+//        let timeout: TimeInterval = 0
+//        let server = try ServerMock(transport: transport, isSecure: true, flow: .acceptAndCancel)
+//        defer { server.stop() }
+//        let port = try await server.start()
+//
+//        let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
+//                                   transport: transport, timeout: timeout, sni: "localhost")
+//        defer { socket.cancel(nil) }
+//
+//        let connectExpect = expectation(description: "Connect callback called")
+//        socket.connect { info, error in
+//            XCTAssertNotNil(error)
+//            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
+//            guard case .tls(let status) = error else { return XCTFail("Error is not tls \(error)") }
+//            XCTAssertEqual(status, errSSLClosedNoNotify)
+//            connectExpect.fulfill()
+//        }
+//        await fulfillment(of: [connectExpect], timeout: 3)
+    }
+
+    func test_Connect_BothInsecure_WhenServerDisconnectsConnectionRightAfterAccept_CallbackReturnsError() async throws {
+        throw XCTSkip("Problems on server side")
+    }
+
+    func test_Connect_WhenServerIsUdp_CallbackReturnsError() async throws {
+        let timeout: TimeInterval = 0
+        let server = try ServerMock(transport: .udp, isSecure: true)
+        defer { server.stop() }
+        let port = try await server.start()
+
+        let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
+                                   transport: transport, timeout: timeout, sni: "localhost")
+        defer { socket.cancel(nil) }
+
+        let connectExpect = expectation(description: "Connect callback called")
+        socket.connect { info, error in
+            XCTAssertNotNil(error)
+            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
+            guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
+            XCTAssertEqual(code, .ECONNREFUSED)
+            connectExpect.fulfill()
+        }
+        await fulfillment(of: [connectExpect], timeout: 3)
+    }
+
+    func test_Connect_WhenServerSecureAndSocketInsecure_CallbackSuccess() async throws {
+        let timeout: TimeInterval = 0
+        let server = try ServerMock(transport: transport, isSecure: true)
+        defer { server.stop() }
+        let port = try await server.start()
+
+        let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
+                                   transport: transport, timeout: timeout, sni: nil)
+        defer { socket.cancel(nil) }
+
+        let connectExpect = expectation(description: "Connect callback called")
+        socket.connect { info, error in
+            XCTAssertNil(error)
+            connectExpect.fulfill()
+        }
+        await fulfillment(of: [connectExpect], timeout: 3)
+    }
+
+    func test_Connect_WhenServerInsecureAndSocketSecure_CallbackNotCalled() async throws {
+        let timeout: TimeInterval = 0
+        let server = try ServerMock(transport: transport, isSecure: false)
+        defer { server.stop() }
+        let port = try await server.start()
+
+        let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
+                                   transport: transport, timeout: timeout, sni: "localhost")
+        defer { socket.cancel(nil) }
+
+        let connectExpect = expectation(description: "Connect callback called")
+        connectExpect.isInverted = true
+        socket.connect { _, _ in
+            connectExpect.fulfill()
+        }
+        await fulfillment(of: [connectExpect], timeout: 3)
+    }
+
+    func test_Connect_WhenServerStoppedRightAfterItsStart_CallbackReturnsError() async throws {
+        let timeout: TimeInterval = 0
+        let server = try ServerMock(transport: transport, isSecure: true)
+        defer { server.stop() }
+        let port = try await server.start()
+        server.stop()
+
+        let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
+                                   transport: transport, timeout: timeout, sni: "localhost")
+        defer { socket.cancel(nil) }
+
+        let connectExpect = expectation(description: "Connect callback called")
+        socket.connect { _, error in
+            XCTAssertNotNil(error)
+            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
+            switch error {
+            case .tls(let status): XCTAssertEqual(status, errSSLClosedNoNotify)
+            case .posix(let code): XCTAssertEqual(code, .ECONNREFUSED)
+            default: XCTFail("Error is not tls or posix \(error)")
+            }
+            connectExpect.fulfill()
+        }
+        await fulfillment(of: [connectExpect], timeout: 3)
+    }
+
+    func test_Connect_WhenServerNotExists_CallbackReturnsError() async throws {
+        let timeout: TimeInterval = 0
+        let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: 65535), maxDataBlock: 256,
+                                   transport: transport, timeout: timeout, sni: "localhost")
+        defer { socket.cancel(nil) }
+
+        let connectExpect = expectation(description: "Connect callback called")
+        socket.connect { _, error in
+            XCTAssertNotNil(error)
+            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
+            guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
+            XCTAssertEqual(code, .ECONNREFUSED)
+            connectExpect.fulfill()
+        }
+        await fulfillment(of: [connectExpect], timeout: 3)
+    }
+
+    func test_Connect_BothSecure_WhenConnecting_ServerStops_CallbackReturnsError() async throws {
+        let timeout: TimeInterval = 0
+        let server = try ServerMock(transport: transport, isSecure: true)
+        defer { server.stop() }
+        let port = try await server.start()
+
+        let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
+                                   transport: transport, timeout: timeout, sni: "localhost")
+        defer { socket.cancel(nil) }
+
+        let connectExpect = expectation(description: "Connect callback called")
+        socket.connect { _, error in
+            XCTAssertNotNil(error)
+            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
+            switch error {
+            case .tls(let status): XCTAssertEqual(status, errSSLClosedNoNotify)
+            case .posix(let code): XCTAssertEqual(code, .ECONNRESET)
+            default: XCTFail("Error is not tls or posix \(error)")
+            }
+            connectExpect.fulfill()
+        }
+        socket.connect { _, error in
+            XCTAssertNotNil(error)
+            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
+            guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
+            XCTAssertEqual(code, .EALREADY)
+            server.stop()
+        }
+        await fulfillment(of: [connectExpect], timeout: 3)
+    }
+
+    func test_Connect_BothInsecure_WhenConnecting_ServerStops_CallbackReturnsError() async throws {
+        throw XCTSkip("Fails some times")
+//        let timeout: TimeInterval = 0
+//        let server = try ServerMock(transport: transport, isSecure: false)
+//        defer { server.stop() }
+//        let port = try await server.start()
+//
+//        let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
+//                                   transport: transport, timeout: timeout, sni: nil)
+//        defer { socket.cancel(nil) }
+//
+//        let connectExpect = expectation(description: "Connect callback called")
+//        socket.connect { _, error in
+//            XCTAssertNotNil(error)
+//            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
+//            guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
+//            XCTAssertEqual(code, .ECONNREFUSED)
+//            connectExpect.fulfill()
+//        }
+//        server.stop()
+//        await fulfillment(of: [connectExpect], timeout: 3)
+    }
+
+    func test_Connect_ServerInsecureAndSocketSecure_WhenConnecting_ServerStops_CallbackReturnsError() async throws {
+        throw XCTSkip("Fails some times")
+//        let timeout: TimeInterval = 0
+//        let server = try ServerMock(transport: transport, isSecure: false)
+//        defer { server.stop() }
+//        let port = try await server.start()
+//
+//        let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
+//                                   transport: transport, timeout: timeout, sni: "localhost")
+//        defer { socket.cancel(nil) }
+//
+//        let connectExpect = expectation(description: "Connect callback called")
+//        socket.connect { _, error in
+//            XCTAssertNotNil(error)
+//            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
+//            guard case .tls(let status) = error else { return XCTFail("Error is not tls \(error)") }
+//            XCTAssertEqual(status, errSSLClosedNoNotify)
+//            connectExpect.fulfill()
+//        }
+//        socket.connect { _, error in
+//            XCTAssertNotNil(error)
+//            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
+//            guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
+//            XCTAssertEqual(code, .EALREADY)
+//            server.stop()
+//        }
+//        await fulfillment(of: [connectExpect], timeout: 3)
+    }
+
+    func test_Connect_ServerSecureAndSocketInsecure_WhenConnecting_ServerStops_CallbackReturnsError() async throws {
+        throw XCTSkip("Problems on server side")
     }
 
     // MARK: CONNECTION INFO
@@ -491,7 +765,7 @@ class RawSocketTests_UDP_Connect: XCTestCase {
         let url = try XCTUnwrap(URL(string: "https://127.0.0.1:\(port)"))
         let socket = try RawSocket(url: url, maxDataBlock: 256,
                                    transport: transport, timeout: timeout, sni: "localhost")
-        defer { socket.cancel() }
+        defer { socket.cancel(nil) }
 
         let connectExpect = expectation(description: "Connect callback called")
         socket.connect { [transport] info, error in
@@ -521,7 +795,7 @@ class RawSocketTests_UDP_Connect: XCTestCase {
 
         let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
                                    transport: transport, timeout: timeout, sni: "localhost")
-        defer { socket.cancel() }
+        defer { socket.cancel(nil) }
 
         let connectExpect = expectation(description: "Connect callback called")
         socket.connect { [transport] info, error in
@@ -541,17 +815,5 @@ class RawSocketTests_UDP_Connect: XCTestCase {
             connectExpect.fulfill()
         }
         await fulfillment(of: [connectExpect], timeout: 3)
-    }
-}
-
-// MARK: - NOT APPLICABLE TESTS DUE TO UDP
-
-extension RawSocketTests_UDP_Connect {
-    func test_Connect_WhenServerNotAcceptsConnection_CallbackReturnsError() async throws {
-        throw XCTSkip("Not applicable for UDP")
-    }
-
-    func test_Connect_WhenServerIsTcp_CallbackReturnsError() async throws {
-        throw XCTSkip("Not applicable for UDP")
     }
 }

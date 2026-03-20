@@ -2,8 +2,8 @@ import XCTest
 import Network
 @testable import NetworkLib
 
-class RawSocketTests_UDP_Receive: XCTestCase {
-    private let transport: NetTransport = .udp
+class RawSocketTests_TCP_Receive_Callbacks: XCTestCase {
+    private let transport: NetTransport = .tcp
 
     override func setUp() {
         continueAfterFailure = false
@@ -21,7 +21,7 @@ class RawSocketTests_UDP_Receive: XCTestCase {
 
         let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: maxDataBlock,
                                    transport: transport, timeout: timeout, sni: "localhost")
-        defer { socket.cancel() }
+        defer { socket.cancel(nil) }
 
         let receiveExpect = expectation(description: "For callback on receive")
         socket.connect { info, error in
@@ -47,7 +47,7 @@ class RawSocketTests_UDP_Receive: XCTestCase {
 
         let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: maxDataBlock,
                                    transport: transport, timeout: timeout, sni: "localhost")
-        defer { socket.cancel() }
+        defer { socket.cancel(nil) }
 
         let receiveExpect = expectation(description: "For callback on receive")
         socket.connect { info, error in
@@ -75,7 +75,7 @@ class RawSocketTests_UDP_Receive: XCTestCase {
 
         let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: maxDataBlock,
                                    transport: transport, timeout: timeout, sni: "localhost")
-        defer { socket.cancel() }
+        defer { socket.cancel(nil) }
 
         let receiveExpect = expectation(description: "For callback on receive")
         receiveExpect.expectedFulfillmentCount = 2
@@ -109,7 +109,7 @@ class RawSocketTests_UDP_Receive: XCTestCase {
 
         let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: maxDataBlock,
                                    transport: transport, timeout: timeout, sni: "localhost")
-        defer { socket.cancel() }
+        defer { socket.cancel(nil) }
 
         let receiveExpect = expectation(description: "For callback on receive called")
         let notReceiveExpect = expectation(description: "For callback on receive not called")
@@ -146,7 +146,7 @@ class RawSocketTests_UDP_Receive: XCTestCase {
 
         let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: maxDataBlock,
                                    transport: transport, timeout: timeout, sni: "localhost")
-        defer { socket.cancel() }
+        defer { socket.cancel(nil) }
 
         let receiveExpect = expectation(description: "For callback on receive")
         socket.connect { info, error in
@@ -173,7 +173,7 @@ class RawSocketTests_UDP_Receive: XCTestCase {
 
         let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: maxDataBlock,
                                    transport: transport, timeout: timeout, sni: "localhost")
-        defer { socket.cancel() }
+        defer { socket.cancel(nil) }
 
         let receiveExpect = expectation(description: "For callback on receive")
         socket.connect { info, error in
@@ -201,7 +201,7 @@ class RawSocketTests_UDP_Receive: XCTestCase {
 
         let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: maxDataBlock,
                                    transport: transport, timeout: timeout, sni: "localhost")
-        defer { socket.cancel() }
+        defer { socket.cancel(nil) }
 
         let receiveExpect = expectation(description: "For callback on receive")
         socket.receiveNext { data, error in
@@ -224,12 +224,12 @@ class RawSocketTests_UDP_Receive: XCTestCase {
 
         let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: maxDataBlock,
                                    transport: transport, timeout: timeout, sni: "localhost")
-        defer { socket.cancel() }
+        defer { socket.cancel(nil) }
 
         let receiveExpect = expectation(description: "For callback on receive")
         socket.connect { _, error in
             XCTAssertNil(error)
-            socket.cancel()
+            socket.cancel(nil)
             socket.receiveNext { data, error in
                 XCTAssertNil(data)
                 XCTAssertNotNil(error)
@@ -251,10 +251,10 @@ class RawSocketTests_UDP_Receive: XCTestCase {
 
         let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: maxDataBlock,
                                    transport: transport, timeout: timeout, sni: "localhost")
-        defer { socket.cancel() }
+        defer { socket.cancel(nil) }
 
         let receiveExpect = expectation(description: "For callback on receive")
-        socket.cancel()
+        socket.cancel(nil)
         socket.receiveNext { data, error in
             XCTAssertNil(data)
             XCTAssertNotNil(error)
@@ -275,7 +275,7 @@ class RawSocketTests_UDP_Receive: XCTestCase {
 
         let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: maxDataBlock,
                                    transport: transport, timeout: timeout, sni: "localhost")
-        defer { socket.cancel() }
+        defer { socket.cancel(nil) }
 
         let receiveExpect = expectation(description: "For callback on receive")
         socket.connect { _, error in
@@ -305,13 +305,13 @@ class RawSocketTests_UDP_Receive: XCTestCase {
 //
 //        let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: maxDataBlock,
 //                                   transport: transport, timeout: timeout, sni: "localhost")
-//        defer { socket.cancel() }
+//        defer { socket.cancel(nil) }
 //
 //        let receiveExpect = expectation(description: "For callback on receive")
 //        socket.connect { _, error in
 //            XCTAssertNil(error)
 //            socket.send(dataToSend) { _ in
-//                socket.cancel()
+//                socket.cancel(nil)
 //            }
 //            socket.receiveNext { data, error in
 //                XCTAssertNil(data)
@@ -337,7 +337,7 @@ class RawSocketTests_UDP_Receive: XCTestCase {
 
         let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: maxDataBlock,
                                    transport: transport, timeout: timeout, sni: "localhost")
-        defer { socket.cancel() }
+        defer { socket.cancel(nil) }
 
         let receiveExpect = expectation(description: "For callback on receive")
         socket.connect { _, _ in
@@ -369,13 +369,17 @@ class RawSocketTests_UDP_Receive: XCTestCase {
 
         let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: maxDataBlock,
                                    transport: transport, timeout: timeout, sni: "localhost")
-        defer { socket.cancel() }
+        defer { socket.cancel(nil) }
 
         let receiveExpect = expectation(description: "For callback on receive")
-        receiveExpect.isInverted = true
         socket.connect { _, error in
             XCTAssertNil(error)
-            socket.receiveNext { _, _ in
+            socket.receiveNext { data, error in
+                XCTAssertNil(data)
+                XCTAssertNotNil(error)
+                guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
+                guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
+                XCTAssertEqual(code, .ECONNRESET)
                 receiveExpect.fulfill()
             }
             socket.send(dataToSend) { _ in
@@ -397,7 +401,7 @@ class RawSocketTests_UDP_Receive: XCTestCase {
 
         let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: maxDataBlock,
                                    transport: transport, timeout: timeout, sni: "localhost")
-        defer { socket.cancel() }
+        defer { socket.cancel(nil) }
 
         let receiveExpect = expectation(description: "For callback on receive")
         socket.connect { _, error in
@@ -424,7 +428,7 @@ class RawSocketTests_UDP_Receive: XCTestCase {
 
         let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: maxDataBlock,
                                    transport: transport, timeout: timeout, sni: "localhost")
-        defer { socket.cancel() }
+        defer { socket.cancel(nil) }
 
         let receiveExpect = expectation(description: "For callback on receive")
         socket.connect { _, error in
@@ -452,7 +456,7 @@ class RawSocketTests_UDP_Receive: XCTestCase {
 
         let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: maxDataBlock,
                                    transport: transport, timeout: timeout, sni: "localhost")
-        defer { socket.cancel() }
+        defer { socket.cancel(nil) }
 
         let receiveExpect = expectation(description: "For callback on receive")
         socket.connect { _, error in
@@ -481,9 +485,9 @@ class RawSocketTests_UDP_Receive: XCTestCase {
         let box = _SocketBox()
         box.set(try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: maxDataBlock,
                               transport: transport, timeout: timeout, sni: "localhost"))
-        defer { box.get()?.cancel() }
+        defer { box.get()?.cancel(nil) }
 
-        let connectExpect = expectation(description: "For callback on connect")
+        let connectExpect = expectation(description: "For callback on receive")
         let receiveExpect = expectation(description: "For callback on receive")
         box.get()?.connect { _, error in
             XCTAssertNil(error)
@@ -513,7 +517,7 @@ class RawSocketTests_UDP_Receive: XCTestCase {
         let box = _SocketBox()
         box.set(try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: maxDataBlock,
                               transport: transport, timeout: timeout, sni: "localhost"))
-        defer { box.get()?.cancel() }
+        defer { box.get()?.cancel(nil) }
 
         let connectExpect = expectation(description: "For callback on receive")
         let receiveExpect = expectation(description: "For callback on receive")

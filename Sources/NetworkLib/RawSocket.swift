@@ -121,7 +121,7 @@ public class RawSocket: @unchecked Sendable {
         }
     }
 
-    public func cancel(_ handler: (@Sendable () -> Void)? = nil) {
+    public func cancel(_ handler: (@Sendable () -> Void)?) {
         accessQueue.async { [weak self] in
             printDebug("[socket] queue async close")
             guard let self else {
