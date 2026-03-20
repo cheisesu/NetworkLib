@@ -198,7 +198,7 @@ class RawSocketTests_TCP_Connect_Callbacks: XCTestCase {
         await fulfillment(of: [connectExpect], timeout: 3)
     }
 
-    func test_Connect_WhenIpNotAvailableAndTimeOutSet_CallbackNotCalled() async throws {
+    func test_Connect_WhenIpNotAvailableAndTimeOutSet_CallbackReturnsError() async throws {
         let timeout: TimeInterval = 0.2
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }

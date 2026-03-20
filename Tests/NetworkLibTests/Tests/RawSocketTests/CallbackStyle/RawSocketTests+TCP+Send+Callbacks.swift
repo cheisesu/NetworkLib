@@ -35,7 +35,7 @@ class RawSocketTests_TCP_Send_Callbacks: XCTestCase {
         await fulfillment(of: [sendExpect], timeout: 3)
     }
 
-    func test_Send_WhenConnected_CallbackReturnsError() async throws {
+    func test_Send_WhenConnected_CallbackSuccess() async throws {
         let timeout: TimeInterval = 0
         let dataToSend = Data("Hello".utf8)
         let server = try ServerMock(transport: transport, isSecure: true)
