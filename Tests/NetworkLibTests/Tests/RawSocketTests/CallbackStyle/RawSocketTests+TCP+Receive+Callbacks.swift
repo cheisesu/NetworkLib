@@ -3,7 +3,7 @@ import Network
 @testable import NetworkLib
 
 class RawSocketTests_TCP_Receive_Callbacks: XCTestCase {
-    private let transport: NetTransport = .tcp
+    private let transport: RawSocketTransport = .tcp
 
     override func setUp() {
         continueAfterFailure = false

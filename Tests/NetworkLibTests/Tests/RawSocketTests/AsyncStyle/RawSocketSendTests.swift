@@ -6,8 +6,8 @@ import Network
 struct RawSocketSendTests {
     @Test("When continuation is called multiple times it will fall with fatal error and test fail",
           .tags(.RawSocketConnect.connect),
-          arguments: [NetTransport.tcp, .udp], [nil, "localhost"])
-    func continuationCalledOnlyOnce(_ transport: NetTransport, _ sni: String?) async throws {
+          arguments: [RawSocketTransport.tcp, .udp], [nil, "localhost"])
+    func continuationCalledOnlyOnce(_ transport: RawSocketTransport, _ sni: String?) async throws {
         let timeout: TimeInterval = 0
         let dataToSend = Data("Hello".utf8)
         let server = try ServerMock(transport: transport, isSecure: sni != nil)
@@ -26,7 +26,7 @@ struct RawSocketSendTests {
           .tags(.RawSocketConnect.connect),
           arguments: [nil, "localhost"])
     func timeoutThrowsError(_ sni: String?) async throws {
-        let transport: NetTransport = .tcp
+        let transport: RawSocketTransport = .tcp
         let timeout: TimeInterval = 0.5
         let dataToSend = Data(repeating: 0xde, count: 16 * 1024 * 1024)
         let server = try ServerMock(transport: transport, isSecure: sni != nil)
@@ -50,10 +50,10 @@ struct RawSocketSendTests {
     @Test("When socket is sending data and called cancel in different thread it throws NWError.posix(.ECANCELED)",
           .tags(.RawSocketConnect.connect),
           arguments: [
-            (NetTransport.tcp, Data(repeating: 0xde, count: 16 * 1024 * 1024), nil as String?),
-            (NetTransport.tcp, Data(repeating: 0xde, count: 16 * 1024 * 1024), "localhost"),
+            (RawSocketTransport.tcp, Data(repeating: 0xde, count: 16 * 1024 * 1024), nil as String?),
+            (RawSocketTransport.tcp, Data(repeating: 0xde, count: 16 * 1024 * 1024), "localhost"),
           ])
-    func cancelSeparatelyThrowsError(_ transport: NetTransport, _ dataToSend: Data, _ sni: String?) async throws {
+    func cancelSeparatelyThrowsError(_ transport: RawSocketTransport, _ dataToSend: Data, _ sni: String?) async throws {
         let timeout: TimeInterval = 0
         let server = try ServerMock(transport: transport, isSecure: sni != nil)
         defer { server.stop() }
@@ -79,12 +79,12 @@ struct RawSocketSendTests {
     @Test("Cancelled a task during sending",
           .tags(.RawSocketConnect.connect),
           arguments: [
-            (NetTransport.tcp, Data(repeating: 0xde, count: 16 * 1024 * 1024), nil as String?),
-            (NetTransport.tcp, Data(repeating: 0xde, count: 16 * 1024 * 1024), "localhost"),
-            (NetTransport.udp, Data("Hello".utf8), nil),
-            (NetTransport.udp, Data("Hello".utf8), "localhost"),
+            (RawSocketTransport.tcp, Data(repeating: 0xde, count: 16 * 1024 * 1024), nil as String?),
+            (RawSocketTransport.tcp, Data(repeating: 0xde, count: 16 * 1024 * 1024), "localhost"),
+            (RawSocketTransport.udp, Data("Hello".utf8), nil),
+            (RawSocketTransport.udp, Data("Hello".utf8), "localhost"),
           ])
-    func cancelDuringSendThrowsError(_ transport: NetTransport, _ dataToSend: Data, _ sni: String?) async throws {
+    func cancelDuringSendThrowsError(_ transport: RawSocketTransport, _ dataToSend: Data, _ sni: String?) async throws {
         let timeout: TimeInterval = 0
         let server = try ServerMock(transport: transport, isSecure: sni != nil)
         defer { server.stop() }

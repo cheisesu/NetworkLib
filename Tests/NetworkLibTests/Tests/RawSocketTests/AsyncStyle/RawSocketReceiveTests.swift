@@ -6,8 +6,8 @@ import Network
 struct RawSocketReceiveTests {
     @Test("When continuation is called multiple times it will fall with fatal error and test fail",
           .tags(.RawSocketConnect.connect),
-          arguments: [NetTransport.tcp, .udp], [nil, "localhost"])
-    func continuationCalledOnlyOnce(_ transport: NetTransport, _ sni: String?) async throws {
+          arguments: [RawSocketTransport.tcp, .udp], [nil, "localhost"])
+    func continuationCalledOnlyOnce(_ transport: RawSocketTransport, _ sni: String?) async throws {
         let timeout: TimeInterval = 0
         let dataToSend = Data("Hello".utf8)
         let server = try ServerMock(transport: transport, isSecure: sni != nil, flow: .echo)
@@ -26,8 +26,8 @@ struct RawSocketReceiveTests {
     
     @Test("When timeout of socket is reached it throws NWError.posix(.ETIMEDOUT)",
           .tags(.RawSocketConnect.connect),
-          arguments: [NetTransport.tcp, .udp], [nil, "localhost"])
-    func timeoutThrowsError(_ transport: NetTransport, _ sni: String?) async throws {
+          arguments: [RawSocketTransport.tcp, .udp], [nil, "localhost"])
+    func timeoutThrowsError(_ transport: RawSocketTransport, _ sni: String?) async throws {
         let timeout: TimeInterval = 0.7
         let dataToSend: Data = Data("Hello".utf8)
         let server = try ServerMock(transport: transport, isSecure: sni != nil, flow: .none)
@@ -50,8 +50,8 @@ struct RawSocketReceiveTests {
     
     @Test("When socket is receiving data and called cancel in different thread result is nil",
           .tags(.RawSocketConnect.connect),
-          arguments: [NetTransport.tcp, .udp], [nil, "localhost"])
-    func cancelSeparatelyThrowsError(_ transport: NetTransport, _ sni: String?) async throws {
+          arguments: [RawSocketTransport.tcp, .udp], [nil, "localhost"])
+    func cancelSeparatelyThrowsError(_ transport: RawSocketTransport, _ sni: String?) async throws {
         let timeout: TimeInterval = 0
         let dataToSend: Data = Data("Hello".utf8)
         let server = try ServerMock(transport: transport, isSecure: sni != nil, flow: .none)
@@ -76,8 +76,8 @@ struct RawSocketReceiveTests {
     
     @Test("Cancelled a task during receiving",
           .tags(.RawSocketConnect.connect),
-          arguments: [NetTransport.tcp, .udp], [nil, "localhost"])
-    func cancelDuringSendThrowsError(_ transport: NetTransport, _ sni: String?) async throws {
+          arguments: [RawSocketTransport.tcp, .udp], [nil, "localhost"])
+    func cancelDuringSendThrowsError(_ transport: RawSocketTransport, _ sni: String?) async throws {
         let timeout: TimeInterval = 0
         let dataToSend: Data = Data("Hello".utf8)
         let server = try ServerMock(transport: transport, isSecure: sni != nil)

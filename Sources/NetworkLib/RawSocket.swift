@@ -1,13 +1,10 @@
 import Foundation
 import Network
 
-public enum NetTransport: Sendable {
-    case tcp
-    case udp
-}
+
 
 public struct ConnectionInfo: Sendable, Equatable {
-    public let transport: NetTransport
+    public let transport: RawSocketTransport
     public let remoteEndpoint: NWEndpoint
     public let localEndpoint: NWEndpoint?
     public let interface: NWInterface?
@@ -26,7 +23,7 @@ public class RawSocket: @unchecked Sendable {
     private let accessQueue: DispatchQueue
     private let maxDataBlock: Int
     private let accessKey: DispatchSpecificKey<ObjectIdentifier>
-    private let transport: NetTransport
+    private let transport: RawSocketTransport
     private var internalState: _InternalState {
         didSet {
             printDebug("[socket] internal state changed", internalState)
@@ -39,13 +36,13 @@ public class RawSocket: @unchecked Sendable {
 
     // MARK: - INITIALIZATION
 
-    public convenience init(url: URL, maxDataBlock: Int = .max, transport: NetTransport = .tcp,
+    public convenience init(url: URL, maxDataBlock: Int = .max, transport: RawSocketTransport = .tcp,
                             timeout: TimeInterval, sni: String?) throws
     {
         try self.init(endpoint: .url(url), maxDataBlock: maxDataBlock, transport: transport, timeout: timeout, sni: sni)
     }
 
-    public init(endpoint: NWEndpoint, maxDataBlock: Int = .max, transport: NetTransport = .tcp,
+    public init(endpoint: NWEndpoint, maxDataBlock: Int = .max, transport: RawSocketTransport = .tcp,
                 timeout: TimeInterval = 10, sni: String?) throws
     {
         internalState = .none

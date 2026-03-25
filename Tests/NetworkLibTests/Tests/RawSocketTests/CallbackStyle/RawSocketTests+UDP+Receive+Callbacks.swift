@@ -3,7 +3,7 @@ import Network
 @testable import NetworkLib
 
 class RawSocketTests_UDP_Receive_Callbacks: XCTestCase {
-    private let transport: NetTransport = .udp
+    private let transport: RawSocketTransport = .udp
 
     override func setUp() {
         continueAfterFailure = false
