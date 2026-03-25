@@ -18,9 +18,9 @@ class RawSocketTests_TCP_Receive_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true, flow: .echo)
         defer { server.stop() }
         let port = try await server.start()
-
-        let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: maxDataBlock,
-                                   transport: transport, timeout: timeout, sni: "localhost")
+        let config = try RawSocket.Configuration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                                 maxDataBlock: maxDataBlock, timeout: timeout)
+        let socket = RawSocket(config)
         defer { socket.cancel(nil) }
 
         let receiveExpect = expectation(description: "For callback on receive")
@@ -44,9 +44,9 @@ class RawSocketTests_TCP_Receive_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true, flow: .echo)
         defer { server.stop() }
         let port = try await server.start()
-
-        let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: maxDataBlock,
-                                   transport: transport, timeout: timeout, sni: "localhost")
+        let config = try RawSocket.Configuration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                                 maxDataBlock: maxDataBlock, timeout: timeout)
+        let socket = RawSocket(config)
         defer { socket.cancel(nil) }
 
         let receiveExpect = expectation(description: "For callback on receive")
@@ -72,9 +72,9 @@ class RawSocketTests_TCP_Receive_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true, flow: .echo)
         defer { server.stop() }
         let port = try await server.start()
-
-        let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: maxDataBlock,
-                                   transport: transport, timeout: timeout, sni: "localhost")
+        let config = try RawSocket.Configuration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                                 maxDataBlock: maxDataBlock, timeout: timeout)
+        let socket = RawSocket(config)
         defer { socket.cancel(nil) }
 
         let receiveExpect = expectation(description: "For callback on receive")
@@ -106,9 +106,9 @@ class RawSocketTests_TCP_Receive_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true, flow: .echo)
         defer { server.stop() }
         let port = try await server.start()
-
-        let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: maxDataBlock,
-                                   transport: transport, timeout: timeout, sni: "localhost")
+        let config = try RawSocket.Configuration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                                 maxDataBlock: maxDataBlock, timeout: timeout)
+        let socket = RawSocket(config)
         defer { socket.cancel(nil) }
 
         let receiveExpect = expectation(description: "For callback on receive called")
@@ -143,9 +143,9 @@ class RawSocketTests_TCP_Receive_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true, flow: .echo)
         defer { server.stop() }
         let port = try await server.start()
-
-        let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: maxDataBlock,
-                                   transport: transport, timeout: timeout, sni: "localhost")
+        let config = try RawSocket.Configuration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                                 maxDataBlock: maxDataBlock, timeout: timeout)
+        let socket = RawSocket(config)
         defer { socket.cancel(nil) }
 
         let receiveExpect = expectation(description: "For callback on receive")
@@ -170,9 +170,9 @@ class RawSocketTests_TCP_Receive_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true, flow: .none)
         defer { server.stop() }
         let port = try await server.start()
-
-        let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: maxDataBlock,
-                                   transport: transport, timeout: timeout, sni: "localhost")
+        let config = try RawSocket.Configuration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                                 maxDataBlock: maxDataBlock, timeout: timeout)
+        let socket = RawSocket(config)
         defer { socket.cancel(nil) }
 
         let receiveExpect = expectation(description: "For callback on receive")
@@ -198,9 +198,9 @@ class RawSocketTests_TCP_Receive_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true, flow: .none)
         defer { server.stop() }
         let port = try await server.start()
-
-        let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: maxDataBlock,
-                                   transport: transport, timeout: timeout, sni: "localhost")
+        let config = try RawSocket.Configuration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                                 maxDataBlock: maxDataBlock, timeout: timeout)
+        let socket = RawSocket(config)
         defer { socket.cancel(nil) }
 
         let receiveExpect = expectation(description: "For callback on receive")
@@ -221,9 +221,9 @@ class RawSocketTests_TCP_Receive_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true, flow: .none)
         defer { server.stop() }
         let port = try await server.start()
-
-        let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: maxDataBlock,
-                                   transport: transport, timeout: timeout, sni: "localhost")
+        let config = try RawSocket.Configuration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                                 maxDataBlock: maxDataBlock, timeout: timeout)
+        let socket = RawSocket(config)
         defer { socket.cancel(nil) }
 
         let receiveExpect = expectation(description: "For callback on receive")
@@ -248,9 +248,9 @@ class RawSocketTests_TCP_Receive_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true, flow: .none)
         defer { server.stop() }
         let port = try await server.start()
-
-        let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: maxDataBlock,
-                                   transport: transport, timeout: timeout, sni: "localhost")
+        let config = try RawSocket.Configuration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                                 maxDataBlock: maxDataBlock, timeout: timeout)
+        let socket = RawSocket(config)
         defer { socket.cancel(nil) }
 
         let receiveExpect = expectation(description: "For callback on receive")
@@ -272,9 +272,9 @@ class RawSocketTests_TCP_Receive_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true, flow: .none)
         defer { server.stop() }
         let port = try await server.start()
-
-        let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: maxDataBlock,
-                                   transport: transport, timeout: timeout, sni: "localhost")
+        let config = try RawSocket.Configuration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                                 maxDataBlock: maxDataBlock, timeout: timeout)
+        let socket = RawSocket(config)
         defer { socket.cancel(nil) }
 
         let receiveExpect = expectation(description: "For callback on receive")
@@ -334,9 +334,9 @@ class RawSocketTests_TCP_Receive_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true, flow: .echo)
         defer { server.stop() }
         let port = try await server.start()
-
-        let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: maxDataBlock,
-                                   transport: transport, timeout: timeout, sni: "localhost")
+        let config = try RawSocket.Configuration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                                 maxDataBlock: maxDataBlock, timeout: timeout)
+        let socket = RawSocket(config)
         defer { socket.cancel(nil) }
 
         let receiveExpect = expectation(description: "For callback on receive")
@@ -366,9 +366,9 @@ class RawSocketTests_TCP_Receive_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true, flow: .echo)
         defer { server.stop() }
         let port = try await server.start()
-
-        let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: maxDataBlock,
-                                   transport: transport, timeout: timeout, sni: "localhost")
+        let config = try RawSocket.Configuration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                                 maxDataBlock: maxDataBlock, timeout: timeout)
+        let socket = RawSocket(config)
         defer { socket.cancel(nil) }
 
         let receiveExpect = expectation(description: "For callback on receive")
@@ -398,9 +398,9 @@ class RawSocketTests_TCP_Receive_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true, flow: .none)
         defer { server.stop() }
         let port = try await server.start()
-
-        let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: maxDataBlock,
-                                   transport: transport, timeout: timeout, sni: "localhost")
+        let config = try RawSocket.Configuration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                                 maxDataBlock: maxDataBlock, timeout: timeout)
+        let socket = RawSocket(config)
         defer { socket.cancel(nil) }
 
         let receiveExpect = expectation(description: "For callback on receive")
@@ -425,9 +425,9 @@ class RawSocketTests_TCP_Receive_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true, flow: .none)
         defer { server.stop() }
         let port = try await server.start()
-
-        let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: maxDataBlock,
-                                   transport: transport, timeout: timeout, sni: "localhost")
+        let config = try RawSocket.Configuration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                                 maxDataBlock: maxDataBlock, timeout: timeout)
+        let socket = RawSocket(config)
         defer { socket.cancel(nil) }
 
         let receiveExpect = expectation(description: "For callback on receive")
@@ -453,9 +453,9 @@ class RawSocketTests_TCP_Receive_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true, flow: .echo)
         defer { server.stop() }
         let port = try await server.start()
-
-        let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: maxDataBlock,
-                                   transport: transport, timeout: timeout, sni: "localhost")
+        let config = try RawSocket.Configuration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                                 maxDataBlock: maxDataBlock, timeout: timeout)
+        let socket = RawSocket(config)
         defer { socket.cancel(nil) }
 
         let receiveExpect = expectation(description: "For callback on receive")
@@ -483,8 +483,9 @@ class RawSocketTests_TCP_Receive_Callbacks: XCTestCase {
         let port = try await server.start()
 
         let box = _SocketBox()
-        box.set(try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: maxDataBlock,
-                              transport: transport, timeout: timeout, sni: "localhost"))
+        let config = try RawSocket.Configuration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                                 maxDataBlock: maxDataBlock, timeout: timeout)
+        box.set(RawSocket(config))
         defer { box.get()?.cancel(nil) }
 
         let connectExpect = expectation(description: "For callback on receive")
@@ -515,8 +516,9 @@ class RawSocketTests_TCP_Receive_Callbacks: XCTestCase {
         let port = try await server.start()
 
         let box = _SocketBox()
-        box.set(try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: maxDataBlock,
-                              transport: transport, timeout: timeout, sni: "localhost"))
+        let config = try RawSocket.Configuration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                                 maxDataBlock: maxDataBlock, timeout: timeout)
+        box.set(RawSocket(config))
         defer { box.get()?.cancel(nil) }
 
         let connectExpect = expectation(description: "For callback on receive")

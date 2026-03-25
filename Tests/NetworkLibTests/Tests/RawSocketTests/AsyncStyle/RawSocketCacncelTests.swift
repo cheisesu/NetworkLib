@@ -11,9 +11,9 @@ struct RawSocketCancelTests {
         let server = try ServerMock(transport: transport, isSecure: sni != nil)
         defer { server.stop() }
         let port = try await server.start()
-
-        let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
-                                   transport: transport, timeout: timeout, sni: sni)
+        let config = try RawSocket.Configuration("127.0.0.1", port, isSecure: sni != nil, sni: sni, transport: transport,
+                                                 maxDataBlock: 256, timeout: timeout)
+        let socket = RawSocket(config)
         defer { socket.cancel(nil) }
         await socket.cancel()
         _ = try? await socket.connect()
@@ -26,9 +26,9 @@ struct RawSocketCancelTests {
         let server = try ServerMock(transport: transport, isSecure: sni != nil)
         defer { server.stop() }
         let port = try await server.start()
-
-        let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
-                                   transport: transport, timeout: timeout, sni: sni)
+        let config = try RawSocket.Configuration("127.0.0.1", port, isSecure: sni != nil, sni: sni, transport: transport,
+                                                 maxDataBlock: 256, timeout: timeout)
+        let socket = RawSocket(config)
         await socket.cancel()
         do {
             try await socket.connect()

@@ -1,13 +1,39 @@
 import Foundation
 import Network
 
-
-
 public struct ConnectionInfo: Sendable, Equatable {
     public let transport: RawSocketTransport
     public let remoteEndpoint: NWEndpoint
     public let localEndpoint: NWEndpoint?
     public let interface: NWInterface?
+}
+
+extension RawSocket {
+    public struct Configuration: Sendable {
+        public let host: NWEndpoint.Host
+        public let port: NWEndpoint.Port
+        public let isSecure: Bool
+        public let sni: String?
+        public let transport: RawSocketTransport
+        public let maxDataBlock: Int
+        public let timeout: TimeInterval
+        
+        var endpoint: NWEndpoint {
+            .hostPort(host: host, port: port)
+        }
+        
+        public init(_ host: NWEndpoint.Host, _ port: NWEndpoint.Port, isSecure: Bool = true, sni: String? = nil,
+                    transport: RawSocketTransport = .tcp, maxDataBlock: Int = .max, timeout: TimeInterval = 10) throws
+        {
+            self.host = host
+            self.port = port
+            self.isSecure = isSecure
+            self.sni = sni
+            self.transport = transport
+            self.maxDataBlock = maxDataBlock
+            self.timeout = timeout
+        }
+    }
 }
 
 public class RawSocket: @unchecked Sendable {
@@ -35,36 +61,27 @@ public class RawSocket: @unchecked Sendable {
     private var cancellingCallbacks: [(@Sendable () -> Void)]
 
     // MARK: - INITIALIZATION
-
-    public convenience init(url: URL, maxDataBlock: Int = .max, transport: RawSocketTransport = .tcp,
-                            timeout: TimeInterval, sni: String?) throws
-    {
-        try self.init(endpoint: .url(url), maxDataBlock: maxDataBlock, transport: transport, timeout: timeout, sni: sni)
-    }
-
-    public init(endpoint: NWEndpoint, maxDataBlock: Int = .max, transport: RawSocketTransport = .tcp,
-                timeout: TimeInterval = 10, sni: String?) throws
-    {
+    
+    public init(_ configuration: Configuration) {
         internalState = .none
         let accessQueue = DispatchQueue(label: "com.network.lib.raw-socket", target: .global())
         accessKey = DispatchSpecificKey()
         accessQueue.setSpecific(key: accessKey, value: ObjectIdentifier(accessQueue))
         self.accessQueue = accessQueue
         cancellingCallbacks = []
-        timeoutEvent = TimeoutRecursiveEvent(timeout: timeout, on: accessQueue)
-        self.maxDataBlock = maxDataBlock
-        self.transport = transport
+        timeoutEvent = TimeoutRecursiveEvent(timeout: configuration.timeout, on: accessQueue)
+        maxDataBlock = configuration.maxDataBlock
+        transport = configuration.transport
         let tls: NWProtocolTLS.Options? = {
-            let isSecure = sni != nil
-            guard isSecure else { return nil }
+            guard configuration.isSecure else { return nil }
             let tls = NWProtocolTLS.Options()
-            if let sni {
+            if let sni = configuration.sni {
                 sec_protocol_options_set_tls_server_name(tls.securityProtocolOptions, sni)
             }
             return tls
         }()
         let parameters = {
-            switch transport {
+            switch configuration.transport {
             case .tcp:
                 let tcp = NWProtocolTCP.Options()
                 return NWParameters(tls: tls, tcp: tcp)
@@ -73,7 +90,7 @@ public class RawSocket: @unchecked Sendable {
                 return NWParameters(dtls: tls, udp: udp)
             }
         }()
-        connection = NWConnection(to: endpoint, using: parameters)
+        connection = NWConnection(to: configuration.endpoint, using: parameters)
         connection.stateUpdateHandler = { [weak self] state in
             self?.stateUpdateHandler(state)
         }
