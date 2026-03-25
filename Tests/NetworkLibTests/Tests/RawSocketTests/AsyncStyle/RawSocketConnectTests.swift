@@ -11,30 +11,30 @@ extension Tag {
 
 struct RawSocketConnectTests {
     @Test("When continuation is called multiple times it will fall with fatal error and test fail",
-          .tags(.RawSocketConnect.connect), arguments: [NetTransport.tcp, .udp], [nil, "localhost"])
-    func continuationCalledOnlyOnce(_ transport: NetTransport, _ sni: String?) async throws {
+          .tags(.RawSocketConnect.connect), arguments: [RawSocketTransport.tcp, .udp], [nil, "localhost"])
+    func continuationCalledOnlyOnce(_ transport: RawSocketTransport, _ sni: String?) async throws {
         let timeout: TimeInterval = 0
         let server = try ServerMock(transport: transport, isSecure: sni != nil)
         defer { server.stop() }
         let port = try await server.start()
-
-        let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
-                                   transport: transport, timeout: timeout, sni: sni)
+        let config = try RawSocket.Configuration("127.0.0.1", port, isSecure: sni != nil, sni: sni, transport: transport,
+                                                 maxDataBlock: 256, timeout: timeout)
+        let socket = RawSocket(config)
         defer { socket.cancel(nil) }
         try await socket.connect()
         await socket.cancel()
     }
     
     @Test("When timeout of socket is reached it throws NWError.posix(.ETIMEDOUT)",
-          .tags(.RawSocketConnect.connect), arguments: [NetTransport.tcp, .udp])
-    func timeoutThrowsError(_ transport: NetTransport) async throws {
+          .tags(.RawSocketConnect.connect), arguments: [RawSocketTransport.tcp, .udp])
+    func timeoutThrowsError(_ transport: RawSocketTransport) async throws {
         let timeout: TimeInterval = 0.2
         let server = try ServerMock(transport: transport, isSecure: false)
         defer { server.stop() }
         let port = try await server.start()
-
-        let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
-                                   transport: transport, timeout: timeout, sni: "localhost")
+        let config = try RawSocket.Configuration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                                 maxDataBlock: 256, timeout: timeout)
+        let socket = RawSocket(config)
         defer { socket.cancel(nil) }
 
         try await withAsyncTimeout(.seconds(3)) {
@@ -46,15 +46,15 @@ struct RawSocketConnectTests {
     }
     
     @Test("When socket is connecting and called cancel in different thread it throws NWError.posix(.ECANCELED)",
-          .tags(.RawSocketConnect.connect), arguments: [NetTransport.tcp, .udp])
-    func cancelSeparatelyThrowsError(_ transport: NetTransport) async throws {
+          .tags(.RawSocketConnect.connect), arguments: [RawSocketTransport.tcp, .udp])
+    func cancelSeparatelyThrowsError(_ transport: RawSocketTransport) async throws {
         let timeout: TimeInterval = 0
         let server = try ServerMock(transport: transport, isSecure: false)
         defer { server.stop() }
         let port = try await server.start()
-
-        let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
-                                   transport: transport, timeout: timeout, sni: "localhost")
+        let config = try RawSocket.Configuration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                                 maxDataBlock: 256, timeout: timeout)
+        let socket = RawSocket(config)
         defer { socket.cancel(nil) }
 
         try await withAsyncTimeout(.seconds(3)) {
@@ -70,15 +70,15 @@ struct RawSocketConnectTests {
     }
     
     @Test("Cancelled a task during connect",
-          .tags(.RawSocketConnect.connect), arguments: [NetTransport.tcp, .udp])
-    func cancelDuringConnectThrowsError(_ transport: NetTransport) async throws {
+          .tags(.RawSocketConnect.connect), arguments: [RawSocketTransport.tcp, .udp])
+    func cancelDuringConnectThrowsError(_ transport: RawSocketTransport) async throws {
         let timeout: TimeInterval = 0
         let server = try ServerMock(transport: transport, isSecure: false)
         defer { server.stop() }
         let port = try await server.start()
-
-        let socket = try RawSocket(endpoint: .hostPort(host: "127.0.0.1", port: port), maxDataBlock: 256,
-                                   transport: transport, timeout: timeout, sni: "localhost")
+        let config = try RawSocket.Configuration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                                 maxDataBlock: 256, timeout: timeout)
+        let socket = RawSocket(config)
         defer { socket.cancel(nil) }
 
         try await withAsyncTimeout(.seconds(3)) {

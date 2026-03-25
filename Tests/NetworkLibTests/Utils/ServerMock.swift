@@ -33,7 +33,7 @@ final class ServerMock: @unchecked Sendable {
     private let flow: Flow
     private var connections: [UUID: NWConnection]
 
-    init(transport: NetTransport, isSecure: Bool, flow: Flow = .none) throws {
+    init(transport: RawSocketTransport, isSecure: Bool, flow: Flow = .none) throws {
         let secIdentity = try loadIdentityFromP12()
         let queue = DispatchQueue(label: "com.network.lib.server-mock", target: .global())
         self.queue = queue
