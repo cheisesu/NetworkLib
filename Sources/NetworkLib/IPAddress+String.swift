@@ -2,7 +2,7 @@ import Foundation
 import Network
 
 extension IPv4Address {
-    var asString: String {
+    public var asString: String {
         var buffer = [CChar](repeating: 0, count: Int(INET_ADDRSTRLEN))
         let cIpString = rawValue.withUnsafeBytes { (bytes: UnsafeRawBufferPointer) in
             bytes.withMemoryRebound(to: in_addr.self) {
@@ -14,7 +14,7 @@ extension IPv4Address {
 }
 
 extension IPv6Address {
-    var asString: String {
+    public var asString: String {
         var buffer = [CChar](repeating: 0, count: Int(INET6_ADDRSTRLEN))
         let cIpString = rawValue.withUnsafeBytes { (bytes: UnsafeRawBufferPointer) in
             bytes.withMemoryRebound(to: in6_addr.self) {
@@ -22,5 +22,9 @@ extension IPv6Address {
             }
         }!
         return String(cString: cIpString)
+    }
+    
+    public var asURLHostString: String {
+        ["[", asString, "]"].joined()
     }
 }

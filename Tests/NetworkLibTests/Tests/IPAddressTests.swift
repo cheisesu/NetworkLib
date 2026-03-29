@@ -7,102 +7,85 @@ extension Tag {
 }
 
 struct IPAddressTests {
-    @Test("Checks if string is IPv4", .tags(.ipAddress), arguments: [
-        // valid
-        ("0.0.0.0", true),
-        ("127.0.0.1", true),
-        ("192.168.0.1", true),
-        ("255.255.255.255", true),
-        ("8.8.8.8", true),
-        
-        // invalid — out of range
-        ("256.0.0.1", false),
-        ("192.168.0.256", false),
-        ("999.999.999.999", false),
-
-        // valid — wrong format
-        ("192.168.0", true),
-        
-        // invalid — wrong format
-        ("192.168.0.1.1", false),
-        ("192.168..1", false),
-        ("192.168.0.a", false),
-        
-        // invalid — empty / garbage
-        ("", false),
-        ("...", false),
-        ("abc.def.ghi.jkl", false),
-        
-        // edge-ish
-        ("01.02.03.04", true),
-        ("1.1.1.01", true),
-        
-        // spaces
-        (" 192.168.0.1", false),
-        ("192.168.0.1 ", false),
-        ("192.168. 0.1", false),
+    @Test("IPv4 string converting", .tags(.ipAddress), arguments: [
+        // ===== VALID =====
+        ("0.0.0.0", IPv4Address("0.0.0.0")),
+        ("127.0.0.1", IPv4Address("127.0.0.1")),
+        ("192.168.0.1", IPv4Address("192.168.0.1")),
+        ("255.255.255.255", IPv4Address("255.255.255.255")),
+        ("8.8.8.8", IPv4Address("8.8.8.8")),
+        ("192.168.0", IPv4Address("192.168.0.0")),
+        ("01.02.03.04", IPv4Address("1.2.3.4")),
+        ("1.1.1.01", IPv4Address("1.1.1.1")),
+        (" 192.168.0.1", IPv4Address("192.168.0.1")),
+        ("192.168.0.1 ", IPv4Address("192.168.0.1")),
+        (" 192.168.0.1 ", IPv4Address("192.168.0.1")),
+        // ===== INVALID =====
+        ("192.168.0.1.1", nil),
+        ("192.168..1", nil),
+        ("192.168.0.a", nil),
+        ("256.0.0.1", nil),
+        ("192.168.0.256", nil),
+        ("999.999.999.999", nil),
+        ("", nil),
+        ("...", nil),
+        ("abc.def.ghi.jkl", nil),
+        ("192.168. 0.1", nil),
     ])
-    func isIpV4(_ ip: String, _ expected: Bool) async throws {
-        try #require(ip.isIPv4 == expected)
+    func asIpV4(_ ip: String, _ expected: IPv4Address?) throws {
+        try #require(ip.asIPv4 == expected)
+        try #require(ip.isIPv4 == (expected != nil))
     }
     
-    @Test("Checks if string is IPv6", .tags(.ipAddress), arguments: [
+    @Test("IPv6 string converting", .tags(.ipAddress), arguments: [
         // ===== VALID =====
-        ("::1", true),
-        ("::", true),
-        ("2001:db8::1", true),
-        ("fe80::1", true),
-        ("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff", true),
-        ("2001:0db8:0000:0000:0000:ff00:0042:8329", true),
-        ("2001:db8:0:0:0:ff00:42:8329", true),
-        ("2001:db8::ff00:42:8329", true),
-        ("1::", true),
-        ("::1:2:3", true),
-        ("1:2:3:4:5:6:7:8", true),
-        ("2001:db8:00000::1", true),
-
-        // IPv4-mapped / mixed
-        ("::ffff:192.168.0.1", true),
-        ("2001:db8::192.168.0.1", true),
-
+        ("::1", IPv6Address("::1")),
+        ("::", IPv6Address("::")),
+        ("2001:db8::1", IPv6Address("2001:db8::1")),
+        ("fe80::1", IPv6Address("fe80::1")),
+        ("[fe80::1]", IPv6Address("fe80::1")),
+        ("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff", IPv6Address("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff")),
+        ("2001:0db8:0000:0000:0000:ff00:0042:8329", IPv6Address("2001:0db8:0000:0000:0000:ff00:0042:8329")),
+        ("2001:db8:0:0:0:ff00:42:8329", IPv6Address("2001:db8:0:0:0:ff00:42:8329")),
+        ("2001:db8::ff00:42:8329", IPv6Address("2001:db8::ff00:42:8329")),
+        ("1::", IPv6Address("1::")),
+        ("::1:2:3", IPv6Address("::1:2:3")),
+        ("1:2:3:4:5:6:7:8", IPv6Address("1:2:3:4:5:6:7:8")),
+        ("2001:db8:00000::1", IPv6Address("2001:db8:00000::1")),
+        ("::ffff:192.168.0.1", IPv6Address("::ffff:192.168.0.1")),
+        ("2001:db8::192.168.0.1", IPv6Address("2001:db8::192.168.0.1")),
+        ("[2001:db8::192.168.0.1]", IPv6Address("2001:db8::192.168.0.1")),
+        (" ::1", IPv6Address("::1")),
+        ("::1 ", IPv6Address("::1")),
+        (" [::1]", IPv6Address("::1")),
+        ("[::1] ", IPv6Address("::1")),
+        ("[ ::1]", IPv6Address("::1")),
+        ("[::1 ]", IPv6Address("::1")),
+        ("[::1 ] ", IPv6Address("::1")),
+        (" [::1 ]", IPv6Address("::1")),
+        (" [ ::1 ] ", IPv6Address("::1")),
         // ===== INVALID =====
-        // double ::
-        ("2001::db8::1", false),
-        ("::ffff::192.168.0.1", false),
-
-        // too many groups
-        ("1:2:3:4:5:6:7:8:9", false),
-        ("2001:db8:0:0:0:ff00:42:8329:1", false),
-
-        // too few without ::
-        ("1:2:3:4:5:6:7", false),
-        ("2001:db8:0:0:ff00:42:8329", false),
-
-        // bad hex
-        ("2001:db8::gggg", false),
-        ("zzzz::1", false),
-
-        // oversized group
-        ("12345::", false),
-
-        // wrong format
-        ("2001-db8::1", false),
-        ("2001.db8::1", false),
-        (":2001:db8::1", false),
-        ("2001:db8::1:", false),
-
-        // garbage
-        ("", false),
-        ("not-an-ip", false),
-        ("::::", false),
-
-        // spaces
-        (" ::1", false),
-        ("::1 ", false),
-        ("2001: db8::1", false),
+        ("2001::db8::1", nil),
+        ("::ffff::192.168.0.1", nil),
+        ("1:2:3:4:5:6:7:8:9", nil),
+        ("2001:db8:0:0:0:ff00:42:8329:1", nil),
+        ("1:2:3:4:5:6:7", nil),
+        ("2001:db8:0:0:ff00:42:8329", nil),
+        ("2001:db8::gggg", nil),
+        ("zzzz::1", nil),
+        ("12345::", nil),
+        ("2001-db8::1", nil),
+        ("2001.db8::1", nil),
+        (":2001:db8::1", nil),
+        ("2001:db8::1:", nil),
+        ("", nil),
+        ("not-an-ip", nil),
+        ("::::", nil),
+        ("2001: db8::1", nil),
     ])
-    func isIpV6(_ ip: String, _ expected: Bool) async throws {
-        try #require(ip.isIPv6 == expected, "ip \(ip)")
+    func asIpV4(_ ip: String, _ expected: IPv6Address?) throws {
+        try #require(ip.asIPv6 == expected)
+        try #require(ip.isIPv6 == (expected != nil))
     }
     
     @Test(.tags(.ipAddress), arguments: [
@@ -168,57 +151,23 @@ struct IPAddressTests {
         try #require(IPv6Address(ip)?.asString == expected)
     }
     
-    @Test(.tags(.ipAddress), arguments: [
-        // IPv4 valid
-        ("0.0.0.0", "0.0.0.0"),
-        ("127.0.0.1", "127.0.0.1"),
-        ("192.168.0.1", "192.168.0.1"),
-        ("255.255.255.255", "255.255.255.255"),
-        ("192.168.0", "192.168.0.0"),
-        
-        // IPv6 valid, already normalized
-        ("::", "::"),
-        ("::", "::"),
-        ("::1", "::1"),
-        ("2001:db8::1", "2001:db8::1"),
-        ("fe80::1", "fe80::1"),
-        ("1:2:3:4:5:6:7:8", "1:2:3:4:5:6:7:8"),
-        ("[fe80::1]", "fe80::1"),
-        ("[1:2:3:4:5:6:7:8]", "1:2:3:4:5:6:7:8"),
-        
-        // IPv6 valid, should normalize
-        ("2001:0db8:0000:0000:0000:ff00:0042:8329", "2001:db8::ff00:42:8329"),
-        ("2001:db8:0:0:0:ff00:42:8329", "2001:db8::ff00:42:8329"),
-        ("0000:0000:0000:0000:0000:0000:0000:0001", "::1"),
-        ("0:0:0:0:0:0:0:0", "::"),
-        
-        // IPv6 with embedded IPv4
-        ("::ffff:192.168.0.1", "::ffff:192.168.0.1"),
-        
-        // invalid
-        ("", nil),
-        ("abc", nil),
-        ("not-an-ip", nil),
-        ("256.0.0.1", nil),
-        ("192.168.0.1.2", nil),
-        ("2001::db8::1", nil),
-        ("1:2:3:4:5:6:7", nil),
-        ("1:2:3:4:5:6:7:8:9", nil),
-        ("2001:db8::gggg", nil),
-        ("12345::", nil),
-        
-        // invalid, but valid when normalized and trimmed
-        (" 192.168.0.1", "192.168.0.1"),
-        ("192.168.0.1 ", "192.168.0.1"),
-        (" ::1", "::1"),
-        ("::1 ", "::1"),
-        ("[ ::1]", "::1"),
-        ("[::1 ]", "::1"),
-        (" [::1]", "::1"),
-        ("[::1] ", "::1"),
-        ("[::1]", "::1"),
+    @Test("IPv6 url format", .tags(.ipAddress), arguments: [
+        ("::1", "[::1]"),
+        ("::", "[::]"),
+        ("2001:db8::1", "[2001:db8::1]"),
+        ("2001:0db8:0000:0000:0000:ff00:0042:8329", "[2001:db8::ff00:42:8329]"),
+        (" ::1", "[::1]"),
+        ("::1 ", "[::1]"),
+        (" [::1]", "[::1]"),
+        ("[::1] ", "[::1]"),
+        ("[ ::1]", "[::1]"),
+        ("[::1 ]", "[::1]"),
+        ("[::1 ] ", "[::1]"),
+        (" [::1 ]", "[::1]"),
+        (" [ ::1 ] ", "[::1]"),
     ])
-    func normalized(ip: String, expected: String?) throws {
-        try #require(ip.normalized == expected)
+    func asURLHostString(_ ip: String, _ expected: String) throws {
+        let ip = try #require(ip.asIPv6)
+        try #require(ip.asURLHostString == expected)
     }
 }
