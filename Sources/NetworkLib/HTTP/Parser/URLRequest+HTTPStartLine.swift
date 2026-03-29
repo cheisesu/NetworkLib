@@ -1,7 +1,7 @@
 import Foundation
 
 extension URLRequest {
-    func startLine(_ version: HTTPVersion) -> String {
+    func httpStartLine(_ version: HTTPVersion) -> String {
         let method = httpMethod?.uppercased() ?? "GET"
         let path = if #available(macOS 13.0, *) {
             url?.path() ?? "/"

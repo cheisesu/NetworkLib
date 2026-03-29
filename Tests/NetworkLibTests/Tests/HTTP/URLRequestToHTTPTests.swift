@@ -64,7 +64,7 @@ struct URLRequestToHTTPTests {
         let url = try #require(URL(string: urlString))
         var request = URLRequest(url: url)
         request.httpMethod = method
-        let result = request.startLine(version)
+        let result = request.httpStartLine(version)
         try #require(result == expected)
     }
 }
