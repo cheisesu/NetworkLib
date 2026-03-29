@@ -11,9 +11,10 @@ extension String {
     }
 
     public var normalized: String? {
-        if let v4 = IPv4Address(self) {
+        let str = trimmingCharacters(in: .whitespacesAndNewlines.union(CharacterSet(charactersIn: "[]")))
+        if let v4 = IPv4Address(str) {
             return v4.asString
-        } else if let v6 = IPv6Address(self) {
+        } else if let v6 = IPv6Address(str) {
             return v6.asString
         }
         return nil

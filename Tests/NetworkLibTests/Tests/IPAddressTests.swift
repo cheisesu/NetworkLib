@@ -178,10 +178,13 @@ struct IPAddressTests {
         
         // IPv6 valid, already normalized
         ("::", "::"),
+        ("::", "::"),
         ("::1", "::1"),
         ("2001:db8::1", "2001:db8::1"),
         ("fe80::1", "fe80::1"),
         ("1:2:3:4:5:6:7:8", "1:2:3:4:5:6:7:8"),
+        ("[fe80::1]", "fe80::1"),
+        ("[1:2:3:4:5:6:7:8]", "1:2:3:4:5:6:7:8"),
         
         // IPv6 valid, should normalize
         ("2001:0db8:0000:0000:0000:ff00:0042:8329", "2001:db8::ff00:42:8329"),
@@ -204,11 +207,16 @@ struct IPAddressTests {
         ("2001:db8::gggg", nil),
         ("12345::", nil),
         
-        // invalid with spaces
-        (" 192.168.0.1", nil),
-        ("192.168.0.1 ", nil),
-        (" ::1", nil),
-        ("::1 ", nil),
+        // invalid, but valid when normalized and trimmed
+        (" 192.168.0.1", "192.168.0.1"),
+        ("192.168.0.1 ", "192.168.0.1"),
+        (" ::1", "::1"),
+        ("::1 ", "::1"),
+        ("[ ::1]", "::1"),
+        ("[::1 ]", "::1"),
+        (" [::1]", "::1"),
+        ("[::1] ", "::1"),
+        ("[::1]", "::1"),
     ])
     func normalized(ip: String, expected: String?) throws {
         try #require(ip.normalized == expected)
