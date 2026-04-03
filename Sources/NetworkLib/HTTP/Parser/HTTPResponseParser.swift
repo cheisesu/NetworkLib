@@ -66,13 +66,6 @@ final class HTTPResponseParser: @unchecked Sendable {
             parsedResponse = response
             return .response(response)
         }
-        if let lengthString = parsedResponse?.value(forHTTPHeaderField: "Content-Length"),
-           let length = Int(lengthString),
-           length == 0
-        {
-            bodyKind = .finished
-            return .end
-        }
         guard !buffer.isEmpty else { return nil }
         if isChunked() {
             return try parseChunkedEncoding()

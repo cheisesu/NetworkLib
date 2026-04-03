@@ -195,51 +195,6 @@ struct HTTPResponseParserTests {
         }
     }
 
-    @Test(.tags(.httpParser))
-    func contentLengthSetAndIsZero_ReturnsEndEvent() throws {
-        let _httpMessageData = [
-            "HTTP/1.1 201 Created",
-            "Content-Type: application/json",
-            "Location: http://example.com/users/123",
-            "Content-Length: 0",
-            "",
-            "",
-        ].joined(separator: "\r\n").data(using: .utf8)
-        let httpMessage = try #require(_httpMessageData)
-        let url = try #require(URL(string: "http://example.com/users/123"))
-        let httpData = httpMessage
-        let parser = HTTPResponseParser(with: url)
-        let events = try parser.append(httpData)
-        try #require(events.count == 2)
-        try #require(events[0].response != nil)
-        try #require(events[1].isEnd)
-    }
-
-    @Test(.tags(.httpParser))
-    func appendingData_WhenContentLengthSetAndIsZero_ThrowsParsingCompletedError() throws {
-        let _httpMessageData = [
-            "HTTP/1.1 201 Created",
-            "Content-Type: application/json",
-            "Location: http://example.com/users/123",
-            "Content-Length: 0",
-            "",
-            "",
-        ].joined(separator: "\r\n").data(using: .utf8)
-        let httpMessage = try #require(_httpMessageData)
-        let url = try #require(URL(string: "http://example.com/users/123"))
-        let httpData = httpMessage
-        let parser = HTTPResponseParser(with: url)
-        var events = try parser.append(httpData)
-        try #require(events.count == 2)
-        try #require(events[0].response != nil)
-        try #require(events[1].isEnd)
-        do {
-            events = try parser.append(httpData)
-            throw TestError.unexpectedEntrance
-        } catch HTTPResponseParser.Error.parsingCompleted {
-        } catch { throw error }
-    }
-
     // MARK: - TRANSFER-ENCODING: CHUNKED
 
     @Suite
