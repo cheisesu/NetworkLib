@@ -286,7 +286,7 @@ le",
         }
 
         @Test
-        func wrongChunkSizeString_ReturnsEmptyEvents() throws {
+        func wrongChunkSizeString_ThrowsInvalidChunkSizeError() throws {
             let httpMessageData = [
                 "HTTP/1.1 201 Created",
                 "Transfer-Encoding: chunked",
@@ -366,7 +366,7 @@ le",
         }
 
         @Test
-        func splittedChunkAndCRLFPortions_ReturnsEmptyEvents() throws {
+        func splittedChunkAndCRLFPortions_ReturnsEmptyAndDataEvent() throws {
             let httpMessageData = [
                 "HTTP/1.1 201 Created",
                 "Transfer-Encoding: chunked",
@@ -404,6 +404,88 @@ le",
             events = try parser.append(httpChunk3)
             try #require(events.count == 1)
             try #require(events[0].isEnd)
+        }
+
+        @Test
+        func trashDataBetweenChunkDataAndItsCRLF_ThrowsInvalidChunkTerminatorError() throws {
+            let httpMessageData = [
+                "HTTP/1.1 201 Created",
+                "Transfer-Encoding: chunked",
+                "",
+                "",
+            ].joined(separator: "\r\n").data(using: .utf8)!
+            let chunkString = """
+{
+  "message": "New user created",
+  "user": {
+    "id": 123,
+    "firstName": "Example",
+    "lastName": "Person 👀",
+    "email": "bsmth@example.com"
+  }
+}
+"""
+            let httpChunk1 = [
+                String(format: "%X", chunkString.utf8.count),
+                chunkString,
+            ].joined(separator: "\r\n").data(using: .utf8)!
+            let httpChunk2 = "<trash_data>\r\n".data(using: .utf8)!
+            let url = try #require(URL(string: "http://example.com/users/123"))
+            let parser = HTTPResponseParser(with: url)
+            var events = try parser.append(httpMessageData)
+            try #require(events.count == 1)
+            try #require(events[0].response != nil)
+            events = try parser.append(httpChunk1)
+            try #require(events.isEmpty)
+            do {
+                events = try parser.append(httpChunk2)
+                throw TestError.unexpectedEntrance
+            } catch HTTPResponseParser.Error.invalidChunkTerminator {
+            } catch { throw error }
+        }
+
+        @Test
+        func newChunksAfterEndOne_ThrowsParsingCompletedError() throws {
+            let httpMessageData = [
+                "HTTP/1.1 201 Created",
+                "Transfer-Encoding: chunked",
+                "",
+                "",
+            ].joined(separator: "\r\n").data(using: .utf8)!
+            let chunk1String = """
+{
+  "message": "New user created",
+  "user": {
+    "id": 123,
+    "firstName": "Example",
+    "lastName": "Person 👀",
+    "email": "bsmth@example.com"
+  }
+}
+"""
+            let httpChunk1 = [
+                String(format: "%X", chunk1String.utf8.count),
+                chunk1String,
+                "",
+            ].joined(separator: "\r\n").data(using: .utf8)!
+            let httpChunk2 = "0\r\n\r\n".data(using: .utf8)!
+            let httpChunk3 = httpChunk1
+            let url = try #require(URL(string: "http://example.com/users/123"))
+            let parser = HTTPResponseParser(with: url)
+            var events = try parser.append(httpMessageData)
+            try #require(events.count == 1)
+            try #require(events[0].response != nil)
+            events = try parser.append(httpChunk1)
+            try #require(events.count == 1)
+            try #require(events[0].data != nil)
+            events = try parser.append(httpChunk2)
+            try #require(events.count == 1)
+            try #require(events[0].isEnd)
+            do {
+                events = try parser.append(httpChunk3)
+                throw TestError.unexpectedEntrance
+            } catch HTTPResponseParser.Error.parsingCompleted {
+            } catch { throw error }
         }
     }
 }
