@@ -73,7 +73,7 @@ struct HTTPParserRequestTests {
             "",
         ]
         let headerData = Data(headerStrings.joined(separator: "\r\n").utf8)
-        let expectedData = Data(headerData + body + Data([0x0d, 0x0a, 0x0d, 0x0a]))
+        let expectedData = Data(headerData + body)
         let parsed = HTTPRequestParser(request, version: version)
         try #require(parsed.parsedData == expectedData)
     }
@@ -106,7 +106,7 @@ struct HTTPParserRequestTests {
         }
         headerStrings.append(contentsOf: ["", ""])
         let headerData = Data(headerStrings.joined(separator: "\r\n").utf8)
-        let expectedData = Data(headerData + body + Data([0x0d, 0x0a, 0x0d, 0x0a]))
+        let expectedData = Data(headerData + body)
         let parsed = HTTPRequestParser(request, version: version)
         try #require(parsed.parsedData == expectedData)
     }

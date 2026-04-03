@@ -18,12 +18,9 @@ final class HTTPRequestParser: Sendable {
             let line = [key, value].joined(separator: ": ")
             lines.append(line)
         }
-        if let body = urlRequest.httpBody, !body.isEmpty {
-            lines.append("")
-            lines.append("")
-        }
+        lines.append("")
+        lines.append("")
         let headerData = Data(lines.joined(separator: "\r\n").utf8)
-        let endData = Data([0x0D, 0x0A, 0x0D, 0x0A])
-        parsedData = Data([headerData, urlRequest.httpBody, endData].compactMap { $0 }.joined())
+        parsedData = Data([headerData, urlRequest.httpBody].compactMap { $0 }.joined())
     }
 }
