@@ -60,10 +60,18 @@ final class HTTPResponseParser: @unchecked Sendable {
     }
 
     private func parseNext() throws(Error) -> Event? {
+        guard bodyKind != .finished else { return nil }
         if parsedResponse == nil {
             guard let response = parseResponse() else { return nil }
             parsedResponse = response
             return .response(response)
+        }
+        if let lengthString = parsedResponse?.value(forHTTPHeaderField: "Content-Length"),
+           let length = Int(lengthString),
+           length == 0
+        {
+            bodyKind = .finished
+            return .end
         }
         guard !buffer.isEmpty else { return nil }
         if isChunked() {

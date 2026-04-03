@@ -5,7 +5,7 @@ import Testing
 struct HTTPResponseParserTests {
     // MARK: - FULL BUFFER
 
-    @Test
+    @Test(.tags(.httpParser))
     func incompleteBuffer_ReturnsEmptyEvents() throws {
         let _data = [
             "HTTP/1.1 201 Created",
@@ -19,11 +19,11 @@ struct HTTPResponseParserTests {
         try #require(events.isEmpty)
     }
 
-    @Test(.disabled("Not working"))
+    @Test(.disabled("Not working"), .tags(.httpParser))
     func appendingIncorrectData_ReturnsEmptyEvents() throws {
     }
 
-    @Test
+    @Test(.tags(.httpParser))
     func withNoBody_ReturnsHTTPResponseEvent() throws {
         let _data = [
             "HTTP/1.1 201 Created",
@@ -48,7 +48,7 @@ struct HTTPResponseParserTests {
         }
     }
 
-    @Test
+    @Test(.tags(.httpParser))
     func onlyMessagetWithNoHeaders_ReturnsHTTPResponseEvent() throws {
         let _data = [
             "HTTP/1.1 201 Created",
@@ -67,7 +67,7 @@ struct HTTPResponseParserTests {
         }
     }
 
-    @Test
+    @Test(.tags(.httpParser))
     func withExistedBodyInOneBuffer_ReturnsBothEvents() throws {
         let _httpMessageData = [
             "HTTP/1.1 201 Created",
@@ -114,7 +114,7 @@ struct HTTPResponseParserTests {
 
     // MARK: - SMALL PORTIONS
 
-    @Test
+    @Test(.tags(.httpParser))
     func withSmallSizedAppending_OnlyHTTPMessage_ReturnsEmptyAndThenHTTPResponseEvent() throws {
         let _httpMessageData1 = [
             "HTTP/1.1 201 Created",
@@ -145,7 +145,7 @@ struct HTTPResponseParserTests {
         }
     }
 
-    @Test
+    @Test(.tags(.httpParser))
     func withSmallSizedAppending_HTTPMessageWithData_ReturnsEmptyAndThenHTTPResponseEventWithCorrectData() throws {
         let _httpMessageData1 = [
             "HTTP/1.1 201 Created",
@@ -195,11 +195,56 @@ struct HTTPResponseParserTests {
         }
     }
 
+    @Test(.tags(.httpParser))
+    func contentLengthSetAndIsZero_ReturnsEndEvent() throws {
+        let _httpMessageData = [
+            "HTTP/1.1 201 Created",
+            "Content-Type: application/json",
+            "Location: http://example.com/users/123",
+            "Content-Length: 0",
+            "",
+            "",
+        ].joined(separator: "\r\n").data(using: .utf8)
+        let httpMessage = try #require(_httpMessageData)
+        let url = try #require(URL(string: "http://example.com/users/123"))
+        let httpData = httpMessage
+        let parser = HTTPResponseParser(with: url)
+        let events = try parser.append(httpData)
+        try #require(events.count == 2)
+        try #require(events[0].response != nil)
+        try #require(events[1].isEnd)
+    }
+
+    @Test(.tags(.httpParser))
+    func appendingData_WhenContentLengthSetAndIsZero_ThrowsParsingCompletedError() throws {
+        let _httpMessageData = [
+            "HTTP/1.1 201 Created",
+            "Content-Type: application/json",
+            "Location: http://example.com/users/123",
+            "Content-Length: 0",
+            "",
+            "",
+        ].joined(separator: "\r\n").data(using: .utf8)
+        let httpMessage = try #require(_httpMessageData)
+        let url = try #require(URL(string: "http://example.com/users/123"))
+        let httpData = httpMessage
+        let parser = HTTPResponseParser(with: url)
+        var events = try parser.append(httpData)
+        try #require(events.count == 2)
+        try #require(events[0].response != nil)
+        try #require(events[1].isEnd)
+        do {
+            events = try parser.append(httpData)
+            throw TestError.unexpectedEntrance
+        } catch HTTPResponseParser.Error.parsingCompleted {
+        } catch { throw error }
+    }
+
     // MARK: - TRANSFER-ENCODING: CHUNKED
 
     @Suite
     struct Chunked {
-        @Test
+        @Test(.tags(.httpParser))
         func fullChunkDataPortions_ReturnsResponsePortionsDataAndEndEvents() throws {
             let httpMessageData = [
                 "HTTP/1.1 201 Created",
@@ -238,7 +283,7 @@ struct HTTPResponseParserTests {
             try #require(events[0].isEnd)
         }
 
-        @Test
+        @Test(.tags(.httpParser))
         func notFullChunkDataPortions_ReturnsEmptyEventsInside() throws {
             let httpMessageData = [
                 "HTTP/1.1 201 Created",
@@ -285,7 +330,7 @@ le",
             try #require(events[0].isEnd)
         }
 
-        @Test
+        @Test(.tags(.httpParser))
         func wrongChunkSizeString_ThrowsInvalidChunkSizeError() throws {
             let httpMessageData = [
                 "HTTP/1.1 201 Created",
@@ -321,7 +366,7 @@ le",
             } catch { throw error }
         }
 
-        @Test
+        @Test(.tags(.httpParser))
         func splittedChunkSizeAndCRLFPortions_ReturnsEmptyEvents() throws {
             let httpMessageData = [
                 "HTTP/1.1 201 Created",
@@ -365,7 +410,7 @@ le",
             try #require(events[0].isEnd)
         }
 
-        @Test
+        @Test(.tags(.httpParser))
         func splittedChunkAndCRLFPortions_ReturnsEmptyAndDataEvent() throws {
             let httpMessageData = [
                 "HTTP/1.1 201 Created",
@@ -406,7 +451,7 @@ le",
             try #require(events[0].isEnd)
         }
 
-        @Test
+        @Test(.tags(.httpParser))
         func trashDataBetweenChunkDataAndItsCRLF_ThrowsInvalidChunkTerminatorError() throws {
             let httpMessageData = [
                 "HTTP/1.1 201 Created",
@@ -444,7 +489,7 @@ le",
             } catch { throw error }
         }
 
-        @Test
+        @Test(.tags(.httpParser))
         func newChunksAfterEndOne_ThrowsParsingCompletedError() throws {
             let httpMessageData = [
                 "HTTP/1.1 201 Created",
