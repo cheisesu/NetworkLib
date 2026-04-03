@@ -15,7 +15,7 @@ struct HTTPResponseParserTests {
         let url = try #require(URL(string: "http://example.com/users/123"))
         let httpData = try #require(_data)
         let parser = HTTPResponseParser(with: url)
-        let events = parser.append(httpData)
+        let events = try parser.append(httpData)
         try #require(events.isEmpty)
     }
 
@@ -35,7 +35,7 @@ struct HTTPResponseParserTests {
         let url = try #require(URL(string: "http://example.com/users/123"))
         let httpData = try #require(_data)
         let parser = HTTPResponseParser(with: url)
-        let events = parser.append(httpData)
+        let events = try parser.append(httpData)
         try #require(events.count == 1)
         let event = events[0]
         switch event {
@@ -58,7 +58,7 @@ struct HTTPResponseParserTests {
         let url = try #require(URL(string: "http://example.com/users/123"))
         let httpData = try #require(_data)
         let parser = HTTPResponseParser(with: url)
-        let events = parser.append(httpData)
+        let events = try parser.append(httpData)
         try #require(events.count == 1)
         let event = events[0]
         switch event {
@@ -94,7 +94,7 @@ struct HTTPResponseParserTests {
         let url = try #require(URL(string: "http://example.com/users/123"))
         let httpData = httpMessage + httpBody
         let parser = HTTPResponseParser(with: url)
-        let events = parser.append(httpData)
+        let events = try parser.append(httpData)
         try #require(events.count == 2)
         var event = events[0]
         switch event {
@@ -130,9 +130,9 @@ struct HTTPResponseParserTests {
         let httpMessage2 = try #require(_httpMessageData2)
         let url = try #require(URL(string: "http://example.com/users/123"))
         let parser = HTTPResponseParser(with: url)
-        var events = parser.append(httpMessage1)
+        var events = try parser.append(httpMessage1)
         try #require(events.isEmpty)
-        events = parser.append(httpMessage2)
+        events = try parser.append(httpMessage2)
         try #require(events.count == 1)
         let event = events[0]
         switch event {
@@ -175,9 +175,9 @@ struct HTTPResponseParserTests {
         let httpBody = try #require(_httpBody)
         let url = try #require(URL(string: "http://example.com/users/123"))
         let parser = HTTPResponseParser(with: url)
-        var events = parser.append(httpMessage1)
+        var events = try parser.append(httpMessage1)
         try #require(events.isEmpty)
-        events = parser.append(httpMessage2 + httpBody)
+        events = try parser.append(httpMessage2 + httpBody)
         try #require(events.count == 2)
         var event = events[0]
         switch event {
@@ -195,6 +195,216 @@ struct HTTPResponseParserTests {
         }
     }
 
-    // MARK: - CHUNKED
+    // MARK: - TRANSFER-ENCODING: CHUNKED
+
+    @Suite
+    struct Chunked {
+        @Test
+        func fullChunkDataPortions_ReturnsResponsePortionsDataAndEndEvents() throws {
+            let httpMessageData = [
+                "HTTP/1.1 201 Created",
+                "Transfer-Encoding: chunked",
+                "",
+                "",
+            ].joined(separator: "\r\n").data(using: .utf8)!
+            let chunk1String = """
+{
+  "message": "New user created",
+  "user": {
+    "id": 123,
+    "firstName": "Example",
+    "lastName": "Person 👀",
+    "email": "bsmth@example.com"
+  }
+}
+"""
+            let httpChunk1 = [
+                String(format: "%X", chunk1String.utf8.count),
+                chunk1String,
+                "",
+            ].joined(separator: "\r\n").data(using: .utf8)!
+            let httpChunk2 = "0\r\n\r\n".data(using: .utf8)!
+            let url = try #require(URL(string: "http://example.com/users/123"))
+            let parser = HTTPResponseParser(with: url)
+            var events = try parser.append(httpMessageData)
+            try #require(events.count == 1)
+            try #require(events[0].response != nil)
+            events = try parser.append(httpChunk1)
+            try #require(events.count == 1)
+            let chunkData = try #require(events[0].data)
+            try #require(chunkData == Data(chunk1String.utf8))
+            events = try parser.append(httpChunk2)
+            try #require(events.count == 1)
+            try #require(events[0].isEnd)
+        }
+
+        @Test
+        func notFullChunkDataPortions_ReturnsEmptyEventsInside() throws {
+            let httpMessageData = [
+                "HTTP/1.1 201 Created",
+                "Transfer-Encoding: chunked",
+                "",
+                "",
+            ].joined(separator: "\r\n").data(using: .utf8)!
+            let chunk1String1 = """
+{
+  "message": "New user created",
+  "user": {
+    "id": 123,
+    "firstName": "Examp
+"""
+            let chunk1String2 = """
+le",
+    "lastName": "Person 👀",
+    "email": "bsmth@example.com"
+  }
+}
+"""
+            let httpChunk1Data1 = [
+                String(format: "%X", (chunk1String1 + chunk1String2).utf8.count),
+                chunk1String1,
+            ].joined(separator: "\r\n").data(using: .utf8)!
+            let httpChunk1Data2 = [
+                chunk1String2,
+                "",
+            ].joined(separator: "\r\n").data(using: .utf8)!
+            let httpChunk3 = "0\r\n\r\n".data(using: .utf8)!
+            let url = try #require(URL(string: "http://example.com/users/123"))
+            let parser = HTTPResponseParser(with: url)
+            var events = try parser.append(httpMessageData)
+            try #require(events.count == 1)
+            try #require(events[0].response != nil)
+            events = try parser.append(httpChunk1Data1)
+            try #require(events.isEmpty)
+            events = try parser.append(httpChunk1Data2)
+            try #require(events.count == 1)
+            let chunkData = try #require(events[0].data)
+            try #require(chunkData == Data(chunk1String1.utf8) + Data(chunk1String2.utf8))
+            events = try parser.append(httpChunk3)
+            try #require(events.count == 1)
+            try #require(events[0].isEnd)
+        }
+
+        @Test
+        func wrongChunkSizeString_ReturnsEmptyEvents() throws {
+            let httpMessageData = [
+                "HTTP/1.1 201 Created",
+                "Transfer-Encoding: chunked",
+                "",
+                "",
+            ].joined(separator: "\r\n").data(using: .utf8)!
+            let chunk1String = """
+{
+  "message": "New user created",
+  "user": {
+    "id": 123,
+    "firstName": "Example",
+    "lastName": "Person 👀",
+    "email": "bsmth@example.com"
+  }
+}
+"""
+            let httpChunk1 = [
+                String(format: "h%X", chunk1String.utf8.count),
+                chunk1String,
+                "",
+            ].joined(separator: "\r\n").data(using: .utf8)!
+            let url = try #require(URL(string: "http://example.com/users/123"))
+            let parser = HTTPResponseParser(with: url)
+            var events = try parser.append(httpMessageData)
+            try #require(events.count == 1)
+            try #require(events[0].response != nil)
+            do {
+                events = try parser.append(httpChunk1)
+                throw TestError.unexpectedEntrance
+            } catch HTTPResponseParser.Error.invalidChunkSize {
+            } catch { throw error }
+        }
+
+        @Test
+        func splittedChunkSizeAndCRLFPortions_ReturnsEmptyEvents() throws {
+            let httpMessageData = [
+                "HTTP/1.1 201 Created",
+                "Transfer-Encoding: chunked",
+                "",
+                "",
+            ].joined(separator: "\r\n").data(using: .utf8)!
+            let chunk1String = """
+{
+  "message": "New user created",
+  "user": {
+    "id": 123,
+    "firstName": "Example",
+    "lastName": "Person 👀",
+    "email": "bsmth@example.com"
+  }
+}
+"""
+            let httpChunk1Data1 = String(format: "%X", chunk1String.utf8.count).data(using: .utf8)!
+            let httpChunk1Data2 = "\r\n".data(using: .utf8)!
+            let httpChunk1Data3 = [
+                chunk1String,
+                "",
+            ].joined(separator: "\r\n").data(using: .utf8)!
+            let httpChunk2 = "0\r\n\r\n".data(using: .utf8)!
+            let url = try #require(URL(string: "http://example.com/users/123"))
+            let parser = HTTPResponseParser(with: url)
+            var events = try parser.append(httpMessageData)
+            try #require(events.count == 1)
+            try #require(events[0].response != nil)
+            events = try parser.append(httpChunk1Data1)
+            try #require(events.isEmpty)
+            events = try parser.append(httpChunk1Data2)
+            try #require(events.isEmpty)
+            events = try parser.append(httpChunk1Data3)
+            try #require(events.count == 1)
+            let chunkData = try #require(events[0].data)
+            try #require(chunkData == Data(chunk1String.utf8))
+            events = try parser.append(httpChunk2)
+            try #require(events.count == 1)
+            try #require(events[0].isEnd)
+        }
+
+        @Test
+        func splittedChunkAndCRLFPortions_ReturnsEmptyEvents() throws {
+            let httpMessageData = [
+                "HTTP/1.1 201 Created",
+                "Transfer-Encoding: chunked",
+                "",
+                "",
+            ].joined(separator: "\r\n").data(using: .utf8)!
+            let chunkString = """
+{
+  "message": "New user created",
+  "user": {
+    "id": 123,
+    "firstName": "Example",
+    "lastName": "Person 👀",
+    "email": "bsmth@example.com"
+  }
+}
+"""
+            let httpChunk1 = [
+                String(format: "%X", chunkString.utf8.count),
+                chunkString,
+            ].joined(separator: "\r\n").data(using: .utf8)!
+            let httpChunk2 = "\r\n".data(using: .utf8)!
+            let httpChunk3 = "0\r\n\r\n".data(using: .utf8)!
+            let url = try #require(URL(string: "http://example.com/users/123"))
+            let parser = HTTPResponseParser(with: url)
+            var events = try parser.append(httpMessageData)
+            try #require(events.count == 1)
+            try #require(events[0].response != nil)
+            events = try parser.append(httpChunk1)
+            try #require(events.isEmpty)
+            events = try parser.append(httpChunk2)
+            try #require(events.count == 1)
+            let chunkData = try #require(events[0].data)
+            try #require(chunkData == Data(chunkString.utf8))
+            events = try parser.append(httpChunk3)
+            try #require(events.count == 1)
+            try #require(events[0].isEnd)
+        }
+    }
 }
 

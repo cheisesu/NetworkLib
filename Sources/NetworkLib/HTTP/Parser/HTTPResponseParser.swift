@@ -5,6 +5,28 @@ final class HTTPResponseParser: @unchecked Sendable {
     public enum Event: Sendable {
         case response(HTTPURLResponse)
         case data(Data)
+        case end
+
+        public var isEnd: Bool {
+            switch self {
+            case .end: return true
+            default: return false
+            }
+        }
+
+        public var response: HTTPURLResponse? {
+            guard case let .response(response) = self else { return nil }
+            return response
+        }
+
+        public var data: Data? {
+            guard case let .data(data) = self else { return nil }
+            return data
+        }
+    }
+
+    public enum Error: Swift.Error, Sendable {
+        case invalidChunkSize
     }
 
     private let url: URL
@@ -16,29 +38,32 @@ final class HTTPResponseParser: @unchecked Sendable {
         buffer = Data()
     }
 
-    public func append(_ data: Data) -> [Event] {
+    public func append(_ data: Data) throws(Error) -> [Event] {
         buffer.append(data)
         var result: [Event] = []
-        while let nextEvent = tryParseNext() {
+        while let nextEvent = try parseNext() {
             result.append(nextEvent)
         }
         return result
     }
 
-    private func tryParseNext() -> Event? {
+    private func parseNext() throws(Error) -> Event? {
         if parsedResponse == nil {
             guard let response = parseResponse() else { return nil }
             parsedResponse = response
             return .response(response)
         }
         guard !buffer.isEmpty else { return nil }
+        if isChunked() {
+            return try parseChunkedEncoding()
+        }
         let data = buffer
         buffer = Data()
         return .data(data)
     }
 
     private func parseResponse() -> HTTPURLResponse? {
-        guard let crlfEndIndex = findCRLF() else { return nil }
+        guard let crlfEndIndex = findCRLF()?.upperBound else { return nil }
         let http = buffer.subdata(in: buffer.startIndex..<crlfEndIndex)
         buffer = buffer.dropFirst(http.count)
         return http.withUnsafeBytes { (pointer: UnsafeRawBufferPointer) in
@@ -68,12 +93,35 @@ final class HTTPResponseParser: @unchecked Sendable {
         return result
     }
 
-    private func findCRLF() -> Data.Index? {
-        guard let range = buffer.firstRange(of: Data.headerTerminator) else { return nil }
-        return range.upperBound
+    private func parseChunkedEncoding() throws(Error) -> Event? {
+        guard let sizeRange = buffer.range(of: .crlf) else { return nil }
+        let sizeData = buffer.subdata(in: buffer.startIndex..<sizeRange.lowerBound)
+        guard let sizeString = String(data: sizeData, encoding: .utf8), let size = Int(sizeString, radix: 16) else {
+            throw .invalidChunkSize
+        }
+        let leftChunkBuffer = buffer.suffix(from: sizeRange.upperBound)
+        guard leftChunkBuffer.count >= size else { return nil }
+        let chunkData = leftChunkBuffer.subdata(in: leftChunkBuffer.startIndex..<(leftChunkBuffer.startIndex + size))
+        let leftBuffer = Data(leftChunkBuffer[(leftChunkBuffer.startIndex + size)...])
+        guard let crlfRange = leftBuffer.range(of: .crlf) else { return nil}
+        buffer = leftBuffer.suffix(from: crlfRange.upperBound)
+        if chunkData.isEmpty {
+            return .end
+        }
+        return .data(Data(chunkData))
+    }
+
+    private func isChunked() -> Bool {
+        guard let encoding = parsedResponse?.value(forHTTPHeaderField: "Transfer-Encoding") else { return false }
+        return encoding.contains("chunked")
+    }
+
+    private func findCRLF() -> Range<Data.Index>? {
+        buffer.firstRange(of: Data.headerTerminator)
     }
 }
 
 private extension Data {
-    static let headerTerminator: Data = Data("\r\n\r\n".utf8)
+    static let crlf: Data = Data("\r\n".utf8)
+    static let headerTerminator: Data = Data(Data.crlf + Data.crlf)
 }
