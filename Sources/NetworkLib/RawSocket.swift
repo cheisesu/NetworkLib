@@ -8,34 +8,6 @@ public struct ConnectionInfo: Sendable, Equatable {
     public let interface: NWInterface?
 }
 
-extension RawSocket {
-    public struct Configuration: Sendable {
-        public let host: NWEndpoint.Host
-        public let port: NWEndpoint.Port
-        public let isSecure: Bool
-        public let sni: String?
-        public let transport: RawSocketTransport
-        public let maxDataBlock: Int
-        public let timeout: TimeInterval
-        
-        var endpoint: NWEndpoint {
-            .hostPort(host: host, port: port)
-        }
-        
-        public init(_ host: NWEndpoint.Host, _ port: NWEndpoint.Port, isSecure: Bool = true, sni: String? = nil,
-                    transport: RawSocketTransport = .tcp, maxDataBlock: Int = .max, timeout: TimeInterval = 10) throws
-        {
-            self.host = host
-            self.port = port
-            self.isSecure = isSecure
-            self.sni = sni
-            self.transport = transport
-            self.maxDataBlock = maxDataBlock
-            self.timeout = timeout
-        }
-    }
-}
-
 public class RawSocket: @unchecked Sendable {
     private enum _InternalState: Sendable, Equatable {
         case none
@@ -62,7 +34,7 @@ public class RawSocket: @unchecked Sendable {
 
     // MARK: - INITIALIZATION
     
-    public init(_ configuration: Configuration) {
+    public init(_ configuration: RawSocketConfiguration) throws {
         internalState = .none
         let accessQueue = DispatchQueue(label: "com.network.lib.raw-socket", target: .global())
         accessKey = DispatchSpecificKey()
@@ -72,25 +44,7 @@ public class RawSocket: @unchecked Sendable {
         timeoutEvent = TimeoutRecursiveEvent(timeout: configuration.timeout, on: accessQueue)
         maxDataBlock = configuration.maxDataBlock
         transport = configuration.transport
-        let tls: NWProtocolTLS.Options? = {
-            guard configuration.isSecure else { return nil }
-            let tls = NWProtocolTLS.Options()
-            if let sni = configuration.sni {
-                sec_protocol_options_set_tls_server_name(tls.securityProtocolOptions, sni)
-            }
-            return tls
-        }()
-        let parameters = {
-            switch configuration.transport {
-            case .tcp:
-                let tcp = NWProtocolTCP.Options()
-                return NWParameters(tls: tls, tcp: tcp)
-            case .udp:
-                let udp = NWProtocolUDP.Options()
-                return NWParameters(dtls: tls, udp: udp)
-            }
-        }()
-        connection = NWConnection(to: configuration.endpoint, using: parameters)
+        connection = try configuration.makeNWConnection()
         connection.stateUpdateHandler = { [weak self] state in
             self?.stateUpdateHandler(state)
         }
