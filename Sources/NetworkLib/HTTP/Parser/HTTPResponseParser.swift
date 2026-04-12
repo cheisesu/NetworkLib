@@ -77,34 +77,9 @@ final class HTTPResponseParser: @unchecked Sendable {
     }
 
     private func parseResponse() -> HTTPURLResponse? {
-        guard let crlfEndIndex = findCRLF()?.upperBound else { return nil }
-        let http = buffer.subdata(in: buffer.startIndex..<crlfEndIndex)
-        buffer = buffer.dropFirst(http.count)
-        return http.withUnsafeBytes { (pointer: UnsafeRawBufferPointer) in
-            guard let message = createHTTPMesage(from: pointer) else { return nil }
-            let headers = parseHeaders(from: message)
-            let code = CFHTTPMessageGetResponseStatusCode(message)
-            let versionRaw = CFHTTPMessageCopyVersion(message).takeRetainedValue() as String
-            return HTTPURLResponse(url: url, statusCode: code, httpVersion: versionRaw, headerFields: headers)
-        }
-    }
-
-    private func createHTTPMesage(from pointer: UnsafeRawBufferPointer) -> CFHTTPMessage? {
-        let count = pointer.count
-        guard let p = pointer.bindMemory(to: UInt8.self).baseAddress else { return nil }
-        let message = CFHTTPMessageCreateEmpty(nil, false).takeRetainedValue()
-        guard CFHTTPMessageAppendBytes(message, p, count) else { return nil }
-        return message
-    }
-
-    private func parseHeaders(from message: CFHTTPMessage) -> [String: String] {
-        let nsHeaders = CFHTTPMessageCopyAllHeaderFields(message)?.takeRetainedValue() as? NSDictionary ?? [:]
-        var result: [String: String] = [:]
-        for (key, value) in nsHeaders {
-            guard let key = key as? String, let value = value as? String else { continue }
-            result[key] = value
-        }
-        return result
+        guard let result = RawHTTPResponseParser.parse(buffer) else { return nil }
+        buffer = result.leftBuffer
+        return HTTPURLResponse(url: url, statusCode: result.status, httpVersion: result.versionRaw, headerFields: result.headers)
     }
 
     private func parseChunkedEncoding() throws(Error) -> Event? {
@@ -130,15 +105,6 @@ final class HTTPResponseParser: @unchecked Sendable {
     private func isChunked() -> Bool {
         parsedResponse?.transferEncodings.contains("chunked") == true
     }
-
-    private func findCRLF() -> Range<Data.Index>? {
-        buffer.firstRange(of: Data.headerTerminator)
-    }
-}
-
-private extension Data {
-    static let crlf: Data = Data("\r\n".utf8)
-    static let headerTerminator: Data = Data(Data.crlf + Data.crlf)
 }
 
 private extension HTTPURLResponse {

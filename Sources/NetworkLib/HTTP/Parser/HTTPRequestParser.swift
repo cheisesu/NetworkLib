@@ -1,4 +1,5 @@
 import Foundation
+import Network
 
 final class HTTPRequestParser: Sendable {
     public let parsedData: Data
@@ -11,6 +12,13 @@ final class HTTPRequestParser: Sendable {
         if !body.isEmpty {
             urlRequest.setValue(String(body.count), forHTTPHeaderField: "Content-Length")
         }
+        if version == .v1_1, urlRequest.value(forHTTPHeaderField: "Host") == nil {
+            if #available(macOS 13.0, iOS 16.0, *) {
+                urlRequest.setValue(urlRequest.url?.host(), forHTTPHeaderField: "Host")
+            } else {
+                urlRequest.setValue(urlRequest.url?.host, forHTTPHeaderField: "Host")
+            }
+        }
         let headers = urlRequest.allHTTPHeaderFields?.map { (key: String, value: String) in
             (key, value)
         }.sorted(by: { $0.0 < $1.0 }) ?? []
@@ -22,5 +30,23 @@ final class HTTPRequestParser: Sendable {
         lines.append("")
         let headerData = Data(lines.joined(separator: "\r\n").utf8)
         parsedData = Data([headerData, urlRequest.httpBody].compactMap { $0 }.joined())
+    }
+
+    public init(connectTo host: NWEndpoint.Host, _ port: NWEndpoint.Port?, headers: [String: String]) {
+        let target = if let port {
+            [host.asUrlString, String(port.rawValue)].joined(separator: ":")
+        } else {
+            host.asUrlString
+        }
+        let version = ["HTTP", HTTPVersion.v1_1.rawValue].joined(separator: "/")
+        let startLine = ["CONNECT", target, version].joined(separator: " ")
+        var headers = headers
+        headers["Host"] = target
+        let headersPairs = headers
+            .map { ($0.key, $0.value) }
+            .sorted(by: { $0.0 < $1.0 })
+            .map { [$0.0, $0.1].joined(separator: ": ") }
+        let lines = [startLine] + headersPairs + ["", ""]
+        parsedData = Data(lines.joined(separator: "\r\n").utf8)
     }
 }

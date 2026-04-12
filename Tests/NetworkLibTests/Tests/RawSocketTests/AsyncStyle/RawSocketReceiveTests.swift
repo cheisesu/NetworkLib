@@ -13,9 +13,9 @@ struct RawSocketReceiveTests {
         let server = try ServerMock(transport: transport, isSecure: sni != nil, flow: .echo)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocket.Configuration("127.0.0.1", port, isSecure: sni != nil, sni: sni, transport: transport,
-                                                 maxDataBlock: 256, timeout: timeout)
-        let socket = RawSocket(config)
+        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: sni != nil, sni: sni, transport: transport,
+                                                maxDataBlock: 256, timeout: timeout)
+        let socket = try RawSocket(config)
         defer { socket.cancel(nil) }
         try await socket.connect()
         try await socket.send(dataToSend)
@@ -33,11 +33,11 @@ struct RawSocketReceiveTests {
         let server = try ServerMock(transport: transport, isSecure: sni != nil, flow: .none)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocket.Configuration("127.0.0.1", port, isSecure: sni != nil, sni: sni, transport: transport,
-                                                 maxDataBlock: 256, timeout: timeout)
-        let socket = RawSocket(config)
+        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: sni != nil, sni: sni, transport: transport,
+                                                maxDataBlock: 256, timeout: timeout)
+        let socket = try RawSocket(config)
         defer { socket.cancel(nil) }
-
+        
         try await withAsyncTimeout(.seconds(2)) {
             try await socket.connect()
             try await socket.send(dataToSend)
@@ -57,11 +57,11 @@ struct RawSocketReceiveTests {
         let server = try ServerMock(transport: transport, isSecure: sni != nil, flow: .none)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocket.Configuration("127.0.0.1", port, isSecure: sni != nil, sni: sni, transport: transport,
-                                                 maxDataBlock: 256, timeout: timeout)
-        let socket = RawSocket(config)
+        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: sni != nil, sni: sni, transport: transport,
+                                                maxDataBlock: 256, timeout: timeout)
+        let socket = try RawSocket(config)
         defer { socket.cancel(nil) }
-
+        
         try await withAsyncTimeout(.seconds(3)) {
             try await socket.connect()
             try await socket.send(dataToSend)
@@ -83,11 +83,11 @@ struct RawSocketReceiveTests {
         let server = try ServerMock(transport: transport, isSecure: sni != nil)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocket.Configuration("127.0.0.1", port, isSecure: sni != nil, sni: sni, transport: transport,
-                                                 maxDataBlock: 256, timeout: timeout)
-        let socket = RawSocket(config)
+        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: sni != nil, sni: sni, transport: transport,
+                                                maxDataBlock: 256, timeout: timeout)
+        let socket = try RawSocket(config)
         defer { socket.cancel(nil) }
-
+        
         try await withAsyncTimeout(.seconds(3)) {
             try await socket.connect()
             try await socket.send(dataToSend)
