@@ -7,7 +7,7 @@ extension Tag {
 }
 
 struct URLRequestToHTTPTests {
-    @Test(.tags(.urlRequest), arguments: [
+    @Test(.tags(.urlRequest, .httpParser), arguments: [
         ("http://localhost/", nil as String?, HTTPVersion.v1_0, "GET / HTTP/1.0"),
         ("http://localhost/?", nil as String?, HTTPVersion.v1_0, "GET /? HTTP/1.0"),
         ("http://localhost/path1", nil as String?, HTTPVersion.v1_0, "GET /path1 HTTP/1.0"),
@@ -68,7 +68,7 @@ struct URLRequestToHTTPTests {
         try #require(result == expected)
     }
     
-    @Test(.tags(.urlRequest), arguments: [
+    @Test(.tags(.urlRequest, .httpParser), arguments: [
         ("http://localhost/path", "Host: localhost"),
         ("http://localhost:123/path", "Host: localhost:123"),
         ("http://127.0.0.1/path", "Host: 127.0.0.1"),

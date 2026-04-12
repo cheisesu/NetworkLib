@@ -14,9 +14,7 @@
       "enabled" : true
     },
     "performanceAntipatternCheckerEnabled" : true,
-    "repeatInNewRunnerProcess" : true,
     "testExecutionOrdering" : "random",
-    "testRepetitionMode" : "fixedIterations",
     "undefinedBehaviorSanitizerEnabled" : true
   },
   "testTargets" : [
