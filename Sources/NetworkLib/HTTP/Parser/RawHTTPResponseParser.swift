@@ -1,16 +1,8 @@
 import Foundation
 
 struct RawHTTPResponseParser: Sendable {
-    public struct Result: Sendable {
-        public let versionRaw: String
-        public let status: Int
-        public let headers: [String: String]
-        /// Size of HTTP message with `\r\n\r\n` terminator in raw data.
-        public let rawSize: Int
-        public let leftBuffer: Data
-    }
     private var buffer: Data
-    private var lastResult: Result?
+    private var lastResult: HTTPParserResponseResult?
 
     public var isCompleted: Bool { lastResult != nil }
 
@@ -24,7 +16,7 @@ struct RawHTTPResponseParser: Sendable {
         buffer.append(contentsOf: data)
     }
 
-    public mutating func tryParse() -> Result? {
+    public mutating func tryParse() -> HTTPParserResponseResult? {
         guard let crlfEndIndex = findCRLF()?.upperBound else { return nil }
         let http = buffer.subdata(in: buffer.startIndex..<crlfEndIndex)
         let message = createHTTPMesage(from: http)
@@ -32,7 +24,7 @@ struct RawHTTPResponseParser: Sendable {
         let status = CFHTTPMessageGetResponseStatusCode(message)
         let versionRaw = CFHTTPMessageCopyVersion(message).takeRetainedValue() as String
         let leftBuffer = Data(buffer.dropFirst(http.count))
-        lastResult = Result(versionRaw: versionRaw, status: status, headers: headers, rawSize: http.count, leftBuffer: leftBuffer)
+        lastResult = HTTPParserResponseResult(versionRaw: versionRaw, status: status, headers: headers, rawSize: http.count, leftBuffer: leftBuffer)
         return lastResult
     }
 
@@ -62,7 +54,7 @@ struct RawHTTPResponseParser: Sendable {
 }
 
 extension RawHTTPResponseParser {
-    static func parse(_ data: Data) -> Result? {
+    static func parse(_ data: Data) -> HTTPParserResponseResult? {
         var parser = RawHTTPResponseParser()
         parser.append(data)
         return parser.tryParse()
