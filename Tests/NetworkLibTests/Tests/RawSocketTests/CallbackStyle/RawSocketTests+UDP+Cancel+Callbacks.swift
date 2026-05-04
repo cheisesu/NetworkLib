@@ -14,8 +14,8 @@ class RawSocketTests_UDP_Cancel_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         
         let cancelExpect = expectation(description: "Callback called")
@@ -30,8 +30,8 @@ class RawSocketTests_UDP_Cancel_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         
         let cancelExpect = expectation(description: "Callback called")
@@ -48,8 +48,8 @@ class RawSocketTests_UDP_Cancel_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         defer { socket.cancel(nil) }
         
@@ -68,8 +68,8 @@ class RawSocketTests_UDP_Cancel_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         
         let cancelExpect = expectation(description: "Callback called")
@@ -86,8 +86,8 @@ class RawSocketTests_UDP_Cancel_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         
         let cancelExpect = expectation(description: "Callback called")
@@ -103,8 +103,8 @@ class RawSocketTests_UDP_Cancel_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         
         let cancelExpect = expectation(description: "Callback called")
@@ -122,8 +122,8 @@ class RawSocketTests_UDP_Cancel_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         defer { socket.cancel(nil) }
         
@@ -143,8 +143,8 @@ class RawSocketTests_UDP_Cancel_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         
         let cancelExpect = expectation(description: "Callback called")
@@ -162,8 +162,8 @@ class RawSocketTests_UDP_Cancel_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         
         let cancelExpect = expectation(description: "Callback called")
@@ -179,8 +179,8 @@ class RawSocketTests_UDP_Cancel_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         
         let cancelExpect = expectation(description: "Callback called")
@@ -198,8 +198,8 @@ class RawSocketTests_UDP_Cancel_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         defer { socket.cancel(nil) }
         
@@ -219,8 +219,8 @@ class RawSocketTests_UDP_Cancel_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         
         let cancelExpect = expectation(description: "Callback called")
@@ -238,8 +238,8 @@ class RawSocketTests_UDP_Cancel_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         
         let cancel1Expect = expectation(description: "First callback called")
@@ -258,8 +258,8 @@ class RawSocketTests_UDP_Cancel_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         
         let cancel1Expect = expectation(description: "First callback called")
@@ -280,8 +280,8 @@ class RawSocketTests_UDP_Cancel_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         defer { socket.cancel(nil) }
         
@@ -304,8 +304,8 @@ class RawSocketTests_UDP_Cancel_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         defer { socket.cancel(nil) }
         
@@ -329,8 +329,8 @@ class RawSocketTests_UDP_Cancel_Callbacks: XCTestCase {
         let port = try await server.start()
         
         let box = _SocketBox()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         try box.set(RawSocket(config))
         defer { box.get()?.cancel(nil) }
         
@@ -349,8 +349,8 @@ class RawSocketTests_UDP_Cancel_Callbacks: XCTestCase {
         let port = try await server.start()
         
         let box = _SocketBox()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         try box.set(RawSocket(config))
         defer { box.get()?.cancel(nil) }
         
@@ -374,8 +374,8 @@ class RawSocketTests_UDP_Cancel_Callbacks: XCTestCase {
         let port = try await server.start()
         
         let box = _SocketBox()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         try box.set(RawSocket(config))
         defer { box.get()?.cancel(nil) }
         

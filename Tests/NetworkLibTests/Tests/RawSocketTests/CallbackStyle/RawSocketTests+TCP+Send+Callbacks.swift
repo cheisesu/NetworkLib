@@ -17,8 +17,8 @@ class RawSocketTests_TCP_Send_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         defer { socket.cancel(nil) }
         
@@ -41,8 +41,8 @@ class RawSocketTests_TCP_Send_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         defer { socket.cancel(nil) }
         
@@ -65,15 +65,15 @@ class RawSocketTests_TCP_Send_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         defer { socket.cancel(nil) }
         
         let sendExpect = expectation(description: "Send callback called")
         socket.send(dataToSend) { error in
             XCTAssertNotNil(error)
-            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
+            guard let error else { return XCTFail("Expecting non-nil error") }
             guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
             XCTAssertEqual(code, .ENOTCONN)
             sendExpect.fulfill()
@@ -87,8 +87,8 @@ class RawSocketTests_TCP_Send_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         defer { socket.cancel(nil) }
         
@@ -98,7 +98,7 @@ class RawSocketTests_TCP_Send_Callbacks: XCTestCase {
             socket.cancel(nil)
             socket.send(dataToSend) { error in
                 XCTAssertNotNil(error)
-                guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
+                guard let error else { return XCTFail("Expecting non-nil error") }
                 guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
                 XCTAssertEqual(code, .ECANCELED)
                 sendExpect.fulfill()
@@ -113,8 +113,8 @@ class RawSocketTests_TCP_Send_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         defer { socket.cancel(nil) }
         
@@ -124,7 +124,7 @@ class RawSocketTests_TCP_Send_Callbacks: XCTestCase {
             socket.cancel {
                 socket.send(dataToSend) { error in
                     XCTAssertNotNil(error)
-                    guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
+                    guard let error else { return XCTFail("Expecting non-nil error") }
                     guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
                     XCTAssertEqual(code, .ECANCELED)
                     sendExpect.fulfill()
@@ -140,8 +140,8 @@ class RawSocketTests_TCP_Send_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         defer { socket.cancel(nil) }
         
@@ -149,7 +149,7 @@ class RawSocketTests_TCP_Send_Callbacks: XCTestCase {
         socket.cancel {
             socket.send(dataToSend) { error in
                 XCTAssertNotNil(error)
-                guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
+                guard let error else { return XCTFail("Expecting non-nil error") }
                 guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
                 XCTAssertEqual(code, .ECANCELED)
                 sendExpect.fulfill()
@@ -166,8 +166,8 @@ class RawSocketTests_TCP_Send_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         var socket: RawSocket? = try RawSocket(config)
         defer { socket?.cancel(nil) }
         
@@ -180,7 +180,7 @@ class RawSocketTests_TCP_Send_Callbacks: XCTestCase {
         let sendExpect = expectation(description: "Send callback called")
         socket?.send(dataToSend) { error in
             XCTAssertNotNil(error)
-            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
+            guard let error else { return XCTFail("Expecting non-nil error") }
             guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
             XCTAssertEqual(code, .ECANCELED)
             sendExpect.fulfill()
@@ -197,8 +197,8 @@ class RawSocketTests_TCP_Send_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         defer { socket.cancel(nil) }
         
@@ -207,7 +207,7 @@ class RawSocketTests_TCP_Send_Callbacks: XCTestCase {
             XCTAssertNil(error)
             socket.send(dataToSend) { error in
                 XCTAssertNotNil(error)
-                guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
+                guard let error else { return XCTFail("Expecting non-nil error") }
                 guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
                 XCTAssertEqual(code, .ETIMEDOUT)
                 sendExpect.fulfill()
@@ -224,8 +224,8 @@ class RawSocketTests_TCP_Send_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         defer { socket.cancel(nil) }
         
@@ -239,7 +239,7 @@ class RawSocketTests_TCP_Send_Callbacks: XCTestCase {
         server.forceStop()
         socket.send(dataToSend) { error in
             XCTAssertNotNil(error)
-            guard let error = error as? NWError else { return XCTFail("Error is not NWError \(error, default: "??")") }
+            guard let error else { return XCTFail("Expecting non-nil error") }
             guard case .posix(let code) = error else { return XCTFail("Error is not posix") }
             XCTAssertTrue([.EPIPE, .ENOTCONN].contains(code), "\(code)")
             sendExpect.fulfill()
@@ -293,8 +293,8 @@ class RawSocketTests_TCP_Send_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true, flow: .echo)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         defer { socket.cancel(nil) }
         
@@ -325,8 +325,8 @@ class RawSocketTests_TCP_Send_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: false, sni: nil, transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: false, sni: nil, transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         defer { socket.cancel(nil) }
         

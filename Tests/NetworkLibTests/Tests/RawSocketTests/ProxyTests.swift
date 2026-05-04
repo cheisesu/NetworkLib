@@ -4,7 +4,7 @@ import Network
 @testable import NetworkLib
 
 struct ProxyTests {
-    @Test
+    @Test(.disabled())
     func continuationCalledOnlyOnce() async throws {
         let timeout: TimeInterval = 0
         let lines = [
@@ -17,8 +17,8 @@ struct ProxyTests {
         let dataToSend = Data(lines.joined(separator: "\r\n").utf8)
         let proxy = RawSocketConfiguration.Proxy(host: "<#server#>", port: 0,
                                                  authorization: .basic(userName: "<#username#>", password: "<#userpassword#>"))
-        let config = try RawSocketConfiguration("api.my-ip.io", 443, isSecure: true, proxy: proxy, transport: .tcp,
-                                                 maxDataBlock: .max, timeout: timeout)
+        let config = RawSocketConfiguration("api.my-ip.io", 443, isSecure: true, proxy: proxy, transport: .tcp,
+                                            maxDataBlock: .max, timeout: timeout)
         let socket = try RawSocket(config)
         defer { socket.cancel(nil) }
         try await socket.connect()

@@ -4,17 +4,22 @@ import Network
 @testable import NetworkLib
 
 extension Tag.RawSocketConnect {
-    @Tag static var receive: Tag
+    @Tag static var sendMessage: Tag
 }
 
-struct RawSocketReceiveTests {
+struct RawSocketSendMessageTests {
+    private struct _SendMessage: RawSocketSendMessage {
+        let context: NWConnection.ContentContext = .defaultMessage
+        let content: Data?
+    }
+
     @Test("When continuation is called multiple times it will fall with fatal error and test fail",
-          .tags(.RawSocketConnect.receive),
+          .tags(.RawSocketConnect.sendMessage),
           arguments: [RawSocketTransport.tcp, .udp], [nil, "localhost"])
     func continuationCalledOnlyOnce(_ transport: RawSocketTransport, _ sni: String?) async throws {
         let timeout: TimeInterval = 0
-        let dataToSend = Data("Hello".utf8)
-        let server = try ServerMock(transport: transport, isSecure: sni != nil, flow: .echo)
+        let message = _SendMessage(content: Data("Hello".utf8))
+        let server = try ServerMock(transport: transport, isSecure: sni != nil)
         defer { server.stop() }
         let port = try await server.start()
         let config = RawSocketConfiguration("127.0.0.1", port, isSecure: sni != nil, sni: sni, transport: transport,
@@ -22,19 +27,18 @@ struct RawSocketReceiveTests {
         let socket = try RawSocket(config)
         defer { socket.cancel(nil) }
         try await socket.connect()
-        try await socket.send(dataToSend)
-        let received = try await socket.receiveNext()
+        try await socket.sendMessage(message)
         await socket.cancel()
-        try #require(received == dataToSend)
     }
     
     @Test("When timeout of socket is reached it throws NWError.posix(.ETIMEDOUT)",
-          .tags(.RawSocketConnect.receive),
-          arguments: [RawSocketTransport.tcp, .udp], [nil, "localhost"])
-    func timeoutThrowsError(_ transport: RawSocketTransport, _ sni: String?) async throws {
+          .tags(.RawSocketConnect.sendMessage),
+          arguments: [nil, "localhost"])
+    func timeoutThrowsError(_ sni: String?) async throws {
+        let transport: RawSocketTransport = .tcp
         let timeout: TimeInterval = 1
-        let dataToSend: Data = Data("Hello".utf8)
-        let server = try ServerMock(transport: transport, isSecure: sni != nil, flow: .none)
+        let message = _SendMessage(content: Data(repeating: 0xde, count: 16 * 1024 * 1024))
+        let server = try ServerMock(transport: transport, isSecure: sni != nil)
         defer { server.stop() }
         let port = try await server.start()
         let config = RawSocketConfiguration("127.0.0.1", port, isSecure: sni != nil, sni: sni, transport: transport,
@@ -44,47 +48,23 @@ struct RawSocketReceiveTests {
         
         try await withAsyncTimeout(.seconds(2)) {
             try await socket.connect()
-            try await socket.send(dataToSend)
             do {
-                _ = try await socket.receiveNext()
-                throw TestError.unexpectedEntrance
+                try await socket.sendMessage(message)
             } catch NWError.posix(.ETIMEDOUT) {
             } catch { throw error }
         }
     }
     
-    @Test("When socket is receiving data and called cancel in different thread result is nil",
-          .tags(.RawSocketConnect.receive),
-          arguments: [RawSocketTransport.tcp, .udp], [nil, "localhost"])
-    func cancelSeparatelyThrowsError(_ transport: RawSocketTransport, _ sni: String?) async throws {
+    /// - note: UDP is not applicable here as it can call completion really fast
+    @Test("When socket is sending data and called cancel in different thread it throws NWError.posix(.ECANCELED)",
+          .tags(.RawSocketConnect.sendMessage),
+          arguments: [
+            (RawSocketTransport.tcp, Data(repeating: 0xde, count: 16 * 1024 * 1024), nil as String?),
+            (RawSocketTransport.tcp, Data(repeating: 0xde, count: 16 * 1024 * 1024), "localhost"),
+          ])
+    func cancelSeparatelyThrowsError(_ transport: RawSocketTransport, _ dataToSend: Data, _ sni: String?) async throws {
         let timeout: TimeInterval = 0
-        let dataToSend: Data = Data("Hello".utf8)
-        let server = try ServerMock(transport: transport, isSecure: sni != nil, flow: .none)
-        defer { server.stop() }
-        let port = try await server.start()
-        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: sni != nil, sni: sni, transport: transport,
-                                            maxDataBlock: 256, timeout: timeout)
-        let socket = try RawSocket(config)
-        defer { socket.cancel(nil) }
-        
-        try await withAsyncTimeout(.seconds(3)) {
-            try await socket.connect()
-            try await socket.send(dataToSend)
-            Task {
-                try await Task.sleep(for: .milliseconds(200))
-                socket.cancel(nil)
-            }
-            let received = try await socket.receiveNext()
-            try #require(received == nil)
-        }
-    }
-    
-    @Test("Cancelled a task during receiving",
-          .tags(.RawSocketConnect.receive),
-          arguments: [RawSocketTransport.tcp, .udp], [nil, "localhost"])
-    func cancelDuringSendThrowsError(_ transport: RawSocketTransport, _ sni: String?) async throws {
-        let timeout: TimeInterval = 0
-        let dataToSend: Data = Data("Hello".utf8)
+        let message = _SendMessage(content: dataToSend)
         let server = try ServerMock(transport: transport, isSecure: sni != nil)
         defer { server.stop() }
         let port = try await server.start()
@@ -95,10 +75,41 @@ struct RawSocketReceiveTests {
         
         try await withAsyncTimeout(.seconds(3)) {
             try await socket.connect()
-            try await socket.send(dataToSend)
+            do {
+                Task {
+                    socket.cancel(nil)
+                }
+                try await socket.sendMessage(message)
+                throw TestError.unexpectedEntrance
+            } catch NWError.posix(.ECANCELED) {
+            } catch { throw error }
+        }
+    }
+    
+    @Test("Cancelled a task during sending",
+          .tags(.RawSocketConnect.sendMessage),
+          arguments: [
+            (RawSocketTransport.tcp, Data(repeating: 0xde, count: 16 * 1024 * 1024), nil as String?),
+            (RawSocketTransport.tcp, Data(repeating: 0xde, count: 16 * 1024 * 1024), "localhost"),
+            (RawSocketTransport.udp, Data("Hello".utf8), nil),
+            (RawSocketTransport.udp, Data("Hello".utf8), "localhost"),
+          ])
+    func cancelDuringSendThrowsError(_ transport: RawSocketTransport, _ dataToSend: Data, _ sni: String?) async throws {
+        let timeout: TimeInterval = 0
+        let message = _SendMessage(content: dataToSend)
+        let server = try ServerMock(transport: transport, isSecure: sni != nil)
+        defer { server.stop() }
+        let port = try await server.start()
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: sni != nil, sni: sni, transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
+        let socket = try RawSocket(config)
+        defer { socket.cancel(nil) }
+        
+        try await withAsyncTimeout(.seconds(3)) {
+            try await socket.connect()
             let task = Task {
                 do {
-                    _ = try await socket.receiveNext()
+                    try await socket.sendMessage(message)
                     throw TestError.unexpectedEntrance
                 } catch NWError.posix(.ECANCELED) {
                 } catch { throw error }

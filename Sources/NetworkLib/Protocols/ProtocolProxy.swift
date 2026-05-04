@@ -2,7 +2,7 @@ import Foundation
 import Network
 
 @available(macOS 12.3, iOS 15.4, *)
-extension ProxyProtocol {
+extension ProtocolProxy {
     /// ``NWEndpoint.Host``
     static let kOptionsEndpointHost = "kOptionsEndpointHost"
     /// ``NWEndpoint.Port``
@@ -11,14 +11,42 @@ extension ProxyProtocol {
     static let kOptionsIsSecure = "kOptionsIsSecure"
     /// ``String``
     static let kOptionsServerName = "kOptionsServerName"
-    /// ``RawSocketConfiguration.Proxy.Authorization``
+    /// ``HTTPAuthorization``
     static let kOptionsProxyAuth = "kOptionsProxyAuth"
+    /// ``Array<NWProtocolOptions>``
+    static let kOptionsProxyTopProtocols = "kOptionsProxyTopProtocols"
+}
+
+extension NWProtocolFramer.Options {
+    @available(macOS 12.3, iOS 15.4, *)
+    static func proxy(
+        connectingToRemote host: NWEndpoint.Host,
+        _ port: NWEndpoint.Port,
+        isSecure: Bool = true,
+        sni: String? = nil,
+        authorization: HTTPAuthorization? = nil,
+        additionalProtocols: [NWProtocolOptions] = []
+    ) -> NWProtocolFramer.Options
+    {
+        let options = NWProtocolFramer.Options(definition: ProtocolProxy.definition)
+        options[ProtocolProxy.kOptionsEndpointHost] = host
+        options[ProtocolProxy.kOptionsEndpointPort] = port
+        options[ProtocolProxy.kOptionsIsSecure] = isSecure
+        options[ProtocolProxy.kOptionsServerName] = if isSecure, sni == nil, !host.isIPAddress {
+            host.asString
+        } else {
+            sni
+        }
+        options[ProtocolProxy.kOptionsProxyAuth] = authorization
+        options[ProtocolProxy.kOptionsProxyTopProtocols] = additionalProtocols
+        return options
+    }
 }
 
 @available(macOS 12.3, iOS 15.4, *)
-final class ProxyProtocol: NWProtocolFramerImplementation, @unchecked Sendable {
-    static let definition = NWProtocolFramer.Definition(implementation: ProxyProtocol.self)
-    static let label: String = "ProxyProtocol"
+private final class ProtocolProxy: NWProtocolFramerImplementation, @unchecked Sendable {
+    static let definition = NWProtocolFramer.Definition(implementation: ProtocolProxy.self)
+    static let label: String = "ProtocolProxy"
 
     private let parserLock: NSLock
     private var parser: RawHTTPResponseParser
@@ -94,9 +122,14 @@ final class ProxyProtocol: NWProtocolFramerImplementation, @unchecked Sendable {
 }
 
 @available(macOS 12.3, iOS 15.4, *)
-extension ProxyProtocol {
+extension ProtocolProxy {
     private func startAsync(with framer: NWProtocolFramer.Instance) {
         do {
+            if let protocols = framer.options[Self.kOptionsProxyTopProtocols] as? [NWProtocolFramer.Options] {
+                for proto in protocols {
+                    try framer.prependApplicationProtocol(options: proto)
+                }
+            }
             if let tls = createNextTLSIfNeeded(from: framer) {
                 try framer.prependApplicationProtocol(options: tls)
             }
@@ -115,7 +148,7 @@ extension ProxyProtocol {
         let port = framer.options[Self.kOptionsEndpointPort] as? NWEndpoint.Port
         guard let host, let port else { throw NWError.posix(.EDESTADDRREQ) }
         var headers: [String: String] = [:]
-        if let auth = framer.options[Self.kOptionsProxyAuth] as? RawSocketConfiguration.Proxy.Authorization {
+        if let auth = framer.options[Self.kOptionsProxyAuth] as? HTTPAuthorization {
             headers["Proxy-Authorization"] = auth.httpHeader
         }
         let parser = HTTPRequestParser(connectTo: host, port, headers: headers)
@@ -126,6 +159,7 @@ extension ProxyProtocol {
         switch status {
         case 200: break
         case 401: throw .posix(.EAUTH)
+        case 403: throw .posix(.EACCES)
         case 404: throw .posix(.ENOENT)
         case 407: throw .posix(.EAUTH)
         case 502: throw .posix(.ECONNABORTED)

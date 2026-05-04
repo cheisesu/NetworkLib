@@ -16,8 +16,8 @@ class RawSocketTests_TCP_Connect_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         defer { socket.cancel(nil) }
         
@@ -34,8 +34,8 @@ class RawSocketTests_TCP_Connect_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: false)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: false, sni: nil, transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: false, sni: nil, transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         defer { socket.cancel(nil) }
         
@@ -52,8 +52,8 @@ class RawSocketTests_TCP_Connect_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         defer { socket.cancel(nil) }
         
@@ -75,8 +75,8 @@ class RawSocketTests_TCP_Connect_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: false)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: false, sni: nil, transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: false, sni: nil, transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         defer { socket.cancel(nil) }
         
@@ -100,8 +100,8 @@ class RawSocketTests_TCP_Connect_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: false)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         defer { socket.cancel(nil) }
         
@@ -121,8 +121,8 @@ class RawSocketTests_TCP_Connect_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocketConfiguration("127.0.0.10", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.10", port, isSecure: true, sni: "localhost", transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         defer { socket.cancel(nil) }
         
@@ -146,8 +146,8 @@ class RawSocketTests_TCP_Connect_Callbacks: XCTestCase {
         let port = try await server.start()
         
         let box = _SocketBox()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         try box.set(RawSocket(config))
         defer { box.get()?.cancel(nil) }
         
@@ -170,8 +170,8 @@ class RawSocketTests_TCP_Connect_Callbacks: XCTestCase {
         let port = try await server.start()
         
         let box = _SocketBox()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         try box.set(RawSocket(config))
         defer { box.get()?.cancel(nil) }
         
@@ -196,8 +196,8 @@ class RawSocketTests_TCP_Connect_Callbacks: XCTestCase {
         let port = try await server.start()
         
         let box = _SocketBox()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         try box.set(RawSocket(config))
         defer { box.get()?.cancel(nil) }
         
@@ -225,8 +225,8 @@ class RawSocketTests_TCP_Connect_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         defer { socket.cancel(nil) }
         
@@ -251,8 +251,8 @@ class RawSocketTests_TCP_Connect_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         defer { socket.cancel(nil) }
         
@@ -275,8 +275,8 @@ class RawSocketTests_TCP_Connect_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         defer { socket.cancel(nil) }
         
@@ -300,8 +300,8 @@ class RawSocketTests_TCP_Connect_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         defer { socket.cancel(nil) }
         
@@ -336,8 +336,8 @@ class RawSocketTests_TCP_Connect_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         defer { socket.cancel(nil) }
         
@@ -362,8 +362,8 @@ class RawSocketTests_TCP_Connect_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         defer { socket.cancel(nil) }
         
@@ -385,8 +385,8 @@ class RawSocketTests_TCP_Connect_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         defer { socket.cancel(nil) }
         
@@ -409,8 +409,8 @@ class RawSocketTests_TCP_Connect_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocketConfiguration("127.0.0.256", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.256", port, isSecure: true, sni: "localhost", transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         defer { socket.cancel(nil) }
         
@@ -427,8 +427,8 @@ class RawSocketTests_TCP_Connect_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocketConfiguration("127.0.0.10", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.10", port, isSecure: true, sni: "localhost", transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         defer { socket.cancel(nil) }
         
@@ -447,8 +447,8 @@ class RawSocketTests_TCP_Connect_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true, flow: .cancel)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         defer { socket.cancel(nil) }
         
@@ -469,7 +469,7 @@ class RawSocketTests_TCP_Connect_Callbacks: XCTestCase {
         //        let server = try ServerMock(transport: transport, isSecure: true, flow: .acceptAndCancel)
         //        defer { server.stop() }
         //        let port = try await server.start()
-        //        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+        //        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
         //                                                 maxDataBlock: 256, timeout: timeout)
         //        let socket = try RawSocket(config)
         //        defer { socket.cancel(nil) }
@@ -494,8 +494,8 @@ class RawSocketTests_TCP_Connect_Callbacks: XCTestCase {
         let server = try ServerMock(transport: .udp, isSecure: true)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         defer { socket.cancel(nil) }
         
@@ -515,8 +515,8 @@ class RawSocketTests_TCP_Connect_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: false, sni: nil, transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: false, sni: nil, transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         defer { socket.cancel(nil) }
         
@@ -533,8 +533,8 @@ class RawSocketTests_TCP_Connect_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: false)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         defer { socket.cancel(nil) }
         
@@ -552,8 +552,8 @@ class RawSocketTests_TCP_Connect_Callbacks: XCTestCase {
         defer { server.stop() }
         let port = try await server.start()
         server.stop()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         defer { socket.cancel(nil) }
         
@@ -573,8 +573,8 @@ class RawSocketTests_TCP_Connect_Callbacks: XCTestCase {
     
     func test_Connect_WhenServerNotExists_CallbackReturnsError() async throws {
         let timeout: TimeInterval = 0
-        let config = try RawSocketConfiguration("127.0.0.1", 65535, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", 65535, isSecure: true, sni: "localhost", transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         defer { socket.cancel(nil) }
         
@@ -594,8 +594,8 @@ class RawSocketTests_TCP_Connect_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         defer { socket.cancel(nil) }
         
@@ -683,8 +683,8 @@ class RawSocketTests_TCP_Connect_Callbacks: XCTestCase {
         let server = try ServerMock(transport: transport, isSecure: true)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         defer { socket.cancel(nil) }
         
