@@ -13,11 +13,7 @@ final class HTTPRequestParser: Sendable {
             urlRequest.setValue(String(body.count), forHTTPHeaderField: "Content-Length")
         }
         if version == .v1_1, urlRequest.value(forHTTPHeaderField: "Host") == nil {
-            if #available(macOS 13.0, iOS 16.0, *) {
-                urlRequest.setValue(urlRequest.url?.host(), forHTTPHeaderField: "Host")
-            } else {
-                urlRequest.setValue(urlRequest.url?.host, forHTTPHeaderField: "Host")
-            }
+            urlRequest.setValue(urlRequest.url?.wrappedHost, forHTTPHeaderField: "Host")
         }
         let headers = urlRequest.allHTTPHeaderFields?.map { (key: String, value: String) in
             (key, value)

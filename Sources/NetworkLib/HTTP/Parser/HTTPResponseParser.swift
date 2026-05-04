@@ -1,9 +1,8 @@
 import Foundation
 
-/// - warning: This class must be used synchronously.
-final class HTTPResponseParser: @unchecked Sendable {
+extension HTTPResponseParser {
     public enum Event: Sendable {
-        case response(HTTPURLResponse)
+        case response(HTTPParserResponseResult)
         case data(Data)
         case end
 
@@ -14,7 +13,7 @@ final class HTTPResponseParser: @unchecked Sendable {
             }
         }
 
-        public var response: HTTPURLResponse? {
+        public var response: HTTPParserResponseResult? {
             guard case let .response(response) = self else { return nil }
             return response
         }
@@ -30,7 +29,20 @@ final class HTTPResponseParser: @unchecked Sendable {
         case invalidChunkTerminator
         case parsingCompleted
     }
+}
 
+extension HTTPResponseParser.Event: CustomStringConvertible {
+    public var description: String {
+        switch self {
+        case let .response(response): return "RESPONSE: \(response)"
+        case let .data(data): return "DATA: \(data.count)"
+        case .end: return "END"
+        }
+    }
+}
+
+/// - warning: This class must be used synchronously.
+final class HTTPResponseParser: @unchecked Sendable {
     private enum BodyKind {
         case none
         case plain
@@ -38,20 +50,20 @@ final class HTTPResponseParser: @unchecked Sendable {
         case finished
     }
 
-    private let url: URL
-    private var buffer: Data
-    private var parsedResponse: HTTPURLResponse?
+    private var currentBuffer: Data
+    private var fullDataBuffer: Data
+    private var parsedResponse: HTTPParserResponseResult?
     private var bodyKind: BodyKind
 
-    public init(with url: URL) {
-        self.url = url
-        buffer = Data()
+    public init() {
+        currentBuffer = Data()
+        fullDataBuffer = Data()
         bodyKind = .none
     }
 
-    public func append(_ data: Data) throws(Error) -> [Event] {
+    public func append(_ data: Data) throws(HTTPResponseParser.Error) -> [Event] {
         guard bodyKind != .finished else { throw .parsingCompleted }
-        buffer.append(data)
+        currentBuffer.append(data)
         var result: [Event] = []
         while let nextEvent = try parseNext() {
             result.append(nextEvent)
@@ -59,47 +71,83 @@ final class HTTPResponseParser: @unchecked Sendable {
         return result
     }
 
-    private func parseNext() throws(Error) -> Event? {
+    private func parseNext() throws(HTTPResponseParser.Error) -> Event? {
         guard bodyKind != .finished else { return nil }
-        if parsedResponse == nil {
+        guard let parsedResponse else {
             guard let response = parseResponse() else { return nil }
-            parsedResponse = response
+            self.parsedResponse = response
             return .response(response)
         }
-        guard !buffer.isEmpty else { return nil }
         if isChunked() {
             return try parseChunkedEncoding()
+        } else {
+            return try parsePlainEncoding(parsedResponse)
         }
-        bodyKind = .plain
-        let data = buffer
-        buffer = Data()
-        return .data(data)
     }
 
-    private func parseResponse() -> HTTPURLResponse? {
-        guard let result = RawHTTPResponseParser.parse(buffer) else { return nil }
-        buffer = result.leftBuffer
-        return HTTPURLResponse(url: url, statusCode: result.status, httpVersion: result.versionRaw, headerFields: result.headers)
+    private func parseResponse() -> HTTPParserResponseResult? {
+        guard var result = RawHTTPResponseParser.parse(currentBuffer) else { return nil }
+        currentBuffer = result.leftBuffer
+        result = HTTPParserResponseResult(
+            versionRaw: result.versionRaw,
+            status: result.status,
+            headers: result.headers,
+            rawSize: result.rawSize,
+            leftBuffer: Data()
+        )
+        return result
     }
 
-    private func parseChunkedEncoding() throws(Error) -> Event? {
+    private func parseChunkedEncoding() throws(HTTPResponseParser.Error) -> Event? {
         bodyKind = .chunked
-        guard let sizeRange = buffer.range(of: .crlf) else { return nil }
-        let sizeData = buffer.subdata(in: buffer.startIndex..<sizeRange.lowerBound)
+        guard let sizeRange = currentBuffer.range(of: .crlf) else { return nil }
+        let sizeData = currentBuffer.subdata(in: currentBuffer.startIndex..<sizeRange.lowerBound)
         guard let sizeString = String(data: sizeData, encoding: .utf8), let size = Int(sizeString, radix: 16) else {
             throw .invalidChunkSize
         }
-        let leftChunkBuffer = buffer.suffix(from: sizeRange.upperBound)
+        let leftChunkBuffer = currentBuffer.suffix(from: sizeRange.upperBound)
         guard leftChunkBuffer.count >= size + Data.crlf.count else { return nil }
         let chunkData = leftChunkBuffer.subdata(in: leftChunkBuffer.startIndex..<(leftChunkBuffer.startIndex + size))
         let leftBuffer = Data(leftChunkBuffer[(leftChunkBuffer.startIndex + size)...])
         guard leftBuffer.prefix(Data.crlf.count) == .crlf else { throw .invalidChunkTerminator }
-        buffer = leftBuffer.dropFirst(Data.crlf.count)
+        currentBuffer = leftBuffer.dropFirst(Data.crlf.count)
         if size == 0 {
             bodyKind = .finished
             return .end
         }
+        fullDataBuffer.append(contentsOf: chunkData)
         return .data(Data(chunkData))
+    }
+
+    private func parsePlainEncoding(_ response: HTTPParserResponseResult) throws(HTTPResponseParser.Error) -> Event? {
+        bodyKind = .plain
+        let contentLength = if let lengthRaw = response.headers["Content-Length"] {
+            Int(lengthRaw) ?? 0
+        } else {
+            0
+        }
+        guard contentLength > 0 else {
+            bodyKind = .finished
+            return .end
+        }
+        let alreadySentData = fullDataBuffer
+        guard contentLength > alreadySentData.count else {
+            bodyKind = .finished
+            return .end
+        }
+        guard !currentBuffer.isEmpty else { return nil }
+        let leftToSendCount = contentLength - alreadySentData.count
+        if leftToSendCount >= currentBuffer.count {
+            fullDataBuffer.append(contentsOf: currentBuffer)
+            let data = currentBuffer
+            currentBuffer = Data()
+            return .data(data)
+        } else {
+            let cuttedCurrentBuffer = Data(currentBuffer.prefix(leftToSendCount))
+            fullDataBuffer.append(contentsOf: cuttedCurrentBuffer)
+            currentBuffer = currentBuffer.dropFirst(leftToSendCount)
+            return .data(cuttedCurrentBuffer)
+        }
     }
 
     private func isChunked() -> Bool {
@@ -107,9 +155,9 @@ final class HTTPResponseParser: @unchecked Sendable {
     }
 }
 
-private extension HTTPURLResponse {
+private extension HTTPParserResponseResult {
     var transferEncodings: [String] {
-        guard let header = value(forHTTPHeaderField: "Transfer-Encoding") else { return [] }
+        guard let header = headers["Transfer-Encoding"] else { return [] }
         return header
             .components(separatedBy: ",")
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }

@@ -19,4 +19,11 @@ extension NWEndpoint.Host {
         @unknown default: return "\(self)"
         }
     }
+
+    var isIPAddress: Bool {
+        switch self {
+        case .ipv4, .ipv6: return true
+        default: return false
+        }
+    }
 }

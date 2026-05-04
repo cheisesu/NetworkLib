@@ -31,4 +31,16 @@ struct NWEndpointHostTests {
     func asUrlString(_ host: NWEndpoint.Host, _ expected: String) throws {
         try #require(host.asUrlString == expected)
     }
+
+    @Test(.tags(.endpointHost), arguments: [
+        (NWEndpoint.Host.name("example.com", nil), false),
+        (NWEndpoint.Host.ipv4(IPv4Address("127.0.0.1")!), true),
+        (NWEndpoint.Host.ipv6(IPv6Address("2001:0db8:85a3:0000:0000:8a2e:0370:7334")!), true),
+        ("example.com" as NWEndpoint.Host, false),
+        ("127.0.0.1" as NWEndpoint.Host, true),
+        ("2001:0db8:85a3:0000:0000:8a2e:0370:7334" as NWEndpoint.Host, true),
+    ])
+    func isIpAddress(_ host: NWEndpoint.Host, _ expected: Bool) throws {
+        try #require(host.isIPAddress == expected)
+    }
 }
