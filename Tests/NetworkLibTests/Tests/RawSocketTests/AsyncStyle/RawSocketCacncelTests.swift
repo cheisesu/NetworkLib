@@ -3,16 +3,20 @@ import Testing
 import Network
 @testable import NetworkLib
 
+extension Tag.RawSocketConnect {
+    @Tag static var cancel: Tag
+}
+
 struct RawSocketCancelTests {
     @Test("When continuation is called multiple times it will fall with fatal error and test fail",
-          .tags(.RawSocketConnect.connect), arguments: [RawSocketTransport.tcp, .udp], [nil, "localhost"])
+          .tags(.RawSocketConnect.cancel), arguments: [RawSocketTransport.tcp, .udp], [nil, "localhost"])
     func continuationCalledOnlyOnce(_ transport: RawSocketTransport, _ sni: String?) async throws {
         let timeout: TimeInterval = 0
         let server = try ServerMock(transport: transport, isSecure: sni != nil)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: sni != nil, sni: sni, transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: sni != nil, sni: sni, transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         defer { socket.cancel(nil) }
         await socket.cancel()
@@ -20,14 +24,14 @@ struct RawSocketCancelTests {
     }
     
     @Test("When cancel, socket closes",
-          .tags(.RawSocketConnect.connect), arguments: [RawSocketTransport.tcp, .udp], [nil, "localhost"])
+          .tags(.RawSocketConnect.cancel), arguments: [RawSocketTransport.tcp, .udp], [nil, "localhost"])
     func cancelCancelsOperation(_ transport: RawSocketTransport, _ sni: String?) async throws {
         let timeout: TimeInterval = 0
         let server = try ServerMock(transport: transport, isSecure: sni != nil)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: sni != nil, sni: sni, transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: sni != nil, sni: sni, transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         await socket.cancel()
         do {

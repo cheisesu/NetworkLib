@@ -10,4 +10,13 @@ extension RawSocket {
             }
         }
     }
+
+    func receiveNext(_ block: @escaping @Sendable (Data?, Error?) -> Void) {
+        self.receiveNext { result in
+            switch result {
+            case let .failure(error): block(nil, error)
+            case let .success(data): block(data, nil)
+            }
+        }
+    }
 }

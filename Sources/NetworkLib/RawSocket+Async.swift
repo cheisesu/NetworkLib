@@ -30,15 +30,39 @@ extension RawSocket {
         }
     }
     
-    public func receiveNext() async throws -> Data? {
+    public func sendMessage<M: RawSocketSendMessage>(_ message: M) async throws {
         try await withTaskCancellationHandler {
-            try await withCheckedThrowingContinuation { continuation in
-                receiveNext { data, error in
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                sendMessage(message) { error in
                     if let error {
                         continuation.resume(throwing: error)
                     } else {
-                        continuation.resume(returning: data)
+                        continuation.resume()
                     }
+                }
+            }
+        } onCancel: { [weak self] in
+            self?.cancel(nil)
+        }
+    }
+    
+    public func receiveNext() async throws -> Data? {
+        try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { continuation in
+                receiveNext { result in
+                    continuation.resume(with: result)
+                }
+            }
+        } onCancel: { [weak self] in
+            self?.cancel(nil)
+        }
+    }
+    
+    public func receiveNextMessage<M: RawSocketReceiveMessage>(of type: M.Type = M.self) async throws -> M {
+        try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { continuation in
+                receiveNextMessage(of: M.self) { result in
+                    continuation.resume(with: result)
                 }
             }
         } onCancel: { [weak self] in

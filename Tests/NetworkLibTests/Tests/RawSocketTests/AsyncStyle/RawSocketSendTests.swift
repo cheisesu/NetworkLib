@@ -3,9 +3,13 @@ import Testing
 import Network
 @testable import NetworkLib
 
+extension Tag.RawSocketConnect {
+    @Tag static var send: Tag
+}
+
 struct RawSocketSendTests {
     @Test("When continuation is called multiple times it will fall with fatal error and test fail",
-          .tags(.RawSocketConnect.connect),
+          .tags(.RawSocketConnect.send),
           arguments: [RawSocketTransport.tcp, .udp], [nil, "localhost"])
     func continuationCalledOnlyOnce(_ transport: RawSocketTransport, _ sni: String?) async throws {
         let timeout: TimeInterval = 0
@@ -13,8 +17,8 @@ struct RawSocketSendTests {
         let server = try ServerMock(transport: transport, isSecure: sni != nil)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: sni != nil, sni: sni, transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: sni != nil, sni: sni, transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         defer { socket.cancel(nil) }
         try await socket.connect()
@@ -23,17 +27,17 @@ struct RawSocketSendTests {
     }
     
     @Test("When timeout of socket is reached it throws NWError.posix(.ETIMEDOUT)",
-          .tags(.RawSocketConnect.connect),
+          .tags(.RawSocketConnect.send),
           arguments: [nil, "localhost"])
     func timeoutThrowsError(_ sni: String?) async throws {
         let transport: RawSocketTransport = .tcp
-        let timeout: TimeInterval = 0.5
+        let timeout: TimeInterval = 1
         let dataToSend = Data(repeating: 0xde, count: 16 * 1024 * 1024)
         let server = try ServerMock(transport: transport, isSecure: sni != nil)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: sni != nil, sni: sni, transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: sni != nil, sni: sni, transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         defer { socket.cancel(nil) }
         
@@ -48,7 +52,7 @@ struct RawSocketSendTests {
     
     /// - note: UDP is not applicable here as it can call completion really fast
     @Test("When socket is sending data and called cancel in different thread it throws NWError.posix(.ECANCELED)",
-          .tags(.RawSocketConnect.connect),
+          .tags(.RawSocketConnect.send),
           arguments: [
             (RawSocketTransport.tcp, Data(repeating: 0xde, count: 16 * 1024 * 1024), nil as String?),
             (RawSocketTransport.tcp, Data(repeating: 0xde, count: 16 * 1024 * 1024), "localhost"),
@@ -58,8 +62,8 @@ struct RawSocketSendTests {
         let server = try ServerMock(transport: transport, isSecure: sni != nil)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: sni != nil, sni: sni, transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: sni != nil, sni: sni, transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         defer { socket.cancel(nil) }
         
@@ -77,7 +81,7 @@ struct RawSocketSendTests {
     }
     
     @Test("Cancelled a task during sending",
-          .tags(.RawSocketConnect.connect),
+          .tags(.RawSocketConnect.send),
           arguments: [
             (RawSocketTransport.tcp, Data(repeating: 0xde, count: 16 * 1024 * 1024), nil as String?),
             (RawSocketTransport.tcp, Data(repeating: 0xde, count: 16 * 1024 * 1024), "localhost"),
@@ -89,8 +93,8 @@ struct RawSocketSendTests {
         let server = try ServerMock(transport: transport, isSecure: sni != nil)
         defer { server.stop() }
         let port = try await server.start()
-        let config = try RawSocketConfiguration("127.0.0.1", port, isSecure: sni != nil, sni: sni, transport: transport,
-                                                maxDataBlock: 256, timeout: timeout)
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: sni != nil, sni: sni, transport: transport,
+                                            maxDataBlock: 256, timeout: timeout)
         let socket = try RawSocket(config)
         defer { socket.cancel(nil) }
         
