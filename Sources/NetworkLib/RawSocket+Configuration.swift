@@ -1,34 +1,20 @@
 import Foundation
 import Network
 
-extension RawSocketConfiguration.Proxy {
-    public enum Authorization: Sendable {
-        case basic(userName: String, password: String)
-
-        var httpHeader: String {
-            switch self {
-            case let .basic(username, password):
-                let encoded = Data("\(username):\(password)".utf8).base64EncodedString()
-                return ["Basic", encoded].joined(separator: " ")
-            }
-        }
-    }
-}
-
 extension RawSocketConfiguration {
-    public struct Proxy: Sendable {
+    public struct Proxy: Sendable, Equatable {
         public let host: NWEndpoint.Host
         public let port: NWEndpoint.Port
         public let isSecure: Bool
         public let sni: String?
-        public let authorization: Authorization?
-        
+        public let authorization: HTTPAuthorization?
+
         var endpoint: NWEndpoint {
             .hostPort(host: host, port: port)
         }
         
         public init(host: NWEndpoint.Host, port: NWEndpoint.Port, isSecure: Bool = true, sni: String? = nil,
-                    authorization: Authorization? = nil)
+                    authorization: HTTPAuthorization? = nil)
         {
             self.host = host
             self.port = port
@@ -48,13 +34,18 @@ public struct RawSocketConfiguration: Sendable {
     public let maxDataBlock: Int
     public let timeout: TimeInterval
     public let proxy: Proxy?
-    
+    public let additionalProtocols: [NWProtocolOptions]
+#if DEBUG
+    var disableInBoxProxy: Bool = false
+#endif
+
     var endpoint: NWEndpoint {
         return .hostPort(host: host, port: port)
     }
     
     public init(_ host: NWEndpoint.Host, _ port: NWEndpoint.Port, isSecure: Bool = true, sni: String? = nil,
-                transport: RawSocketTransport = .tcp, maxDataBlock: Int = .max, timeout: TimeInterval = 10) throws
+                transport: RawSocketTransport = .tcp, maxDataBlock: Int = .max, timeout: TimeInterval = 10,
+                additionalProtocols: [NWProtocolOptions] = [])
     {
         self.host = host
         self.port = port
@@ -64,12 +55,13 @@ public struct RawSocketConfiguration: Sendable {
         self.maxDataBlock = maxDataBlock
         self.timeout = timeout
         proxy = nil
+        self.additionalProtocols = additionalProtocols
     }
     
     @available(macOS 12.3, iOS 15.4, *)
     public init(_ host: NWEndpoint.Host, _ port: NWEndpoint.Port, isSecure: Bool = true, sni: String? = nil,
                 proxy: Proxy, transport: RawSocketTransport = .tcp, maxDataBlock: Int = .max,
-                timeout: TimeInterval = 10) throws
+                timeout: TimeInterval = 10, additionalProtocols: [NWProtocolOptions] = [])
     {
         self.host = host
         self.port = port
@@ -79,8 +71,24 @@ public struct RawSocketConfiguration: Sendable {
         self.maxDataBlock = maxDataBlock
         self.timeout = timeout
         self.proxy = proxy
+        self.additionalProtocols = additionalProtocols
     }
-    
+
+    @available(macOS 12.3, iOS 15.4, *)
+    public func using(proxy: Proxy) -> RawSocketConfiguration {
+        RawSocketConfiguration(
+            host,
+            port,
+            isSecure: isSecure,
+            sni: sni,
+            proxy: proxy,
+            transport: transport,
+            maxDataBlock: maxDataBlock,
+            timeout: timeout,
+            additionalProtocols: additionalProtocols
+        )
+    }
+
     // TODO: move to a separate entity
     func makeNWConnection() throws -> NWConnection {
         if let proxy {
@@ -91,12 +99,13 @@ public struct RawSocketConfiguration: Sendable {
     
     private func makeProxyNWConnection(_ proxy: Proxy) throws -> NWConnection {
         let parameters = try makeProxyParameters(proxy)
-        let endpoint = makeProxyMainEndpoint(proxy)
+        let endpoint = try makeProxyMainEndpoint(proxy)
         return NWConnection(to: endpoint, using: parameters)
     }
     
     private func makeDirectNWConnection() -> NWConnection {
         let parameters = makeDirectNWParameters(transport, isSecure: isSecure, sni: sni)
+        parameters.defaultProtocolStack.applicationProtocols.insert(contentsOf: additionalProtocols, at: 0)
         return NWConnection(to: endpoint, using: parameters)
     }
     
@@ -123,35 +132,43 @@ public struct RawSocketConfiguration: Sendable {
     }
     
     private func makeProxyParameters(_ proxy: Proxy) throws -> NWParameters {
+#if !DEBUG
+        let disableInBoxProxy = false
+#endif
+        if #available(macOS 14.0, iOS 17.0, *), !disableInBoxProxy {
+            return makeInBoxProxyParameters(proxy)
+        }
         if #available(macOS 12.3, iOS 15.4, *) {
-            let options = NWProtocolFramer.Options(definition: ProxyProtocol.definition)
-            options[ProxyProtocol.kOptionsEndpointHost] = host
-            options[ProxyProtocol.kOptionsEndpointPort] = port
-            options[ProxyProtocol.kOptionsIsSecure] = isSecure
-            options[ProxyProtocol.kOptionsServerName] = sni
-            options[ProxyProtocol.kOptionsProxyAuth] = proxy.authorization
-            let parameters = makeDirectNWParameters(transport, isSecure: proxy.isSecure, sni: proxy.sni)
+            let parameters = makeDirectNWParameters(.tcp, isSecure: proxy.isSecure, sni: proxy.sni)
+            let options: NWProtocolFramer.Options = .proxy(
+                connectingToRemote: host,
+                port,
+                isSecure: isSecure,
+                sni: sni,
+                authorization: proxy.authorization,
+                additionalProtocols: additionalProtocols
+            )
             parameters.defaultProtocolStack.applicationProtocols.insert(options, at: 0)
             return parameters
-        }
-        if #available(macOS 14.0, iOS 17.0, *) {
-            return makeInBoxSocketParameters(proxy)
         }
         throw NWError.posix(.ENOTSUP)
     }
     
-    private func makeProxyMainEndpoint(_ proxy: Proxy) -> NWEndpoint {
+    private func makeProxyMainEndpoint(_ proxy: Proxy) throws -> NWEndpoint {
+#if !DEBUG
+        let disableInBoxProxy = false
+#endif
+        if #available(macOS 14.0, iOS 17.0, *), !disableInBoxProxy {
+            return endpoint
+        }
         if #available(macOS 12.3, iOS 15.4, *) {
             return proxy.endpoint
         }
-        if #available(macOS 14.0, iOS 17.0, *) {
-            return endpoint
-        }
-        return proxy.endpoint
+        throw NWError.posix(.ENOTSUP)
     }
     
     @available(macOS 14.0, iOS 17.0, *)
-    private func makeInBoxSocketParameters(_ proxy: Proxy) -> NWParameters {
+    private func makeInBoxProxyParameters(_ proxy: Proxy) -> NWParameters {
         let parameters = makeDirectNWParameters(transport, isSecure: isSecure, sni: sni)
         let tls: NWProtocolTLS.Options? = {
             guard proxy.isSecure else { return nil }
@@ -170,6 +187,7 @@ public struct RawSocketConfiguration: Sendable {
         let context = NWParameters.PrivacyContext(description: "Proxy")
         context.proxyConfigurations = [_proxy]
         parameters.setPrivacyContext(context)
+        parameters.defaultProtocolStack.applicationProtocols.insert(contentsOf: additionalProtocols, at: 0)
         return parameters
     }
 }
