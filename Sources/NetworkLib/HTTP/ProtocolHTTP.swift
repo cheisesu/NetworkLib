@@ -81,7 +81,7 @@ private final class ProtocolHTTP: NWProtocolFramerImplementation, @unchecked Sen
         }
         while true {
             var ended = false
-            let parsed = framer.parseInput(minimumIncompleteLength: 1, maximumLength: 50) { buffer, isComplete in
+            let parsed = framer.parseInput(minimumIncompleteLength: 1, maximumLength: .max) { buffer, isComplete in
                 guard let buffer, !buffer.isEmpty else { return 0 }
                 let assumedBuffer = buffer.assumingMemoryBound(to: UInt8.self)
                 let data = Data(bytes: assumedBuffer.baseAddress!, count: buffer.count)
