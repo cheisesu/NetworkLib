@@ -30,16 +30,8 @@ public final class HTTPNetworkTask: @unchecked Sendable {
     public private(set) var response: HTTPURLResponse?
     public private(set) var data: Data?
     public var callback: ResultCallback? {
-        get {
-            callbackLock.lock()
-            defer { callbackLock.unlock() }
-            return _callback
-        }
-        set {
-            callbackLock.lock()
-            defer { callbackLock.unlock() }
-            _callback = newValue
-        }
+        get { callbackLock.withLock { _callback } }
+        set { callbackLock.withLock { _callback = newValue } }
     }
 
     public init(_ urlRequest: URLRequest, through proxy: RawSocketConfiguration.Proxy? = nil, sni: String? = nil) {
