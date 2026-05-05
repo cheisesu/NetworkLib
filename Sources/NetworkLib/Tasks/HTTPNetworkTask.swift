@@ -26,6 +26,7 @@ public final class HTTPNetworkTask: @unchecked Sendable {
     private let callbackLock: NSLock
     private var _callback: ResultCallback?
     private var isFinished: Bool
+    private var currentConnection: RawSocket?
 
     public private(set) var response: HTTPURLResponse?
     public private(set) var data: Data?
@@ -47,12 +48,13 @@ public final class HTTPNetworkTask: @unchecked Sendable {
     }
 
     public func cancel() {
-
+        currentConnection?.cancel(nil)
     }
 }
 
 extension HTTPNetworkTask {
     private func startUnsafe() {
+        guard currentConnection == nil else { return }
         do {
             try startWithRequestUnsafe(originalRequest)
         } catch {
@@ -63,6 +65,7 @@ extension HTTPNetworkTask {
     private func startWithRequestUnsafe(_ urlRequest: URLRequest) throws(URLError) {
         let configuration = try makeConfiguration(from: urlRequest)
         let rawSocket = try createRawSocket(from: configuration)
+        currentConnection = rawSocket
         rawSocket.connect { [weak self] result in
             printDebug("[http] connected", result)
             switch result {
