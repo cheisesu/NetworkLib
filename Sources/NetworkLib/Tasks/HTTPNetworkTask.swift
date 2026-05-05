@@ -158,6 +158,7 @@ extension HTTPNetworkTask {
                 self.response = response.urlResponse(with: url)
                 receiveNextDataUnsafe(rawSocket, urlRequest, configuration)
             case let .data(data):
+                guard response != nil else { throw URLError(.badServerResponse) }
                 handleResponseDataUnsafe(rawSocket, urlRequest, configuration, with: data)
                 receiveNextDataUnsafe(rawSocket, urlRequest, configuration)
             case .end: finishAndNotifyUnsafe(rawSocket, urlRequest, configuration, with: nil)
