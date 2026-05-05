@@ -27,6 +27,8 @@ public final class HTTPNetworkTask: @unchecked Sendable {
     private var _callback: ResultCallback?
     private var isFinished: Bool
     private var currentConnection: RawSocket?
+    private let accessQueue: DispatchQueue
+    private let accessKey: DispatchSpecificKey<ObjectIdentifier>
 
     public private(set) var response: HTTPURLResponse?
     public private(set) var data: Data?
@@ -41,14 +43,23 @@ public final class HTTPNetworkTask: @unchecked Sendable {
         self.proxy = proxy
         self.sni = sni
         isFinished = false
+        accessQueue = DispatchQueue(label: "com.network.lib.http_network_task", target: .global())
+        accessKey = DispatchSpecificKey()
+        accessQueue.setSpecific(key: accessKey, value: ObjectIdentifier(self.accessQueue))
     }
 
     public func start() {
-        startUnsafe()
+        accessQueue.async { [weak self] in
+            guard let self else { return }
+            self.startUnsafe()
+        }
     }
 
     public func cancel() {
-        currentConnection?.cancel(nil)
+        accessQueue.async { [weak self] in
+            guard let self else { return }
+            self.currentConnection?.cancel(nil)
+        }
     }
 }
 
@@ -77,7 +88,7 @@ extension HTTPNetworkTask {
 
     private func createRawSocket(from configuration: RawSocketConfiguration) throws(URLError) -> RawSocket {
         do throws(NWError) {
-            let rawSocket = try RawSocket(configuration)
+            let rawSocket = try RawSocket(configuration, accessQueue: accessQueue)
             return rawSocket
         } catch {
             let error = transformError(error)
