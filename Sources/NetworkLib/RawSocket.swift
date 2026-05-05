@@ -42,15 +42,18 @@ public class RawSocket: @unchecked Sendable {
     private var cancellingCallbacks: [(@Sendable () -> Void)]
 
     // MARK: - INITIALIZATION
-    
-    public init(_ configuration: RawSocketConfiguration) throws(NWError) {
+
+    public convenience init(_ configuration: RawSocketConfiguration) throws(NWError) {
+        try self.init(configuration, accessQueue: nil)
+    }
+
+    init(_ configuration: RawSocketConfiguration, accessQueue: DispatchQueue?) throws(NWError) {
         internalState = .none
-        let accessQueue = DispatchQueue(label: "com.network.lib.raw-socket", target: .global())
+        self.accessQueue = accessQueue ?? DispatchQueue(label: "com.network.lib.raw-socket", target: .global())
         accessKey = DispatchSpecificKey()
-        accessQueue.setSpecific(key: accessKey, value: ObjectIdentifier(accessQueue))
-        self.accessQueue = accessQueue
+        self.accessQueue.setSpecific(key: accessKey, value: ObjectIdentifier(self.accessQueue))
         cancellingCallbacks = []
-        timeoutEvent = TimeoutRecursiveEvent(timeout: configuration.timeout, on: accessQueue)
+        timeoutEvent = TimeoutRecursiveEvent(timeout: configuration.timeout, on: self.accessQueue)
         maxDataBlock = configuration.maxDataBlock
         transport = configuration.transport
         connection = try configuration.makeNWConnection()
@@ -155,11 +158,11 @@ public class RawSocket: @unchecked Sendable {
         accessQueue.async { [weak self, maxDataBlock] in
             guard let self else { return completion(.failure(.posix(.ECANCELED))) }
             printDebug("[socket] receive next")
-            
+
             if let error = activeOperationCheckErrorUnsafe() {
                 return completion(.failure(error))
             }
-            
+
             timeoutEvent?.touch()
             connection.receive(minimumIncompleteLength: 1, maximumLength: maxDataBlock)
             { [weak self] content, contentContext, isComplete, error in
@@ -284,7 +287,7 @@ public class RawSocket: @unchecked Sendable {
         @unknown default: break
         }
     }
-    
+
     private func callAllCancelsUnsafe() {
         let callbacks = cancellingCallbacks
         cancellingCallbacks = []
@@ -292,17 +295,17 @@ public class RawSocket: @unchecked Sendable {
             callback()
         }
     }
-    
+
     private func finishConnectionUnsafe(code: POSIXErrorCode) {
         finishConnectionUnsafe(.failure(.posix(code)))
     }
-    
+
     private func finishConnectionUnsafe(_ result: Result<ConnectionInfo, NWError>) {
         let callback = connectingCallback
         connectingCallback = nil
         callback?(result)
     }
-    
+
     private func activeOperationCheckErrorUnsafe() -> NWError? {
         if internalState == .none {
             return .posix(.ENOTCONN)
