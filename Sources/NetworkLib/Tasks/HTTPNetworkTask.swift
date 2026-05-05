@@ -66,15 +66,25 @@ extension HTTPNetworkTask {
         }
     }
 
-    private func startWithRequestUnsafe(_ urlRequest: URLRequest) throws {
-        let configuration = try makeConfiguration(from: originalRequest)
-        let rawSocket = try RawSocket(configuration)
+    private func startWithRequestUnsafe(_ urlRequest: URLRequest) throws(URLError) {
+        let configuration = try makeConfiguration(from: urlRequest)
+        let rawSocket = try createRawSocket(from: configuration)
         rawSocket.connect { [weak self] result in
             printDebug("[http] connected", result)
             switch result {
             case .success: self?.successConnectUnsafe(rawSocket, urlRequest, configuration)
             case let .failure(error): self?.finishAndNotify(rawSocket, urlRequest, configuration, with: error)
             }
+        }
+    }
+
+    private func createRawSocket(from configuration: RawSocketConfiguration) throws(URLError) -> RawSocket {
+        do throws(NWError) {
+            let rawSocket = try RawSocket(configuration)
+            return rawSocket
+        } catch {
+            let error = transformError(error)
+            throw error
         }
     }
 

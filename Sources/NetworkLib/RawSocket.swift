@@ -43,7 +43,7 @@ public class RawSocket: @unchecked Sendable {
 
     // MARK: - INITIALIZATION
     
-    public init(_ configuration: RawSocketConfiguration) throws {
+    public init(_ configuration: RawSocketConfiguration) throws(NWError) {
         internalState = .none
         let accessQueue = DispatchQueue(label: "com.network.lib.raw-socket", target: .global())
         accessKey = DispatchSpecificKey()

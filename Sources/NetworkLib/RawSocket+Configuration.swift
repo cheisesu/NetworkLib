@@ -89,15 +89,14 @@ public struct RawSocketConfiguration: Sendable {
         )
     }
 
-    // TODO: move to a separate entity
-    func makeNWConnection() throws -> NWConnection {
+    func makeNWConnection() throws(NWError) -> NWConnection {
         if let proxy {
             return try makeProxyNWConnection(proxy)
         }
         return makeDirectNWConnection()
     }
     
-    private func makeProxyNWConnection(_ proxy: Proxy) throws -> NWConnection {
+    private func makeProxyNWConnection(_ proxy: Proxy) throws(NWError) -> NWConnection {
         let parameters = try makeProxyParameters(proxy)
         let endpoint = try makeProxyMainEndpoint(proxy)
         return NWConnection(to: endpoint, using: parameters)
@@ -131,7 +130,7 @@ public struct RawSocketConfiguration: Sendable {
         return parameters
     }
     
-    private func makeProxyParameters(_ proxy: Proxy) throws -> NWParameters {
+    private func makeProxyParameters(_ proxy: Proxy) throws(NWError) -> NWParameters {
 #if !DEBUG
         let disableInBoxProxy = false
 #endif
@@ -154,7 +153,7 @@ public struct RawSocketConfiguration: Sendable {
         throw NWError.posix(.ENOTSUP)
     }
     
-    private func makeProxyMainEndpoint(_ proxy: Proxy) throws -> NWEndpoint {
+    private func makeProxyMainEndpoint(_ proxy: Proxy) throws(NWError) -> NWEndpoint {
 #if !DEBUG
         let disableInBoxProxy = false
 #endif
