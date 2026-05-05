@@ -25,6 +25,7 @@ public final class HTTPNetworkTask: @unchecked Sendable {
     private let sni: String?
     private let callbackLock: NSLock
     private var _callback: ResultCallback?
+    private var isFinished: Bool
 
     public private(set) var response: HTTPURLResponse?
     public private(set) var data: Data?
@@ -46,6 +47,7 @@ public final class HTTPNetworkTask: @unchecked Sendable {
         originalRequest = urlRequest
         self.proxy = proxy
         self.sni = sni
+        isFinished = false
     }
 
     public func start() {
@@ -73,7 +75,7 @@ extension HTTPNetworkTask {
             printDebug("[http] connected", result)
             switch result {
             case .success: self?.successConnectUnsafe(rawSocket, urlRequest, configuration)
-            case let .failure(error): self?.finishAndNotify(rawSocket, urlRequest, configuration, with: error)
+            case let .failure(error): self?.finishAndNotifyUnsafe(rawSocket, urlRequest, configuration, with: error)
             }
         }
     }
@@ -116,7 +118,7 @@ extension HTTPNetworkTask {
         rawSocket.sendMessage(HTTPSendMessage(urlRequest)) { [weak self, urlRequest] error in
             printDebug("[http] sent", error, "request", urlRequest)
             if let error {
-                self?.finishAndNotify(rawSocket, urlRequest, configuration, with: error)
+                self?.finishAndNotifyUnsafe(rawSocket, urlRequest, configuration, with: error)
             } else {
                 self?.successSendHTTPUnsafe(rawSocket, urlRequest, configuration)
             }
@@ -134,9 +136,8 @@ extension HTTPNetworkTask {
         rawSocket.receiveNextMessage(of: HTTPReceiveMessage.self) { [weak self] result in
             printDebug("[http] receive message", result)
             switch result {
-            case let .success(message):
-                self?.successReceiveNextUnsafe(rawSocket, urlRequest, configuration, with: message)
-            case let .failure(error): self?.finishAndNotify(rawSocket, urlRequest, configuration, with: error)
+            case let .success(message): self?.successReceiveNextUnsafe(rawSocket, urlRequest, configuration, with: message)
+            case let .failure(error): self?.finishAndNotifyUnsafe(rawSocket, urlRequest, configuration, with: error)
             }
         }
     }
@@ -149,15 +150,14 @@ extension HTTPNetworkTask {
             case let .response(response):
                 guard let url = urlRequest.url else { throw URLError(.badURL) }
                 self.response = response.urlResponse(with: url)
-                //TODO: handle response (redirect, etc)
                 receiveNextDataUnsafe(rawSocket, urlRequest, configuration)
             case let .data(data):
                 handleResponseDataUnsafe(rawSocket, urlRequest, configuration, with: data)
                 receiveNextDataUnsafe(rawSocket, urlRequest, configuration)
-            case .end: finishAndNotify(rawSocket, urlRequest, configuration, with: nil)
+            case .end: finishAndNotifyUnsafe(rawSocket, urlRequest, configuration, with: nil)
             }
         } catch {
-            finishAndNotify(rawSocket, urlRequest, configuration, with: error)
+            finishAndNotifyUnsafe(rawSocket, urlRequest, configuration, with: error)
         }
     }
 
@@ -170,11 +170,14 @@ extension HTTPNetworkTask {
         self.data?.append(contentsOf: data)
     }
 
-    private func finishAndNotify(_ rawSocket: RawSocket, _ urlRequest: URLRequest,
-                                 _ configuration: RawSocketConfiguration, with error: Error?)
+    private func finishAndNotifyUnsafe(_ rawSocket: RawSocket, _ urlRequest: URLRequest,
+                                       _ configuration: RawSocketConfiguration, with error: Error?)
     {
+        guard !isFinished else { return }
+        isFinished = true
         rawSocket.cancel(nil)
         let callback = self.callback
+        self.callback = nil
         if let error {
             callback?(response, .failure(error))
         } else {
