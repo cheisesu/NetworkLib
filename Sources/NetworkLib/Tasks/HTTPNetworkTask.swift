@@ -66,16 +66,16 @@ public final class HTTPNetworkTask: @unchecked Sendable {
 extension HTTPNetworkTask {
     private func startUnsafe() {
         guard currentConnection == nil else { return }
-        do throws(URLError) {
+        do {
             try startWithRequestUnsafe(originalRequest)
         } catch {
             callback?(nil, .failure(error))
         }
     }
 
-    private func startWithRequestUnsafe(_ urlRequest: URLRequest) throws(URLError) {
+    private func startWithRequestUnsafe(_ urlRequest: URLRequest) throws {
         let configuration = try makeConfiguration(from: urlRequest)
-        let rawSocket = try createRawSocket(from: configuration)
+        let rawSocket = try RawSocket(configuration, accessQueue: accessQueue)
         currentConnection = rawSocket
         rawSocket.connect { [weak self] result in
             printDebug("[http] connected", result)
@@ -83,16 +83,6 @@ extension HTTPNetworkTask {
             case .success: self?.successConnectUnsafe(rawSocket, urlRequest, configuration)
             case let .failure(error): self?.finishAndNotifyUnsafe(rawSocket, urlRequest, configuration, with: error)
             }
-        }
-    }
-
-    private func createRawSocket(from configuration: RawSocketConfiguration) throws(URLError) -> RawSocket {
-        do throws(NWError) {
-            let rawSocket = try RawSocket(configuration, accessQueue: accessQueue)
-            return rawSocket
-        } catch {
-            let error = transformError(error)
-            throw error
         }
     }
 
@@ -194,9 +184,5 @@ extension HTTPNetworkTask {
             }
             callback?(response, .success(data ?? Data()))
         }
-    }
-
-    private func transformError(_ error: NWError) -> URLError {
-        return URLError(.unknown)
     }
 }
