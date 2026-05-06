@@ -66,7 +66,7 @@ public final class HTTPNetworkTask: @unchecked Sendable {
 extension HTTPNetworkTask {
     private func startUnsafe() {
         guard currentConnection == nil else { return }
-        do {
+        do throws(URLError) {
             try startWithRequestUnsafe(originalRequest)
         } catch {
             callback?(nil, .failure(error))
