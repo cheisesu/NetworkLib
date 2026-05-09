@@ -69,7 +69,7 @@ extension HTTPNetworkTask {
         do {
             try startWithRequestUnsafe(originalRequest)
         } catch {
-            callback?(nil, .failure(error))
+            finishAndNotifyUnsafe(nil, originalRequest, with: error)
         }
     }
 
