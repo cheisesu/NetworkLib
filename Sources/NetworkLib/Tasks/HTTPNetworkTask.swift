@@ -80,8 +80,8 @@ extension HTTPNetworkTask {
         rawSocket.connect { [weak self] result in
             printDebug("[http] connected", result)
             switch result {
-            case .success: self?.successConnectUnsafe(rawSocket, urlRequest, configuration)
-            case let .failure(error): self?.finishAndNotifyUnsafe(rawSocket, urlRequest, configuration, with: error)
+            case .success: self?.successConnectUnsafe(rawSocket, urlRequest)
+            case let .failure(error): self?.finishAndNotifyUnsafe(rawSocket, urlRequest, with: error)
             }
         }
     }
@@ -106,7 +106,7 @@ extension HTTPNetworkTask {
         return configuration
     }
 
-    private func successConnectUnsafe(_ rawSocket: RawSocket, _ urlRequest: URLRequest, _ configuration: RawSocketConfiguration) {
+    private func successConnectUnsafe(_ rawSocket: RawSocket, _ urlRequest: URLRequest) {
         var urlRequest = urlRequest
         if urlRequest.value(forHTTPHeaderField: "Host") == nil {
             urlRequest.setValue(urlRequest.url?.wrappedHost, forHTTPHeaderField: "Host")
@@ -114,65 +114,57 @@ extension HTTPNetworkTask {
         rawSocket.sendMessage(HTTPSendMessage(urlRequest)) { [weak self, urlRequest] error in
             printDebug("[http] sent", error, "request", urlRequest)
             if let error {
-                self?.finishAndNotifyUnsafe(rawSocket, urlRequest, configuration, with: error)
+                self?.finishAndNotifyUnsafe(rawSocket, urlRequest, with: error)
             } else {
-                self?.successSendHTTPUnsafe(rawSocket, urlRequest, configuration)
+                self?.successSendHTTPUnsafe(rawSocket, urlRequest)
             }
         }
     }
 
-    private func successSendHTTPUnsafe(_ rawSocket: RawSocket, _ urlRequest: URLRequest, _ configuration: RawSocketConfiguration) {
-        receiveNextDataUnsafe(rawSocket, urlRequest, configuration)
+    private func successSendHTTPUnsafe(_ rawSocket: RawSocket, _ urlRequest: URLRequest) {
+        receiveNextDataUnsafe(rawSocket, urlRequest)
     }
 
-    private func receiveNextDataUnsafe(_ rawSocket: RawSocket, _ urlRequest: URLRequest,
-                                       _ configuration: RawSocketConfiguration)
-    {
+    private func receiveNextDataUnsafe(_ rawSocket: RawSocket, _ urlRequest: URLRequest) {
         printDebug("[http] call receive next")
         rawSocket.receiveNextMessage(of: HTTPReceiveMessage.self) { [weak self] result in
             printDebug("[http] receive message", result)
             switch result {
-            case let .success(message): self?.successReceiveNextUnsafe(rawSocket, urlRequest, configuration, with: message)
-            case let .failure(error): self?.finishAndNotifyUnsafe(rawSocket, urlRequest, configuration, with: error)
+            case let .success(message): self?.successReceiveNextUnsafe(rawSocket, urlRequest, with: message)
+            case let .failure(error): self?.finishAndNotifyUnsafe(rawSocket, urlRequest, with: error)
             }
         }
     }
 
-    private func successReceiveNextUnsafe(_ rawSocket: RawSocket, _ urlRequest: URLRequest,
-                                          _ configuration: RawSocketConfiguration, with message: HTTPReceiveMessage)
-    {
+    private func successReceiveNextUnsafe(_ rawSocket: RawSocket, _ urlRequest: URLRequest, with message: HTTPReceiveMessage) {
         do throws(URLError) {
             switch message {
             case let .response(response):
                 guard let url = urlRequest.url else { throw URLError(.badURL) }
                 self.response = response.urlResponse(with: url)
-                receiveNextDataUnsafe(rawSocket, urlRequest, configuration)
+                receiveNextDataUnsafe(rawSocket, urlRequest)
             case let .data(data):
                 guard response != nil else { throw URLError(.badServerResponse) }
-                handleResponseDataUnsafe(rawSocket, urlRequest, configuration, with: data)
-                receiveNextDataUnsafe(rawSocket, urlRequest, configuration)
-            case .end: finishAndNotifyUnsafe(rawSocket, urlRequest, configuration, with: nil)
+                handleResponseDataUnsafe(rawSocket, urlRequest, with: data)
+                receiveNextDataUnsafe(rawSocket, urlRequest)
+            case .end: finishAndNotifyUnsafe(rawSocket, urlRequest, with: nil)
             }
         } catch {
-            finishAndNotifyUnsafe(rawSocket, urlRequest, configuration, with: error)
+            finishAndNotifyUnsafe(rawSocket, urlRequest, with: error)
         }
     }
 
-    private func handleResponseDataUnsafe(_ rawSocket: RawSocket, _ urlRequest: URLRequest,
-                                          _ configuration: RawSocketConfiguration, with data: Data)
-    {
+    private func handleResponseDataUnsafe(_ rawSocket: RawSocket, _ urlRequest: URLRequest, with data: Data) {
         if self.data == nil {
             self.data = Data()
         }
         self.data?.append(contentsOf: data)
     }
 
-    private func finishAndNotifyUnsafe(_ rawSocket: RawSocket, _ urlRequest: URLRequest,
-                                       _ configuration: RawSocketConfiguration, with error: Error?)
-    {
+    private func finishAndNotifyUnsafe(_ rawSocket: RawSocket?, _ urlRequest: URLRequest, with error: Error?) {
         guard !isFinished else { return }
         isFinished = true
-        rawSocket.cancel(nil)
+        rawSocket?.cancel(nil)
         let callback = self.callback
         self.callback = nil
         if let error {
