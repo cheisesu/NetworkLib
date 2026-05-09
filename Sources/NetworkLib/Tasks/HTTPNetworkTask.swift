@@ -67,6 +67,7 @@ extension HTTPNetworkTask {
     private func startUnsafe() {
         guard currentConnection == nil else { return }
         do {
+            guard !isFinished else { return }
             try startWithRequestUnsafe(originalRequest)
         } catch {
             finishAndNotifyUnsafe(nil, originalRequest, with: error)
