@@ -299,7 +299,7 @@ class RawSocketTests_TCP_Receive_Callbacks: XCTestCase {
         //        let timeout: TimeInterval = 0
         //        let maxDataBlock: Int = .max
         //        let dataToSend = Data(repeating: 0xde, count: 2048)
-        //        let server = try ServerMock(transport: transport, isSecure: true, flow: .echo)
+        //        let server = try ServerMock(transport: transport, isSecure: true, flow: .manualEcho)
         //        defer { server.stop() }
         //        let port = try await server.start()
         //

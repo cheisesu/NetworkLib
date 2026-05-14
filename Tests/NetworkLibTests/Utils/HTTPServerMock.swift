@@ -23,7 +23,7 @@ private func loadIdentityFromP12() throws -> SecIdentity {
 final class HTTPServerMock: @unchecked Sendable {
     enum Flow: Sendable {
         case none
-        case echo(Data)
+        case manualEcho(Data)
     }
     private struct ConnectionInfo: Sendable {
         let connection: NWConnection
@@ -91,7 +91,7 @@ final class HTTPServerMock: @unchecked Sendable {
         }
     }
 
-    func receiveNext() async throws -> Data? {
+    func manualEcho() async throws -> Data? {
         try await withCheckedThrowingContinuation { continuation in
             let connection = self.connection!
             connection.receive(minimumIncompleteLength: 1, maximumLength: .max) { [weak self, flow] content, _, _, error in
@@ -100,8 +100,7 @@ final class HTTPServerMock: @unchecked Sendable {
                 } else {
                     switch flow {
                     case .none: break
-                    case .echo(let data):
-                        self?.sendToConnection(data, connection: connection)
+                    case .manualEcho(let data): self?.sendToConnection(data, connection: connection)
                     }
                     continuation.resume(returning: content)
                 }

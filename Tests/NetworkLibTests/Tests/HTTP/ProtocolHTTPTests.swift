@@ -25,7 +25,7 @@ struct ProtocolHTTPTests {
             defer { socket.cancel(nil) }
             try await socket.connect()
             try await socket.sendMessage(HTTPSendMessage(request))
-            let receivedData = try await #require(server.receiveNext())
+            let receivedData = try await #require(server.manualEcho())
             try #require(receivedData == requestData)
         }
 
@@ -104,7 +104,7 @@ struct ProtocolHTTPTests {
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
             request.httpBody = "some data".data(using: .utf8)
-            let server = try HTTPServerMock(isSecure: true, flow: .echo(expectedData))
+            let server = try HTTPServerMock(isSecure: true, flow: .manualEcho(expectedData))
             let port = try await server.start()
             defer { server.stop() }
             let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: .tcp,
@@ -113,7 +113,7 @@ struct ProtocolHTTPTests {
             defer { socket.cancel(nil) }
             try await socket.connect()
             try await socket.sendMessage(HTTPSendMessage(request))
-            _ = try! await server.receiveNext()
+            _ = try await server.manualEcho()
             let receivedMessages: [HTTPReceiveMessage] = try [
                 await socket.receiveNextMessage(),
                 await socket.receiveNextMessage(),
@@ -142,7 +142,7 @@ struct ProtocolHTTPTests {
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
             request.httpBody = "some data".data(using: .utf8)
-            let server = try HTTPServerMock(isSecure: true, flow: .echo(expectedData))
+            let server = try HTTPServerMock(isSecure: true, flow: .manualEcho(expectedData))
             let port = try await server.start()
             defer { server.stop() }
             let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: .tcp,
@@ -151,7 +151,7 @@ struct ProtocolHTTPTests {
             defer { socket.cancel(nil) }
             try await socket.connect()
             try await socket.sendMessage(HTTPSendMessage(request))
-            _ = try await server.receiveNext()
+            _ = try await server.manualEcho()
             do {
                 _ = try await socket.receiveNextMessage() as HTTPReceiveMessage
                 throw TestError.unexpectedEntrance
@@ -179,7 +179,7 @@ struct ProtocolHTTPTests {
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
             request.httpBody = "some data".data(using: .utf8)
-            let server = try HTTPServerMock(isSecure: true, flow: .echo(expectedData))
+            let server = try HTTPServerMock(isSecure: true, flow: .manualEcho(expectedData))
             let port = try await server.start()
             defer { server.stop() }
             let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: .tcp,
@@ -188,7 +188,7 @@ struct ProtocolHTTPTests {
             defer { socket.cancel(nil) }
             try await socket.connect()
             try await socket.sendMessage(HTTPSendMessage(request))
-            _ = try await server.receiveNext()
+            _ = try await server.manualEcho()
             do {
                 _ = try await socket.receiveNextMessage() as HTTPReceiveMessage
                 throw TestError.unexpectedEntrance
@@ -210,7 +210,7 @@ struct ProtocolHTTPTests {
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
             request.httpBody = "some data".data(using: .utf8)
-            let server = try HTTPServerMock(isSecure: true, flow: .echo(expectedData))
+            let server = try HTTPServerMock(isSecure: true, flow: .manualEcho(expectedData))
             let port = try await server.start()
             defer { server.stop() }
             let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: .tcp,
@@ -219,13 +219,13 @@ struct ProtocolHTTPTests {
             defer { socket.cancel(nil) }
             try await socket.connect()
             try await socket.sendMessage(HTTPSendMessage(request))
-            _ = try await server.receiveNext()
+            _ = try await server.manualEcho()
             do {
                 var msg = try await socket.receiveNextMessage() as HTTPReceiveMessage
                 msg = try await socket.receiveNextMessage() as HTTPReceiveMessage
                 try #require(msg == .end)
                 try await socket.sendMessage(HTTPSendMessage(request))
-                _ = try await server.receiveNext()
+                _ = try await server.manualEcho()
                 _ = try await socket.receiveNextMessage() as HTTPReceiveMessage
                 throw TestError.unexpectedEntrance
             } catch NWError.posix(.EINVAL) {
@@ -251,7 +251,7 @@ struct ProtocolHTTPTests {
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
             request.httpBody = "some data".data(using: .utf8)
-            let server = try HTTPServerMock(isSecure: true, flow: .echo(expectedData))
+            let server = try HTTPServerMock(isSecure: true, flow: .manualEcho(expectedData))
             let port = try await server.start()
             defer { server.stop() }
             let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: .tcp,
@@ -260,7 +260,7 @@ struct ProtocolHTTPTests {
             defer { socket.cancel(nil) }
             try await socket.connect()
             try await socket.sendMessage(HTTPSendMessage(request))
-            _ = try await server.receiveNext()
+            _ = try await server.manualEcho()
             do {
                 _ = try await socket.receiveNextMessage() as _SomeReceiveMessage
                 throw TestError.unexpectedEntrance
