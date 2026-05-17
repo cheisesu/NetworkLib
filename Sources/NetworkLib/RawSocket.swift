@@ -212,10 +212,14 @@ public class RawSocket: @unchecked Sendable {
                     if !isComplete {
                         return completion(.failure(.posix(.EIO)))
                     }
-                    guard let message = M.init(from: contentContext, with: content) else {
-                        return completion(.failure(.posix(.EBADMSG)))
+
+                    if let message = M.init(from: contentContext, with: content) {
+                        completion(.success(message))
+                    } else if contentContext.isFinal, internalState == .closed || internalState == .cancelling {
+                        completion(.failure(.posix(.ECANCELED)))
+                    } else {
+                        completion(.failure(.posix(.EBADMSG)))
                     }
-                    completion(.success(message))
                 } else if isComplete {
                     completion(.failure(.posix(.EIO)))
                 } else {
