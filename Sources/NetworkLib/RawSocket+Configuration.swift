@@ -44,7 +44,7 @@ public struct RawSocketConfiguration: Sendable {
     }
     
     public init(_ host: NWEndpoint.Host, _ port: NWEndpoint.Port, isSecure: Bool = true, sni: String? = nil,
-                transport: RawSocketTransport = .tcp, maxDataBlock: Int = .max, timeout: TimeInterval = 10,
+                transport: RawSocketTransport = .tcp, maxDataBlock: Int = .max, timeout: TimeInterval = 30,
                 additionalProtocols: [NWProtocolOptions] = [])
     {
         self.host = host
