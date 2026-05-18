@@ -24,6 +24,7 @@ final class HTTPServerMock: @unchecked Sendable {
     enum Flow: Sendable {
         case none
         case manualEcho(Data)
+        case sendResponse(Data)
     }
     private struct ConnectionInfo: Sendable {
         let connection: NWConnection
@@ -101,9 +102,22 @@ final class HTTPServerMock: @unchecked Sendable {
                     switch flow {
                     case .none: break
                     case .manualEcho(let data): self?.sendToConnection(data, connection: connection)
+                    case .sendResponse: break
                     }
                     continuation.resume(returning: content)
                 }
+            }
+        }
+    }
+
+    private func scheduleEchoOnReceive(_ data: Data, on connection: NWConnection) {
+        connection.receive(minimumIncompleteLength: 1, maximumLength: .max) { _, _, _, error in
+            if let error {
+                printDebug("[server_connection] scheduled echo, receive - error", error)
+            } else {
+                connection.send(content: data, completion: .contentProcessed({ error in
+                    printDebug("[server_connection] scheduled echo, echo - error", error)
+                }))
             }
         }
     }
@@ -117,11 +131,16 @@ final class HTTPServerMock: @unchecked Sendable {
     private func handleNewConnection(_ newConnection: NWConnection) {
         printDebug("[server_connection] handle new", newConnection)
         self.connection = newConnection
-        newConnection.stateUpdateHandler = { state in
+        newConnection.stateUpdateHandler = { [weak self, flow] state in
             printDebug("[server_connection] new state", state)
             switch state {
             case .failed, .waiting: newConnection.cancel()
-            case .ready: break
+            case .ready:
+                switch flow {
+                case .none: break
+                case .manualEcho: break
+                case let .sendResponse(data): self?.scheduleEchoOnReceive(data, on: newConnection)
+                }
             case .cancelled: break
             default: break
             }
