@@ -116,7 +116,7 @@ final class HTTPServerMock: @unchecked Sendable {
                 printDebug("[server_connection] scheduled echo, receive - error", error)
             } else {
                 connection.send(content: data, completion: .contentProcessed({ error in
-                    printDebug("[server_connection] scheduled echo, echo - error", error)
+                    printDebug("[server_connection] sent echo, error", error)
                 }))
             }
         }

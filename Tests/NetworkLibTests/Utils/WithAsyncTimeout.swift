@@ -11,7 +11,7 @@ func withAsyncTimeout<T: Sendable>(_ timeout: Duration, block: @escaping @Sendab
             try await Task.sleep(until: .now + timeout)
             throw AsyncTimeoutError()
         }
-        
+
         defer { group.cancelAll() }
         guard let result = try await group.next() else { throw AsyncTimeoutError() }
         return result
