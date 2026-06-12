@@ -48,6 +48,11 @@ struct RawSocketConfigurationTests {
     }
 
     struct Main {
+        @Test
+        func maxDataLengthIsDeviceBitWidthKb() throws {
+            try #require(RawSocketConfiguration.maxDataLength == Int.bitWidth * 1024)
+        }
+
         @Test(.tags(.RawSocketConnect.configuration), arguments: [RawSocketTransport.tcp, .udp])
         func init_NoProxy_AssignsProperties(_ transport: RawSocketTransport) throws {
             let config = RawSocketConfiguration("some.host", 9999, isSecure: true, sni: "sni-value", transport: transport,
@@ -72,7 +77,7 @@ struct RawSocketConfigurationTests {
             try #require(config.isSecure)
             try #require(config.sni == nil)
             try #require(config.transport == .tcp)
-            try #require(config.maxDataBlock == .max)
+            try #require(config.maxDataBlock == RawSocketConfiguration.maxDataLength)
             try #require(config.timeout == 30)
             try #require(config.additionalProtocols.isEmpty)
         }
@@ -127,7 +132,7 @@ struct RawSocketConfigurationTests {
             try #require(config.isSecure)
             try #require(config.sni == nil)
             try #require(config.transport == .tcp)
-            try #require(config.maxDataBlock == .max)
+            try #require(config.maxDataBlock == RawSocketConfiguration.maxDataLength)
             try #require(config.timeout == 30)
             try #require(config.additionalProtocols.isEmpty)
         }
