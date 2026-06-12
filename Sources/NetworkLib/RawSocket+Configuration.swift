@@ -2,6 +2,10 @@ import Foundation
 import Network
 
 extension RawSocketConfiguration {
+    public static let maxDataLength: Int = Int.bitWidth * 1024
+}
+
+extension RawSocketConfiguration {
     public struct Proxy: Sendable, Equatable {
         public let host: NWEndpoint.Host
         public let port: NWEndpoint.Port
@@ -44,8 +48,8 @@ public struct RawSocketConfiguration: Sendable {
     }
 
     public init(_ host: NWEndpoint.Host, _ port: NWEndpoint.Port, isSecure: Bool = true, sni: String? = nil,
-                transport: RawSocketTransport = .tcp, maxDataBlock: Int = .max, timeout: TimeInterval = 30,
-                additionalProtocols: [NWProtocolOptions] = [])
+                transport: RawSocketTransport = .tcp, maxDataBlock: Int = Self.maxDataLength,
+                timeout: TimeInterval = 30, additionalProtocols: [NWProtocolOptions] = [])
     {
         self.host = host
         self.port = port
@@ -60,8 +64,8 @@ public struct RawSocketConfiguration: Sendable {
     
     @available(macOS 12.3, iOS 15.4, *)
     public init(_ host: NWEndpoint.Host, _ port: NWEndpoint.Port, isSecure: Bool = true, sni: String? = nil,
-                proxy: Proxy, transport: RawSocketTransport = .tcp, maxDataBlock: Int = .max,
-                timeout: TimeInterval = 10, additionalProtocols: [NWProtocolOptions] = [])
+                proxy: Proxy, transport: RawSocketTransport = .tcp, maxDataBlock: Int = Self.maxDataLength,
+                timeout: TimeInterval = 30, additionalProtocols: [NWProtocolOptions] = [])
     {
         self.host = host
         self.port = port
