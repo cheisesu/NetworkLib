@@ -42,7 +42,7 @@ public struct RawSocketConfiguration: Sendable {
     var endpoint: NWEndpoint {
         return .hostPort(host: host, port: port)
     }
-    
+
     public init(_ host: NWEndpoint.Host, _ port: NWEndpoint.Port, isSecure: Bool = true, sni: String? = nil,
                 transport: RawSocketTransport = .tcp, maxDataBlock: Int = .max, timeout: TimeInterval = 30,
                 additionalProtocols: [NWProtocolOptions] = [])
@@ -131,9 +131,6 @@ public struct RawSocketConfiguration: Sendable {
     }
     
     private func makeProxyParameters(_ proxy: Proxy) throws(NWError) -> NWParameters {
-#if !DEBUG
-        let disableInBoxProxy = false
-#endif
         if #available(macOS 14.0, iOS 17.0, *), !disableInBoxProxy {
             return makeInBoxProxyParameters(proxy)
         }
@@ -154,9 +151,6 @@ public struct RawSocketConfiguration: Sendable {
     }
     
     private func makeProxyMainEndpoint(_ proxy: Proxy) throws(NWError) -> NWEndpoint {
-#if !DEBUG
-        let disableInBoxProxy = false
-#endif
         if #available(macOS 14.0, iOS 17.0, *), !disableInBoxProxy {
             return endpoint
         }

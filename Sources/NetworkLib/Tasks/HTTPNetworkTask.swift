@@ -18,7 +18,7 @@ public final class HTTPNetworkTask: @unchecked Sendable {
         }
     }
 
-    public typealias ResultCallback = @Sendable (_ response: HTTPURLResponse?, _ result: Result<Data, Error>) -> Void
+    public typealias ResultCallback = @Sendable (_ result: Result<(HTTPURLResponse, Data), Error>) -> Void
 
     private let proxy: RawSocketConfiguration.Proxy?
     private let originalRequest: URLRequest
@@ -48,34 +48,63 @@ public final class HTTPNetworkTask: @unchecked Sendable {
         accessQueue.setSpecific(key: accessKey, value: ObjectIdentifier(self.accessQueue))
     }
 
-    public func start() {
+    public func start(onScheduled callback: (@Sendable (_ startResult: Result<URLRequest, Error>) -> Void)? = nil) {
+        let callback = callback ?? { _ in }
         accessQueue.async { [weak self] in
+            printDebug("[http] call start")
             guard let self else { return }
-            self.startUnsafe()
+            self.startUnsafe(callback)
         }
     }
 
     public func cancel() {
         accessQueue.async { [weak self] in
+            printDebug("[http] cancel")
             guard let self else { return }
             self.currentConnection?.cancel(nil)
+        }
+    }
+
+    public func perform() async throws -> (HTTPURLResponse, Data) {
+        printDebug("[http] call perform")
+        return try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { continuation in
+                printDebug("[http] perform continuation enter")
+                self.accessQueue.async { [weak self] in
+                    guard let self else { return continuation.resume(throwing: URLError(.cancelled)) }
+                    self.startUnsafe { startResult in
+                        switch startResult {
+                        case .success:
+                            precondition(self.callback == nil)
+                            self.callback = { result in
+                                continuation.resume(with: result)
+                            }
+                        case let .failure(error): continuation.resume(throwing: error)
+                        }
+                    }
+                }
+            }
+        } onCancel: { [weak self] in
+            self?.cancel()
         }
     }
 }
 
 extension HTTPNetworkTask {
-    private func startUnsafe() {
-        guard currentConnection == nil else { return }
+    private func startUnsafe(_ onScheduleComplete: @Sendable(_ startResult: Result<URLRequest, Error>) -> Void) {
+        guard currentConnection == nil else { return onScheduleComplete(.failure(NWError.posix(.EALREADY))) }
         do {
-            guard !isFinished else { return }
-            try startWithRequestUnsafe(originalRequest)
+            guard !isFinished else { return onScheduleComplete(.failure(NWError.posix(.ECANCELED))) }
+            let executingRequest = try startWithRequestUnsafe(originalRequest)
+            onScheduleComplete(.success(executingRequest))
         } catch {
+            onScheduleComplete(.failure(error))
             finishAndNotifyUnsafe(nil, originalRequest, with: error)
         }
     }
 
-    private func startWithRequestUnsafe(_ urlRequest: URLRequest) throws {
-        let configuration = try makeConfiguration(from: urlRequest)
+    private func startWithRequestUnsafe(_ urlRequest: URLRequest) throws -> URLRequest {
+        let (configuration, executingRequest) = try makeConfiguration(from: urlRequest)
         let rawSocket = try RawSocket(configuration, accessQueue: accessQueue)
         currentConnection = rawSocket
         rawSocket.connect { [weak self] result in
@@ -85,16 +114,17 @@ extension HTTPNetworkTask {
             case let .failure(error): self?.finishAndNotifyUnsafe(rawSocket, urlRequest, with: error)
             }
         }
+        return executingRequest
     }
 
-    private func makeConfiguration(from request: URLRequest) throws(URLError) -> RawSocketConfiguration { // done
+    private func makeConfiguration(from request: URLRequest) throws(URLError) -> (RawSocketConfiguration, URLRequest) { // done
         guard let url = request.url else { throw URLError(.badURL) }
         guard let schemeRaw = url.scheme, let scheme = Scheme(rawValue: schemeRaw) else { throw URLError(.unsupportedURL) }
         guard let hostRaw = url.wrappedHost, !hostRaw.isEmpty else { throw URLError(.badURL) }
-        let urlPort = if let portInt = url.port {
-            NWEndpoint.Port(rawValue: UInt16(truncatingIfNeeded: portInt))
+        let urlPort: NWEndpoint.Port? = if let portInt = url.port {
+            .init(rawValue: UInt16(truncatingIfNeeded: portInt))
         } else {
-            scheme.defaultNWPort
+            nil
         }
         let port = urlPort ?? scheme.defaultNWPort
         var configuration = RawSocketConfiguration(.init(hostRaw),
@@ -104,7 +134,14 @@ extension HTTPNetworkTask {
         if let proxy, #available(macOS 12.3, iOS 15.4, *) {
             configuration = configuration.using(proxy: proxy)
         }
-        return configuration
+        var executingRequest = request
+        var executingComponents = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        executingComponents?.scheme = schemeRaw
+        executingComponents?.host = hostRaw
+        executingComponents?.port = Int(port.rawValue)
+        guard let executingUrl = executingComponents?.url else { throw URLError(.badURL) }
+        executingRequest.url = executingUrl
+        return (configuration, executingRequest)
     }
 
     private func successConnectUnsafe(_ rawSocket: RawSocket, _ urlRequest: URLRequest) {
@@ -166,16 +203,18 @@ extension HTTPNetworkTask {
         guard !isFinished else { return }
         isFinished = true
         rawSocket?.cancel(nil)
+        currentConnection = nil
         let callback = self.callback
         self.callback = nil
         if let error {
-            callback?(response, .failure(error))
+            callback?(.failure(error))
         } else {
             guard let response else {
-                callback?(nil, .failure(URLError(.cannotParseResponse)))
+                callback?(.failure(URLError(.cannotParseResponse)))
                 return
             }
-            callback?(response, .success(data ?? Data()))
+            let result = (response, data ?? Data())
+            callback?(.success(result))
         }
     }
 }
