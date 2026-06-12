@@ -42,9 +42,9 @@ public struct RawSocketConfiguration: Sendable {
     var endpoint: NWEndpoint {
         return .hostPort(host: host, port: port)
     }
-    
+
     public init(_ host: NWEndpoint.Host, _ port: NWEndpoint.Port, isSecure: Bool = true, sni: String? = nil,
-                transport: RawSocketTransport = .tcp, maxDataBlock: Int = .max, timeout: TimeInterval = 10,
+                transport: RawSocketTransport = .tcp, maxDataBlock: Int = .max, timeout: TimeInterval = 30,
                 additionalProtocols: [NWProtocolOptions] = [])
     {
         self.host = host
@@ -89,15 +89,14 @@ public struct RawSocketConfiguration: Sendable {
         )
     }
 
-    // TODO: move to a separate entity
-    func makeNWConnection() throws -> NWConnection {
+    func makeNWConnection() throws(NWError) -> NWConnection {
         if let proxy {
             return try makeProxyNWConnection(proxy)
         }
         return makeDirectNWConnection()
     }
     
-    private func makeProxyNWConnection(_ proxy: Proxy) throws -> NWConnection {
+    private func makeProxyNWConnection(_ proxy: Proxy) throws(NWError) -> NWConnection {
         let parameters = try makeProxyParameters(proxy)
         let endpoint = try makeProxyMainEndpoint(proxy)
         return NWConnection(to: endpoint, using: parameters)
@@ -131,10 +130,7 @@ public struct RawSocketConfiguration: Sendable {
         return parameters
     }
     
-    private func makeProxyParameters(_ proxy: Proxy) throws -> NWParameters {
-#if !DEBUG
-        let disableInBoxProxy = false
-#endif
+    private func makeProxyParameters(_ proxy: Proxy) throws(NWError) -> NWParameters {
         if #available(macOS 14.0, iOS 17.0, *), !disableInBoxProxy {
             return makeInBoxProxyParameters(proxy)
         }
@@ -154,10 +150,7 @@ public struct RawSocketConfiguration: Sendable {
         throw NWError.posix(.ENOTSUP)
     }
     
-    private func makeProxyMainEndpoint(_ proxy: Proxy) throws -> NWEndpoint {
-#if !DEBUG
-        let disableInBoxProxy = false
-#endif
+    private func makeProxyMainEndpoint(_ proxy: Proxy) throws(NWError) -> NWEndpoint {
         if #available(macOS 14.0, iOS 17.0, *), !disableInBoxProxy {
             return endpoint
         }

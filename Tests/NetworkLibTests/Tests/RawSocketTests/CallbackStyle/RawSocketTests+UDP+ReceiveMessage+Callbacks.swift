@@ -198,7 +198,7 @@ class RawSocketTests_UDP_ReceiveMessage_Callbacks: XCTestCase {
         await fulfillment(of: [receiveExpect], timeout: 1, enforceOrder: true)
     }
 
-    func test_Receive_WhenCancelling_CallbackReturnsError() async throws {
+    func test_Receive_WhenCancellingBeforeReceive_CallbackReturnsError() async throws {
         let timeout: TimeInterval = 0
         let maxDataBlock: Int = .max
         let server = try ServerMock(transport: transport, isSecure: true, flow: .none)
@@ -222,6 +222,39 @@ class RawSocketTests_UDP_ReceiveMessage_Callbacks: XCTestCase {
                     receiveExpect.fulfill()
                 }
             }
+        }
+        await fulfillment(of: [receiveExpect], timeout: 3, enforceOrder: true)
+    }
+
+    func test_Receive_WhenCancellingDuringReceive_CallbackReturnsError() async throws {
+        struct _ReceiveMessage: RawSocketReceiveMessage {
+            init?(from context: NWConnection.ContentContext, with content: Data?) {
+                return nil
+            }
+        }
+        let timeout: TimeInterval = 0
+        let maxDataBlock: Int = .max
+        let server = try ServerMock(transport: transport, isSecure: true, flow: .none)
+        defer { server.stop() }
+        let port = try await server.start()
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                            maxDataBlock: maxDataBlock, timeout: timeout)
+        let socket = try RawSocket(config)
+        defer { socket.cancel(nil) }
+
+        let receiveExpect = expectation(description: "For callback on receive")
+        socket.connect { _, error in
+            XCTAssertNil(error)
+            socket.receiveNextMessage(of: _ReceiveMessage.self) { result in
+                switch result {
+                case let .success(message): XCTFail("Unexpected entrance with message: \(message)")
+                case let .failure(error):
+                    guard case .posix(let code) = error else { return XCTFail("Error is not posix \(error)") }
+                    XCTAssertEqual(code, .ECANCELED)
+                    receiveExpect.fulfill()
+                }
+            }
+            socket.cancel(nil)
         }
         await fulfillment(of: [receiveExpect], timeout: 3, enforceOrder: true)
     }

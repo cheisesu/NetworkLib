@@ -70,7 +70,7 @@ struct RawSocketReceiveTests {
         try await withAsyncTimeout(.seconds(3)) {
             try await socket.connect()
             try await socket.send(dataToSend)
-            Task {
+            _ = Task {
                 try await Task.sleep(for: .milliseconds(200))
                 socket.cancel(nil)
             }

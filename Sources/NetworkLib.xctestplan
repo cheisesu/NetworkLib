@@ -19,7 +19,7 @@
   },
   "testTargets" : [
     {
-      "parallelizable" : true,
+      "parallelizable" : false,
       "skippedTests" : [
         "RawSocketTests_TCP_Cancel_Old",
         "RawSocketTests_TCP_Cancel_Old\/test_CancelsWithAndWithoutCallback_WillTriggerCallback()",

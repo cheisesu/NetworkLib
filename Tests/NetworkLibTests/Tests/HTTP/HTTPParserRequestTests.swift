@@ -20,6 +20,7 @@ struct HTTPParserRequestTests {
         request.httpMethod = method
         let expectedLines = [
             "\(expectedMethod) /path1?q1=query1 HTTP/\(version.rawValue)",
+            "Connection: close",
             version == .v1_1 ? "Host: localhost" : nil,
             "",
             ""
@@ -40,6 +41,7 @@ struct HTTPParserRequestTests {
             ("Header1", "Lorem ¡psum"),
             version == .v1_1 ? ("Host", "localhost") : nil,
             ("DateTime", "\(Date())"),
+            ("Connection", "close"),
         ]
             .compactMap { $0 }
             .sorted(by: { $0.0 < $1.0 })
@@ -76,6 +78,7 @@ struct HTTPParserRequestTests {
         
         let headerStrings = [
             "\(expectedMethod) /path1?q1=query1 HTTP/\(version.rawValue)",
+            "Connection: close",
             ["Content-Length", String(body.count)].joined(separator: ": "),
             version == .v1_1 ? "Host: localhost" : nil,
             "",
@@ -100,6 +103,7 @@ struct HTTPParserRequestTests {
             ("DateTime", "\(Date())"),
             ("Content-Length", String(body.count)),
             version == .v1_1 ? ("Host", "localhost") : nil,
+            ("Connection", "close"),
         ]
             .compactMap { $0 }
             .sorted(by: { $0.0 < $1.0 })
@@ -133,14 +137,14 @@ extension HTTPParserRequestTests {
             ("example.com" as NWEndpoint.Host, nil, "CONNECT example.com HTTP/1.1"),
             ("127.0.0.1" as NWEndpoint.Host, nil, "CONNECT 127.0.0.1 HTTP/1.1"),
             ("2001:0db8:85a3:0000:0000:8a2e:0370:7334" as NWEndpoint.Host, nil, "CONNECT [2001:db8:85a3::8a2e:370:7334] HTTP/1.1"),
-
+            
             (NWEndpoint.Host.name("example.com", nil), 80 as NWEndpoint.Port?, "CONNECT example.com:80 HTTP/1.1"),
             (NWEndpoint.Host.ipv4(IPv4Address("127.0.0.1")!), 80, "CONNECT 127.0.0.1:80 HTTP/1.1"),
             (NWEndpoint.Host.ipv6(IPv6Address("2001:0db8:85a3:0000:0000:8a2e:0370:7334")!), 80, "CONNECT [2001:db8:85a3::8a2e:370:7334]:80 HTTP/1.1"),
             ("example.com" as NWEndpoint.Host, 80, "CONNECT example.com:80 HTTP/1.1"),
             ("127.0.0.1" as NWEndpoint.Host, 80, "CONNECT 127.0.0.1:80 HTTP/1.1"),
             ("2001:0db8:85a3:0000:0000:8a2e:0370:7334" as NWEndpoint.Host, 80, "CONNECT [2001:db8:85a3::8a2e:370:7334]:80 HTTP/1.1"),
-
+            
             (NWEndpoint.Host.name("example.com", nil), NWEndpoint.Port(rawValue: 80), "CONNECT example.com:80 HTTP/1.1"),
             (NWEndpoint.Host.ipv4(IPv4Address("127.0.0.1")!), NWEndpoint.Port(rawValue: 80), "CONNECT 127.0.0.1:80 HTTP/1.1"),
             (NWEndpoint.Host.ipv6(IPv6Address("2001:0db8:85a3:0000:0000:8a2e:0370:7334")!), NWEndpoint.Port(rawValue: 80), "CONNECT [2001:db8:85a3::8a2e:370:7334]:80 HTTP/1.1"),
@@ -157,6 +161,7 @@ extension HTTPParserRequestTests {
             }
             let expectedLines = [
                 expectedString,
+                "Connection: close",
                 "Host: \(target)",
                 "",
                 ""
@@ -164,7 +169,7 @@ extension HTTPParserRequestTests {
             let expectedData = Data(expectedLines.joined(separator: "\r\n").utf8)
             try #require(parser.parsedData == expectedData)
         }
-
+        
         @Test(.tags(.httpParser), arguments: [
             (NWEndpoint.Host.name("example.com", nil), nil as NWEndpoint.Port?, "CONNECT example.com HTTP/1.1"),
             (NWEndpoint.Host.ipv4(IPv4Address("127.0.0.1")!), nil, "CONNECT 127.0.0.1 HTTP/1.1"),
@@ -172,14 +177,14 @@ extension HTTPParserRequestTests {
             ("example.com" as NWEndpoint.Host, nil, "CONNECT example.com HTTP/1.1"),
             ("127.0.0.1" as NWEndpoint.Host, nil, "CONNECT 127.0.0.1 HTTP/1.1"),
             ("2001:0db8:85a3:0000:0000:8a2e:0370:7334" as NWEndpoint.Host, nil, "CONNECT [2001:db8:85a3::8a2e:370:7334] HTTP/1.1"),
-
+            
             (NWEndpoint.Host.name("example.com", nil), 80 as NWEndpoint.Port?, "CONNECT example.com:80 HTTP/1.1"),
             (NWEndpoint.Host.ipv4(IPv4Address("127.0.0.1")!), 80, "CONNECT 127.0.0.1:80 HTTP/1.1"),
             (NWEndpoint.Host.ipv6(IPv6Address("2001:0db8:85a3:0000:0000:8a2e:0370:7334")!), 80, "CONNECT [2001:db8:85a3::8a2e:370:7334]:80 HTTP/1.1"),
             ("example.com" as NWEndpoint.Host, 80, "CONNECT example.com:80 HTTP/1.1"),
             ("127.0.0.1" as NWEndpoint.Host, 80, "CONNECT 127.0.0.1:80 HTTP/1.1"),
             ("2001:0db8:85a3:0000:0000:8a2e:0370:7334" as NWEndpoint.Host, 80, "CONNECT [2001:db8:85a3::8a2e:370:7334]:80 HTTP/1.1"),
-
+            
             (NWEndpoint.Host.name("example.com", nil), NWEndpoint.Port(rawValue: 80), "CONNECT example.com:80 HTTP/1.1"),
             (NWEndpoint.Host.ipv4(IPv4Address("127.0.0.1")!), NWEndpoint.Port(rawValue: 80), "CONNECT 127.0.0.1:80 HTTP/1.1"),
             (NWEndpoint.Host.ipv6(IPv6Address("2001:0db8:85a3:0000:0000:8a2e:0370:7334")!), NWEndpoint.Port(rawValue: 80), "CONNECT [2001:db8:85a3::8a2e:370:7334]:80 HTTP/1.1"),
@@ -201,6 +206,7 @@ extension HTTPParserRequestTests {
             let parser = HTTPRequestParser(connectTo: host, port, headers: headers)
             let expectedLines = [
                 expectedString,
+                "Connection: close",
                 "Header2: Header value 2",
                 "Header3: Header value 3",
                 "Host: \(target)",
@@ -210,7 +216,7 @@ extension HTTPParserRequestTests {
             let expectedData = Data(expectedLines.joined(separator: "\r\n").utf8)
             try #require(parser.parsedData == expectedData)
         }
-
+        
         @Test(.tags(.httpParser))
         func containsHostHeader() throws {
             let host: NWEndpoint.Host = .name("example.com", nil)
@@ -218,6 +224,7 @@ extension HTTPParserRequestTests {
             let parser = HTTPRequestParser(connectTo: host, port, headers: [:])
             let expectedLines = [
                 "CONNECT example.com:90 HTTP/1.1",
+                "Connection: close",
                 "Host: example.com:90",
                 "",
                 ""

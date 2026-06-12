@@ -15,6 +15,7 @@ final class HTTPRequestParser: Sendable {
         if version == .v1_1, urlRequest.value(forHTTPHeaderField: "Host") == nil {
             urlRequest.setValue(urlRequest.url?.wrappedHost, forHTTPHeaderField: "Host")
         }
+        urlRequest.setValue("close", forHTTPHeaderField: "Connection")
         let headers = urlRequest.allHTTPHeaderFields?.map { (key: String, value: String) in
             (key, value)
         }.sorted(by: { $0.0 < $1.0 }) ?? []
@@ -38,6 +39,7 @@ final class HTTPRequestParser: Sendable {
         let startLine = ["CONNECT", target, version].joined(separator: " ")
         var headers = headers
         headers["Host"] = target
+        headers["Connection"] = "close"
         let headersPairs = headers
             .map { ($0.key, $0.value) }
             .sorted(by: { $0.0 < $1.0 })
