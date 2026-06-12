@@ -61,7 +61,7 @@ public struct RawSocketConfiguration: Sendable {
     @available(macOS 12.3, iOS 15.4, *)
     public init(_ host: NWEndpoint.Host, _ port: NWEndpoint.Port, isSecure: Bool = true, sni: String? = nil,
                 proxy: Proxy, transport: RawSocketTransport = .tcp, maxDataBlock: Int = .max,
-                timeout: TimeInterval = 10, additionalProtocols: [NWProtocolOptions] = [])
+                timeout: TimeInterval = 30, additionalProtocols: [NWProtocolOptions] = [])
     {
         self.host = host
         self.port = port

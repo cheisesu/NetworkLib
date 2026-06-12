@@ -73,7 +73,7 @@ struct RawSocketConfigurationTests {
             try #require(config.sni == nil)
             try #require(config.transport == .tcp)
             try #require(config.maxDataBlock == .max)
-            try #require(config.timeout == 10)
+            try #require(config.timeout == 30)
             try #require(config.additionalProtocols.isEmpty)
         }
 
@@ -128,7 +128,7 @@ struct RawSocketConfigurationTests {
             try #require(config.sni == nil)
             try #require(config.transport == .tcp)
             try #require(config.maxDataBlock == .max)
-            try #require(config.timeout == 10)
+            try #require(config.timeout == 30)
             try #require(config.additionalProtocols.isEmpty)
         }
 
