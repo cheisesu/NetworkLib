@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-import Network
+@preconcurrency import Network
 @testable import NetworkLib
 
 extension Tag.RawSocketConnect {
@@ -55,11 +55,13 @@ struct RawSocketConfigurationTests {
 
         @Test(.tags(.RawSocketConnect.configuration), arguments: [RawSocketTransport.tcp, .udp])
         func init_NoProxy_AssignsProperties(_ transport: RawSocketTransport) throws {
-            let config = RawSocketConfiguration("some.host", 9999, isSecure: true, sni: "sni-value", transport: transport,
-                                                maxDataBlock: 256, timeout: 20, additionalProtocols: [.http()])
+            let config = RawSocketConfiguration("some.host", 9999, ipVersion: .v6, isSecure: true, sni: "sni-value",
+                                                transport: transport, maxDataBlock: 256, timeout: 20,
+                                                additionalProtocols: [.http()])
             try #require(config.proxy == nil)
             try #require(config.host == "some.host")
             try #require(config.port == 9999)
+            try #require(config.overrideIpVersion == .v6)
             try #require(config.isSecure)
             try #require(config.sni == "sni-value")
             try #require(config.transport == transport)
@@ -74,6 +76,7 @@ struct RawSocketConfigurationTests {
             try #require(config.proxy == nil)
             try #require(config.host == "some.host")
             try #require(config.port == 9999)
+            try #require(config.overrideIpVersion == .any)
             try #require(config.isSecure)
             try #require(config.sni == nil)
             try #require(config.transport == .tcp)
@@ -87,12 +90,14 @@ struct RawSocketConfigurationTests {
             let auth = HTTPAuthorization.basic(userName: "foo", password: "pas)01")
             let proxy = RawSocketConfiguration.Proxy(host: "some.host", port: 9999, isSecure: true, sni: "sni-value",
                                                      authorization: auth)
-            let config = RawSocketConfiguration("some.host", 9999, isSecure: true, sni: "sni-value", transport: transport,
-                                                maxDataBlock: 256, timeout: 20, additionalProtocols: [.http()])
+            let config = RawSocketConfiguration("some.host", 9999, ipVersion: .v6, isSecure: true, sni: "sni-value",
+                                                transport: transport, maxDataBlock: 256, timeout: 20,
+                                                additionalProtocols: [.http()])
                 .using(proxy: proxy)
             try #require(config.proxy == proxy)
             try #require(config.host == "some.host")
             try #require(config.port == 9999)
+            try #require(config.overrideIpVersion == .v6)
             try #require(config.isSecure)
             try #require(config.sni == "sni-value")
             try #require(config.transport == transport)
@@ -106,12 +111,13 @@ struct RawSocketConfigurationTests {
             let auth = HTTPAuthorization.basic(userName: "foo", password: "pas)01")
             let proxy = RawSocketConfiguration.Proxy(host: "some.host", port: 9999, isSecure: true, sni: "sni-value",
                                                      authorization: auth)
-            let config = RawSocketConfiguration("some.host", 9999, isSecure: true, sni: "sni-value", proxy: proxy,
+            let config = RawSocketConfiguration("some.host", 9999, ipVersion: .v6, isSecure: true, sni: "sni-value", proxy: proxy,
                                                 transport: transport, maxDataBlock: 256, timeout: 20,
                                                 additionalProtocols: [.http()])
             try #require(config.proxy == proxy)
             try #require(config.host == "some.host")
             try #require(config.port == 9999)
+            try #require(config.overrideIpVersion == .v6)
             try #require(config.isSecure)
             try #require(config.sni == "sni-value")
             try #require(config.transport == transport)
@@ -129,6 +135,7 @@ struct RawSocketConfigurationTests {
             try #require(config.proxy == proxy)
             try #require(config.host == "some.host")
             try #require(config.port == 9999)
+            try #require(config.overrideIpVersion == .any)
             try #require(config.isSecure)
             try #require(config.sni == nil)
             try #require(config.transport == .tcp)
@@ -148,9 +155,12 @@ struct RawSocketConfigurationTests {
     struct CreateNWConnection {
         // MARK: NO PROXY
 
-        @Test(.tags(.RawSocketConnect.configuration), arguments: [RawSocketTransport.tcp, .udp])
-        func noProxy_Insecure_NoAdditionalProtocols_ReturnsCorrect(_ transport: RawSocketTransport) throws {
-            let config = RawSocketConfiguration("some.host", 9999, isSecure: false, transport: transport)
+        @Test(.tags(.RawSocketConnect.configuration),
+              arguments: [RawSocketTransport.tcp, .udp], [NWProtocolIP.Options.Version.any, .v4, .v6])
+        func noProxy_Insecure_NoAdditionalProtocols_ReturnsCorrect(_ transport: RawSocketTransport,
+                                                                   _ ipVersion: NWProtocolIP.Options.Version) throws
+        {
+            let config = RawSocketConfiguration("some.host", 9999, ipVersion: ipVersion, isSecure: false, transport: transport)
             let connection = try config.makeNWConnection()
             try #require(connection.endpoint == config.endpoint)
             let parameters = connection.parameters
@@ -162,6 +172,8 @@ struct RawSocketConfigurationTests {
                 let proto = parameters.defaultProtocolStack.transportProtocol as? NWProtocolUDP.Options
                 try #require(proto != nil)
             }
+            let ip = try #require(parameters.defaultProtocolStack.internetProtocol as? NWProtocolIP.Options)
+            try #require(ip.version == ipVersion)
             try #require(parameters.defaultProtocolStack.applicationProtocols.isEmpty)
         }
 
@@ -245,110 +257,302 @@ struct RawSocketConfigurationTests {
 
         @Test(.tags(.RawSocketConnect.configuration),
               arguments: [
-                (false, "some.host", RawSocketTransport.tcp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty),
-                (false, "some.host", RawSocketTransport.tcp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsHttp),
-                (false, "some.host", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty),
-                (false, "some.host", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsHttp),
-                (false, "some.host", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty),
-                (false, "some.host", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsHttp),
-                (false, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty),
-                (false, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsHttp),
-                (false, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty),
-                (false, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsHttp),
-                (false, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty),
-                (false, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsHttp),
-                (false, "some.host", RawSocketTransport.tcp, Self.customProxyAuthNone, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty),
-                (false, "some.host", RawSocketTransport.tcp, Self.customProxyAuthNone, false, Self.customProxySniNone, Self.customProxyProtocolsHttp),
-                (false, "some.host", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty),
-                (false, "some.host", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniNone, Self.customProxyProtocolsHttp),
-                (false, "some.host", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty),
-                (false, "some.host", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniSet, Self.customProxyProtocolsHttp),
-                (false, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthNone, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty),
-                (false, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthNone, false, Self.customProxySniNone, Self.customProxyProtocolsHttp),
-                (false, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty),
-                (false, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniNone, Self.customProxyProtocolsHttp),
-                (false, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty),
-                (false, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniSet, Self.customProxyProtocolsHttp),
-                (false, "some.host", RawSocketTransport.udp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty),
-                (false, "some.host", RawSocketTransport.udp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsHttp),
-                (false, "some.host", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty),
-                (false, "some.host", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsHttp),
-                (false, "some.host", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty),
-                (false, "some.host", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsHttp),
-                (false, "2001:db8::1", RawSocketTransport.udp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty),
-                (false, "2001:db8::1", RawSocketTransport.udp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsHttp),
-                (false, "2001:db8::1", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty),
-                (false, "2001:db8::1", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsHttp),
-                (false, "2001:db8::1", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty),
-                (false, "2001:db8::1", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsHttp),
-                (false, "some.host", RawSocketTransport.udp, nil, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty),
-                (false, "some.host", RawSocketTransport.udp, nil, false, Self.customProxySniNone, Self.customProxyProtocolsHttp),
-                (false, "some.host", RawSocketTransport.udp, nil, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty),
-                (false, "some.host", RawSocketTransport.udp, nil, true, Self.customProxySniNone, Self.customProxyProtocolsHttp),
-                (false, "some.host", RawSocketTransport.udp, nil, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty),
-                (false, "some.host", RawSocketTransport.udp, nil, true, Self.customProxySniSet, Self.customProxyProtocolsHttp),
-                (false, "2001:db8::1", RawSocketTransport.udp, nil, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty),
-                (false, "2001:db8::1", RawSocketTransport.udp, nil, false, Self.customProxySniNone, Self.customProxyProtocolsHttp),
-                (false, "2001:db8::1", RawSocketTransport.udp, nil, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty),
-                (false, "2001:db8::1", RawSocketTransport.udp, nil, true, Self.customProxySniNone, Self.customProxyProtocolsHttp),
-                (false, "2001:db8::1", RawSocketTransport.udp, nil, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty),
-                (false, "2001:db8::1", RawSocketTransport.udp, nil, true, Self.customProxySniSet, Self.customProxyProtocolsHttp),
-                (true, "some.host", RawSocketTransport.tcp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty),
-                (true, "some.host", RawSocketTransport.tcp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsHttp),
-                (true, "some.host", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty),
-                (true, "some.host", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsHttp),
-                (true, "some.host", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty),
-                (true, "some.host", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsHttp),
-                (true, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty),
-                (true, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsHttp),
-                (true, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty),
-                (true, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsHttp),
-                (true, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty),
-                (true, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsHttp),
-                (true, "some.host", RawSocketTransport.tcp, Self.customProxyAuthNone, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty),
-                (true, "some.host", RawSocketTransport.tcp, Self.customProxyAuthNone, false, Self.customProxySniNone, Self.customProxyProtocolsHttp),
-                (true, "some.host", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty),
-                (true, "some.host", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniNone, Self.customProxyProtocolsHttp),
-                (true, "some.host", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty),
-                (true, "some.host", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniSet, Self.customProxyProtocolsHttp),
-                (true, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthNone, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty),
-                (true, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthNone, false, Self.customProxySniNone, Self.customProxyProtocolsHttp),
-                (true, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty),
-                (true, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniNone, Self.customProxyProtocolsHttp),
-                (true, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty),
-                (true, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniSet, Self.customProxyProtocolsHttp),
-                (true, "some.host", RawSocketTransport.udp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty),
-                (true, "some.host", RawSocketTransport.udp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsHttp),
-                (true, "some.host", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty),
-                (true, "some.host", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsHttp),
-                (true, "some.host", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty),
-                (true, "some.host", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsHttp),
-                (true, "2001:db8::1", RawSocketTransport.udp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty),
-                (true, "2001:db8::1", RawSocketTransport.udp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsHttp),
-                (true, "2001:db8::1", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty),
-                (true, "2001:db8::1", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsHttp),
-                (true, "2001:db8::1", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty),
-                (true, "2001:db8::1", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsHttp),
-                (true, "some.host", RawSocketTransport.udp, nil, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty),
-                (true, "some.host", RawSocketTransport.udp, nil, false, Self.customProxySniNone, Self.customProxyProtocolsHttp),
-                (true, "some.host", RawSocketTransport.udp, nil, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty),
-                (true, "some.host", RawSocketTransport.udp, nil, true, Self.customProxySniNone, Self.customProxyProtocolsHttp),
-                (true, "some.host", RawSocketTransport.udp, nil, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty),
-                (true, "some.host", RawSocketTransport.udp, nil, true, Self.customProxySniSet, Self.customProxyProtocolsHttp),
-                (true, "2001:db8::1", RawSocketTransport.udp, nil, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty),
-                (true, "2001:db8::1", RawSocketTransport.udp, nil, false, Self.customProxySniNone, Self.customProxyProtocolsHttp),
-                (true, "2001:db8::1", RawSocketTransport.udp, nil, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty),
-                (true, "2001:db8::1", RawSocketTransport.udp, nil, true, Self.customProxySniNone, Self.customProxyProtocolsHttp),
-                (true, "2001:db8::1", RawSocketTransport.udp, nil, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty),
-                (true, "2001:db8::1", RawSocketTransport.udp, nil, true, Self.customProxySniSet, Self.customProxyProtocolsHttp),
+                (false, "some.host", RawSocketTransport.tcp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty, NWProtocolIP.Options.Version.any),
+                (false, "some.host", RawSocketTransport.tcp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v4),
+                (false, "some.host", RawSocketTransport.tcp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v6),
+                (false, "some.host", RawSocketTransport.tcp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsHttp, .any),
+                (false, "some.host", RawSocketTransport.tcp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v4),
+                (false, "some.host", RawSocketTransport.tcp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v6),
+                (false, "some.host", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .any),
+                (false, "some.host", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v4),
+                (false, "some.host", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v6),
+                (false, "some.host", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsHttp, .any),
+                (false, "some.host", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v4),
+                (false, "some.host", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v6),
+                (false, "some.host", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty, .any),
+                (false, "some.host", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty, .v4),
+                (false, "some.host", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty, .v6),
+                (false, "some.host", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsHttp, .any),
+                (false, "some.host", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsHttp, .v4),
+                (false, "some.host", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsHttp, .v6),
+                (false, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .any),
+                (false, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v4),
+                (false, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v6),
+                (false, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsHttp, .any),
+                (false, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v4),
+                (false, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v6),
+                (false, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .any),
+                (false, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v4),
+                (false, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v6),
+                (false, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsHttp, .any),
+                (false, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v4),
+                (false, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v6),
+                (false, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty, .any),
+                (false, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty, .v4),
+                (false, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty, .v6),
+                (false, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsHttp, .any),
+                (false, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsHttp, .v4),
+                (false, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsHttp, .v6),
+                (false, "some.host", RawSocketTransport.tcp, Self.customProxyAuthNone, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .any),
+                (false, "some.host", RawSocketTransport.tcp, Self.customProxyAuthNone, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v4),
+                (false, "some.host", RawSocketTransport.tcp, Self.customProxyAuthNone, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v6),
+                (false, "some.host", RawSocketTransport.tcp, Self.customProxyAuthNone, false, Self.customProxySniNone, Self.customProxyProtocolsHttp, .any),
+                (false, "some.host", RawSocketTransport.tcp, Self.customProxyAuthNone, false, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v4),
+                (false, "some.host", RawSocketTransport.tcp, Self.customProxyAuthNone, false, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v6),
+                (false, "some.host", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .any),
+                (false, "some.host", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v4),
+                (false, "some.host", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v6),
+                (false, "some.host", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniNone, Self.customProxyProtocolsHttp, .any),
+                (false, "some.host", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v4),
+                (false, "some.host", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v6),
+                (false, "some.host", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty, .any),
+                (false, "some.host", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty, .v4),
+                (false, "some.host", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty, .v6),
+                (false, "some.host", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniSet, Self.customProxyProtocolsHttp, .any),
+                (false, "some.host", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniSet, Self.customProxyProtocolsHttp, .v4),
+                (false, "some.host", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniSet, Self.customProxyProtocolsHttp, .v6),
+                (false, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthNone, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .any),
+                (false, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthNone, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v4),
+                (false, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthNone, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v6),
+                (false, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthNone, false, Self.customProxySniNone, Self.customProxyProtocolsHttp, .any),
+                (false, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthNone, false, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v4),
+                (false, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthNone, false, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v6),
+                (false, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .any),
+                (false, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v4),
+                (false, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v6),
+                (false, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniNone, Self.customProxyProtocolsHttp, .any),
+                (false, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v4),
+                (false, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v6),
+                (false, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty, .any),
+                (false, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty, .v4),
+                (false, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty, .v6),
+                (false, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniSet, Self.customProxyProtocolsHttp, .any),
+                (false, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniSet, Self.customProxyProtocolsHttp, .v4),
+                (false, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniSet, Self.customProxyProtocolsHttp, .v6),
+                (false, "some.host", RawSocketTransport.udp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .any),
+                (false, "some.host", RawSocketTransport.udp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v4),
+                (false, "some.host", RawSocketTransport.udp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v6),
+                (false, "some.host", RawSocketTransport.udp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsHttp, .any),
+                (false, "some.host", RawSocketTransport.udp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v4),
+                (false, "some.host", RawSocketTransport.udp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v6),
+                (false, "some.host", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .any),
+                (false, "some.host", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v4),
+                (false, "some.host", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v6),
+                (false, "some.host", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsHttp, .any),
+                (false, "some.host", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v4),
+                (false, "some.host", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v6),
+                (false, "some.host", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty, .any),
+                (false, "some.host", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty, .v4),
+                (false, "some.host", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty, .v6),
+                (false, "some.host", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsHttp, .any),
+                (false, "some.host", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsHttp, .v4),
+                (false, "some.host", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsHttp, .v6),
+                (false, "2001:db8::1", RawSocketTransport.udp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .any),
+                (false, "2001:db8::1", RawSocketTransport.udp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v4),
+                (false, "2001:db8::1", RawSocketTransport.udp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v6),
+                (false, "2001:db8::1", RawSocketTransport.udp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsHttp, .any),
+                (false, "2001:db8::1", RawSocketTransport.udp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v4),
+                (false, "2001:db8::1", RawSocketTransport.udp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v6),
+                (false, "2001:db8::1", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .any),
+                (false, "2001:db8::1", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v4),
+                (false, "2001:db8::1", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v6),
+                (false, "2001:db8::1", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsHttp, .any),
+                (false, "2001:db8::1", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v4),
+                (false, "2001:db8::1", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v6),
+                (false, "2001:db8::1", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty, .any),
+                (false, "2001:db8::1", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty, .v4),
+                (false, "2001:db8::1", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty, .v6),
+                (false, "2001:db8::1", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsHttp, .any),
+                (false, "2001:db8::1", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsHttp, .v4),
+                (false, "2001:db8::1", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsHttp, .v6),
+                (false, "some.host", RawSocketTransport.udp, nil, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .any),
+                (false, "some.host", RawSocketTransport.udp, nil, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v4),
+                (false, "some.host", RawSocketTransport.udp, nil, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v6),
+                (false, "some.host", RawSocketTransport.udp, nil, false, Self.customProxySniNone, Self.customProxyProtocolsHttp, .any),
+                (false, "some.host", RawSocketTransport.udp, nil, false, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v4),
+                (false, "some.host", RawSocketTransport.udp, nil, false, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v6),
+                (false, "some.host", RawSocketTransport.udp, nil, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .any),
+                (false, "some.host", RawSocketTransport.udp, nil, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v4),
+                (false, "some.host", RawSocketTransport.udp, nil, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v6),
+                (false, "some.host", RawSocketTransport.udp, nil, true, Self.customProxySniNone, Self.customProxyProtocolsHttp, .any),
+                (false, "some.host", RawSocketTransport.udp, nil, true, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v4),
+                (false, "some.host", RawSocketTransport.udp, nil, true, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v6),
+                (false, "some.host", RawSocketTransport.udp, nil, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty, .any),
+                (false, "some.host", RawSocketTransport.udp, nil, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty, .v4),
+                (false, "some.host", RawSocketTransport.udp, nil, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty, .v6),
+                (false, "some.host", RawSocketTransport.udp, nil, true, Self.customProxySniSet, Self.customProxyProtocolsHttp, .any),
+                (false, "some.host", RawSocketTransport.udp, nil, true, Self.customProxySniSet, Self.customProxyProtocolsHttp, .v4),
+                (false, "some.host", RawSocketTransport.udp, nil, true, Self.customProxySniSet, Self.customProxyProtocolsHttp, .v6),
+                (false, "2001:db8::1", RawSocketTransport.udp, nil, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .any),
+                (false, "2001:db8::1", RawSocketTransport.udp, nil, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v4),
+                (false, "2001:db8::1", RawSocketTransport.udp, nil, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v6),
+                (false, "2001:db8::1", RawSocketTransport.udp, nil, false, Self.customProxySniNone, Self.customProxyProtocolsHttp, .any),
+                (false, "2001:db8::1", RawSocketTransport.udp, nil, false, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v4),
+                (false, "2001:db8::1", RawSocketTransport.udp, nil, false, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v6),
+                (false, "2001:db8::1", RawSocketTransport.udp, nil, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .any),
+                (false, "2001:db8::1", RawSocketTransport.udp, nil, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v4),
+                (false, "2001:db8::1", RawSocketTransport.udp, nil, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v6),
+                (false, "2001:db8::1", RawSocketTransport.udp, nil, true, Self.customProxySniNone, Self.customProxyProtocolsHttp, .any),
+                (false, "2001:db8::1", RawSocketTransport.udp, nil, true, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v4),
+                (false, "2001:db8::1", RawSocketTransport.udp, nil, true, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v6),
+                (false, "2001:db8::1", RawSocketTransport.udp, nil, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty, .any),
+                (false, "2001:db8::1", RawSocketTransport.udp, nil, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty, .v4),
+                (false, "2001:db8::1", RawSocketTransport.udp, nil, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty, .v6),
+                (false, "2001:db8::1", RawSocketTransport.udp, nil, true, Self.customProxySniSet, Self.customProxyProtocolsHttp, .any),
+                (false, "2001:db8::1", RawSocketTransport.udp, nil, true, Self.customProxySniSet, Self.customProxyProtocolsHttp, .v4),
+                (false, "2001:db8::1", RawSocketTransport.udp, nil, true, Self.customProxySniSet, Self.customProxyProtocolsHttp, .v6),
+                (true, "some.host", RawSocketTransport.tcp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .any),
+                (true, "some.host", RawSocketTransport.tcp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v4),
+                (true, "some.host", RawSocketTransport.tcp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v6),
+                (true, "some.host", RawSocketTransport.tcp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsHttp, .any),
+                (true, "some.host", RawSocketTransport.tcp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v4),
+                (true, "some.host", RawSocketTransport.tcp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v6),
+                (true, "some.host", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .any),
+                (true, "some.host", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v4),
+                (true, "some.host", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v6),
+                (true, "some.host", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsHttp, .any),
+                (true, "some.host", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v4),
+                (true, "some.host", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v6),
+                (true, "some.host", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty, .any),
+                (true, "some.host", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty, .v4),
+                (true, "some.host", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty, .v6),
+                (true, "some.host", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsHttp, .any),
+                (true, "some.host", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsHttp, .v4),
+                (true, "some.host", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsHttp, .v6),
+                (true, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .any),
+                (true, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v4),
+                (true, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v6),
+                (true, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsHttp, .any),
+                (true, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v4),
+                (true, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v6),
+                (true, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .any),
+                (true, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v4),
+                (true, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v6),
+                (true, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsHttp, .any),
+                (true, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v4),
+                (true, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v6),
+                (true, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty, .any),
+                (true, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty, .v4),
+                (true, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty, .v6),
+                (true, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsHttp, .any),
+                (true, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsHttp, .v4),
+                (true, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsHttp, .v6),
+                (true, "some.host", RawSocketTransport.tcp, Self.customProxyAuthNone, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .any),
+                (true, "some.host", RawSocketTransport.tcp, Self.customProxyAuthNone, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v4),
+                (true, "some.host", RawSocketTransport.tcp, Self.customProxyAuthNone, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v6),
+                (true, "some.host", RawSocketTransport.tcp, Self.customProxyAuthNone, false, Self.customProxySniNone, Self.customProxyProtocolsHttp, .any),
+                (true, "some.host", RawSocketTransport.tcp, Self.customProxyAuthNone, false, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v4),
+                (true, "some.host", RawSocketTransport.tcp, Self.customProxyAuthNone, false, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v6),
+                (true, "some.host", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .any),
+                (true, "some.host", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v4),
+                (true, "some.host", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v6),
+                (true, "some.host", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniNone, Self.customProxyProtocolsHttp, .any),
+                (true, "some.host", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v4),
+                (true, "some.host", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v6),
+                (true, "some.host", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty, .any),
+                (true, "some.host", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty, .v4),
+                (true, "some.host", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty, .v6),
+                (true, "some.host", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniSet, Self.customProxyProtocolsHttp, .any),
+                (true, "some.host", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniSet, Self.customProxyProtocolsHttp, .v4),
+                (true, "some.host", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniSet, Self.customProxyProtocolsHttp, .v6),
+                (true, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthNone, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .any),
+                (true, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthNone, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v4),
+                (true, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthNone, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v6),
+                (true, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthNone, false, Self.customProxySniNone, Self.customProxyProtocolsHttp, .any),
+                (true, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthNone, false, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v4),
+                (true, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthNone, false, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v6),
+                (true, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .any),
+                (true, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v4),
+                (true, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v6),
+                (true, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniNone, Self.customProxyProtocolsHttp, .any),
+                (true, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v4),
+                (true, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v6),
+                (true, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty, .any),
+                (true, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty, .v4),
+                (true, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty, .v6),
+                (true, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniSet, Self.customProxyProtocolsHttp, .any),
+                (true, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniSet, Self.customProxyProtocolsHttp, .v4),
+                (true, "2001:db8::1", RawSocketTransport.tcp, Self.customProxyAuthNone, true, Self.customProxySniSet, Self.customProxyProtocolsHttp, .v6),
+                (true, "some.host", RawSocketTransport.udp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .any),
+                (true, "some.host", RawSocketTransport.udp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v4),
+                (true, "some.host", RawSocketTransport.udp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v6),
+                (true, "some.host", RawSocketTransport.udp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsHttp, .any),
+                (true, "some.host", RawSocketTransport.udp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v4),
+                (true, "some.host", RawSocketTransport.udp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v6),
+                (true, "some.host", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .any),
+                (true, "some.host", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v4),
+                (true, "some.host", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v6),
+                (true, "some.host", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsHttp, .any),
+                (true, "some.host", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v4),
+                (true, "some.host", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v6),
+                (true, "some.host", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty, .any),
+                (true, "some.host", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty, .v4),
+                (true, "some.host", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty, .v6),
+                (true, "some.host", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsHttp, .any),
+                (true, "some.host", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsHttp, .v4),
+                (true, "some.host", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsHttp, .v6),
+                (true, "2001:db8::1", RawSocketTransport.udp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .any),
+                (true, "2001:db8::1", RawSocketTransport.udp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v4),
+                (true, "2001:db8::1", RawSocketTransport.udp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v6),
+                (true, "2001:db8::1", RawSocketTransport.udp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsHttp, .any),
+                (true, "2001:db8::1", RawSocketTransport.udp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v4),
+                (true, "2001:db8::1", RawSocketTransport.udp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v6),
+                (true, "2001:db8::1", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .any),
+                (true, "2001:db8::1", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v4),
+                (true, "2001:db8::1", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v6),
+                (true, "2001:db8::1", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsHttp, .any),
+                (true, "2001:db8::1", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v4),
+                (true, "2001:db8::1", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v6),
+                (true, "2001:db8::1", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty, .any),
+                (true, "2001:db8::1", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty, .v4),
+                (true, "2001:db8::1", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty, .v6),
+                (true, "2001:db8::1", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsHttp, .any),
+                (true, "2001:db8::1", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsHttp, .v4),
+                (true, "2001:db8::1", RawSocketTransport.udp, Self.customProxyAuthBasic, true, Self.customProxySniSet, Self.customProxyProtocolsHttp, .v6),
+                (true, "some.host", RawSocketTransport.udp, nil, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .any),
+                (true, "some.host", RawSocketTransport.udp, nil, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v4),
+                (true, "some.host", RawSocketTransport.udp, nil, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v6),
+                (true, "some.host", RawSocketTransport.udp, nil, false, Self.customProxySniNone, Self.customProxyProtocolsHttp, .any),
+                (true, "some.host", RawSocketTransport.udp, nil, false, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v4),
+                (true, "some.host", RawSocketTransport.udp, nil, false, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v6),
+                (true, "some.host", RawSocketTransport.udp, nil, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .any),
+                (true, "some.host", RawSocketTransport.udp, nil, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v4),
+                (true, "some.host", RawSocketTransport.udp, nil, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v6),
+                (true, "some.host", RawSocketTransport.udp, nil, true, Self.customProxySniNone, Self.customProxyProtocolsHttp, .any),
+                (true, "some.host", RawSocketTransport.udp, nil, true, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v4),
+                (true, "some.host", RawSocketTransport.udp, nil, true, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v6),
+                (true, "some.host", RawSocketTransport.udp, nil, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty, .any),
+                (true, "some.host", RawSocketTransport.udp, nil, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty, .v4),
+                (true, "some.host", RawSocketTransport.udp, nil, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty, .v6),
+                (true, "some.host", RawSocketTransport.udp, nil, true, Self.customProxySniSet, Self.customProxyProtocolsHttp, .any),
+                (true, "some.host", RawSocketTransport.udp, nil, true, Self.customProxySniSet, Self.customProxyProtocolsHttp, .v4),
+                (true, "some.host", RawSocketTransport.udp, nil, true, Self.customProxySniSet, Self.customProxyProtocolsHttp, .v6),
+                (true, "2001:db8::1", RawSocketTransport.udp, nil, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .any),
+                (true, "2001:db8::1", RawSocketTransport.udp, nil, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v4),
+                (true, "2001:db8::1", RawSocketTransport.udp, nil, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v6),
+                (true, "2001:db8::1", RawSocketTransport.udp, nil, false, Self.customProxySniNone, Self.customProxyProtocolsHttp, .any),
+                (true, "2001:db8::1", RawSocketTransport.udp, nil, false, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v4),
+                (true, "2001:db8::1", RawSocketTransport.udp, nil, false, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v6),
+                (true, "2001:db8::1", RawSocketTransport.udp, nil, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .any),
+                (true, "2001:db8::1", RawSocketTransport.udp, nil, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v4),
+                (true, "2001:db8::1", RawSocketTransport.udp, nil, true, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v6),
+                (true, "2001:db8::1", RawSocketTransport.udp, nil, true, Self.customProxySniNone, Self.customProxyProtocolsHttp, .any),
+                (true, "2001:db8::1", RawSocketTransport.udp, nil, true, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v4),
+                (true, "2001:db8::1", RawSocketTransport.udp, nil, true, Self.customProxySniNone, Self.customProxyProtocolsHttp, .v6),
+                (true, "2001:db8::1", RawSocketTransport.udp, nil, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty, .any),
+                (true, "2001:db8::1", RawSocketTransport.udp, nil, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty, .v4),
+                (true, "2001:db8::1", RawSocketTransport.udp, nil, true, Self.customProxySniSet, Self.customProxyProtocolsEmpty, .v6),
+                (true, "2001:db8::1", RawSocketTransport.udp, nil, true, Self.customProxySniSet, Self.customProxyProtocolsHttp, .any),
+                (true, "2001:db8::1", RawSocketTransport.udp, nil, true, Self.customProxySniSet, Self.customProxyProtocolsHttp, .v4),
+                (true, "2001:db8::1", RawSocketTransport.udp, nil, true, Self.customProxySniSet, Self.customProxyProtocolsHttp, .v6),
               ])
         func withCustomProxy_ReturnsCorrect(_ isProxySecure: Bool, _ host: String, _ transport: RawSocketTransport,
                                             _ auth: HTTPAuthorization?, _ isSecure: Bool, _ sni: String?,
-                                            _ additionalProtocols: [NWProtocolOptions]) throws
+                                            _ additionalProtocols: [NWProtocolOptions], _ ipVersion: NWProtocolIP.Options.Version) throws
         {
             let host = NWEndpoint.Host(host)
             let proxy = RawSocketConfiguration.Proxy(host: "some.proxy", port: 8888, isSecure: isProxySecure, authorization: auth)
-            var config = RawSocketConfiguration(host, 9999, isSecure: isSecure, sni: sni, proxy: proxy,
+            var config = RawSocketConfiguration(host, 9999, ipVersion: ipVersion, isSecure: isSecure, sni: sni, proxy: proxy,
                                                 transport: transport, additionalProtocols: additionalProtocols)
             config.disableInBoxProxy = true
             let connection = try config.makeNWConnection()
@@ -369,6 +573,7 @@ struct RawSocketConfigurationTests {
             let optSni = options["kOptionsServerName"] as? String
             let optAuth = options["kOptionsProxyAuth"] as? HTTPAuthorization
             let optTopProtocols = try #require(options["kOptionsProxyTopProtocols"] as? [NWProtocolOptions])
+            let ip = try #require(parameters.defaultProtocolStack.internetProtocol as? NWProtocolIP.Options)
 
             try #require(optHost == host)
             try #require(optPort == 9999)
@@ -381,6 +586,7 @@ struct RawSocketConfigurationTests {
             try #require(optSni == sni)
             try #require(optAuth == auth)
             try #require(optTopProtocols.count == additionalProtocols.count)
+            try #require(ip.version == ipVersion)
         }
     }
 }
