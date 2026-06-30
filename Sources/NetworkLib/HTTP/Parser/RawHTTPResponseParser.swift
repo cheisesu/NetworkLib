@@ -42,12 +42,12 @@ struct RawHTTPResponseParser: Sendable {
         }
     }
 
-    private func parseHeaders(from message: CFHTTPMessage) -> [String: String] {
+    private func parseHeaders(from message: CFHTTPMessage) -> [HTTPHeaderKey: String] {
         let nsHeaders = CFHTTPMessageCopyAllHeaderFields(message)?.takeRetainedValue() as? NSDictionary ?? [:]
-        var result: [String: String] = [:]
+        var result: [HTTPHeaderKey: String] = [:]
         for (key, value) in nsHeaders {
-            guard let key = key as? String, let value = value as? String else { continue }
-            result[key] = value
+            guard let rawKey = key as? String, let value = value as? String else { continue }
+            result[.init(rawKey)] = value
         }
         return result
     }

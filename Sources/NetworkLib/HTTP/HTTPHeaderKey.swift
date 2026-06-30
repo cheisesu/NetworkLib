@@ -24,6 +24,16 @@ extension HTTPHeaderKey: ExpressibleByStringLiteral {
     }
 }
 
+// MARK: - CONVERSIONS
+
+extension Dictionary where Key == HTTPHeaderKey, Value == String {
+    public var rawFields: [String: String] {
+        reduce(into: [:]) { partialResult, keyValue in
+            partialResult[keyValue.key.rawValue] = keyValue.value
+        }
+    }
+}
+
 // MARK: - EXTENDING URLREQUEST
 
 extension URLRequest {
