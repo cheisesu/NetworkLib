@@ -121,7 +121,7 @@ final class HTTPResponseParser: @unchecked Sendable {
 
     private func parsePlainEncoding(_ response: HTTPParserResponseResult) throws(HTTPResponseParser.Error) -> Event? {
         bodyKind = .plain
-        let contentLength = if let lengthRaw = response.headers["Content-Length"] {
+        let contentLength = if let lengthRaw = response.headers[.contentLength] {
             Int(lengthRaw) ?? 0
         } else {
             0
@@ -157,7 +157,7 @@ final class HTTPResponseParser: @unchecked Sendable {
 
 private extension HTTPParserResponseResult {
     var transferEncodings: [String] {
-        guard let header = headers["Transfer-Encoding"] else { return [] }
+        guard let header = headers[.transferEncoding] else { return [] }
         return header
             .components(separatedBy: ",")
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }

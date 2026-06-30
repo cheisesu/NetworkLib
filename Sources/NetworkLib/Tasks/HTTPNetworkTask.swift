@@ -146,8 +146,8 @@ extension HTTPNetworkTask {
 
     private func successConnectUnsafe(_ rawSocket: RawSocket, _ urlRequest: URLRequest) {
         var urlRequest = urlRequest
-        if urlRequest.value(forHTTPHeaderField: "Host") == nil {
-            urlRequest.setValue(urlRequest.url?.wrappedHost, forHTTPHeaderField: "Host")
+        if urlRequest.value(forHTTPHeaderField: .host) == nil {
+            urlRequest.setValue(urlRequest.url?.wrappedHost, forHTTPHeaderField: .host)
         }
         rawSocket.sendMessage(HTTPSendMessage(urlRequest)) { [weak self, urlRequest] error in
             printDebug("[http] sent", error, "request", urlRequest)
