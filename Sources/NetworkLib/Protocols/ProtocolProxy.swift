@@ -147,11 +147,11 @@ extension ProtocolProxy {
         let host = framer.options[Self.kOptionsEndpointHost] as? NWEndpoint.Host
         let port = framer.options[Self.kOptionsEndpointPort] as? NWEndpoint.Port
         guard let host, let port else { throw NWError.posix(.EDESTADDRREQ) }
-        var headers: [String: String] = [:]
+        var headers: [HTTPHeaderKey: String] = [:]
         if let auth = framer.options[Self.kOptionsProxyAuth] as? HTTPAuthorization {
-            headers["Proxy-Authorization"] = auth.httpHeader
+            headers[.proxyAuthorization] = auth.httpHeader
         }
-        let parser = HTTPRequestParser(connectTo: host, port, headers: headers)
+        let parser = HTTPRequestParser(connectTo: host, port, headerKeys: headers)
         return parser.parsedData
     }
 

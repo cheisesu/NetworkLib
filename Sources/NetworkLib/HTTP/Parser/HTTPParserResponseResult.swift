@@ -3,7 +3,7 @@ import Foundation
 public struct HTTPParserResponseResult: Sendable, Equatable {
     public let versionRaw: String
     public let status: Int
-    public let headers: [String: String]
+    public let headers: [HTTPHeaderKey: String]
     /// Size of HTTP message with `\r\n\r\n` terminator in raw data.
     public let rawSize: Int
     public let leftBuffer: Data
@@ -13,7 +13,7 @@ public struct HTTPParserResponseResult: Sendable, Equatable {
             url: url,
             statusCode: status,
             httpVersion: versionRaw,
-            headerFields: headers
+            headerFields: headers.rawFields
         )
     }
 }
@@ -28,7 +28,7 @@ extension HTTPParserResponseResult: CustomStringConvertible {
         if !headers.isEmpty {
             lines.append("\tHeaders:")
             for (key, value) in headers {
-                lines.append("\t\t" + key + ": " + value)
+                lines.append("\t\t" + key.rawValue + ": " + value)
             }
         }
         lines.append("\tLeft buffer: " + String(leftBuffer.count) + "b")

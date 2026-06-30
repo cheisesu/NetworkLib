@@ -22,6 +22,6 @@ extension URLRequest {
         guard let host else { return nil }
         let port = url?.port.map { String($0) }
         let hostPort = [host, port].compactMap { $0 }.joined(separator: ":")
-        return ["Host:", hostPort].joined(separator: " ")
+        return [HTTPHeaderKey.host.rawValue + ":", hostPort].joined(separator: " ")
     }
 }
