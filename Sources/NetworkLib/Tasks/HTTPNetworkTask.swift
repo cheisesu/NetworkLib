@@ -2,6 +2,15 @@ import Foundation
 import Network
 
 /// A single HTTP request task backed by ``RawSocket``.
+///
+/// For example, perform a request asynchronously:
+///
+/// ```swift
+/// let request = URLRequest(url: URL(string: "https://example.com")!)
+/// let task = HTTPNetworkTask(request)
+/// let (response, data) = try await task.perform()
+/// print(response.statusCode, data.count)
+/// ```
 public final class HTTPNetworkTask: @unchecked Sendable {
     private enum Scheme: String, Sendable {
         case http
@@ -61,12 +70,30 @@ public final class HTTPNetworkTask: @unchecked Sendable {
         accessQueue.setSpecific(key: accessKey, value: ObjectIdentifier(self.accessQueue))
     }
 
-    /// Starts the task using the callback stored in ``callback``.
+    /// Starts the task and optionally reports the request scheduled for execution.
     ///
-    /// The scheduling callback is invoked after the request has been validated and the socket has been created, before the final
-    /// response callback is invoked.
+    /// The `onScheduled` callback is not stored. It is invoked once after the original request has been validated, normalized for
+    /// execution, and associated with a socket. The request in the success result may differ from the original request, for
+    /// example by filling in a default port or normalized host value required by the connection.
     ///
-    /// - Parameter callback: Optional callback that receives the request actually scheduled for execution or a scheduling error.
+    /// Set ``callback`` separately to receive the final HTTP response or failure.
+    ///
+    /// For example, observe the scheduled request and handle the final result:
+    ///
+    /// ```swift
+    /// task.callback = { result in
+    ///     if case .success(let (response, data)) = result {
+    ///         print(response.statusCode, data.count)
+    ///     }
+    /// }
+    /// task.start { scheduled in
+    ///     if case .success(let request) = scheduled {
+    ///         print(request.url?.absoluteString ?? "")
+    ///     }
+    /// }
+    /// ```
+    ///
+    /// - Parameter callback: Optional one-shot callback that receives the request actually scheduled for execution or a scheduling error.
     public func start(onScheduled callback: (@Sendable (_ startResult: Result<URLRequest, Error>) -> Void)? = nil) {
         let callback = callback ?? { _ in }
         accessQueue.async { [weak self] in

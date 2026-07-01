@@ -8,6 +8,14 @@ struct RawHTTPResponseParser: Sendable {
     public var isCompleted: Bool { lastResult != nil }
 
     /// Creates an empty raw HTTP response-head parser.
+    ///
+    /// For example, create a parser before feeding response bytes from a connection:
+    ///
+    /// ```swift
+    /// var parser = RawHTTPResponseParser()
+    /// parser.append(responseBytes)
+    /// let response = parser.tryParse()
+    /// ```
     public init() {
         buffer = Data()
         lastResult = nil
@@ -27,6 +35,15 @@ struct RawHTTPResponseParser: Sendable {
     ///
     /// Parsing succeeds only after the buffer contains the `\r\n\r\n` header terminator. Any bytes after that terminator are
     /// returned as ``HTTPParserResponseResult/leftBuffer``.
+    ///
+    /// For example, keep appending bytes until a response head is available:
+    ///
+    /// ```swift
+    /// parser.append(nextChunk)
+    /// if let response = parser.tryParse() {
+    ///     print(response.headers)
+    /// }
+    /// ```
     ///
     /// - Returns: The parsed response head, or `nil` when more bytes are needed.
     public mutating func tryParse() -> HTTPParserResponseResult? {

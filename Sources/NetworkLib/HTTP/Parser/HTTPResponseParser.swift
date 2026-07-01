@@ -2,6 +2,18 @@ import Foundation
 
 extension HTTPResponseParser {
     /// Events emitted while incrementally parsing an HTTP response.
+    ///
+    /// For example, switch over events returned from ``HTTPResponseParser/append(_:)``:
+    ///
+    /// ```swift
+    /// for event in events {
+    ///     switch event {
+    ///     case .response(let response): print(response.status)
+    ///     case .data(let data): print(data.count)
+    ///     case .end: print("complete")
+    ///     }
+    /// }
+    /// ```
     public enum Event: Sendable {
         /// The response head, including status, version, and headers, has been parsed.
         case response(HTTPParserResponseResult)
@@ -82,6 +94,16 @@ final class HTTPResponseParser: @unchecked Sendable {
     ///
     /// The parser first emits a response event after the full response head is available. It then emits data events for either
     /// `Content-Length` bodies or `Transfer-Encoding: chunked` bodies, followed by an end event when the body is complete.
+    ///
+    /// For example, feed bytes as they arrive and handle every produced event:
+    ///
+    /// ```swift
+    /// let parser = HTTPResponseParser()
+    /// let events = try parser.append(receivedData)
+    /// for event in events where event.isEnd {
+    ///     print("response complete")
+    /// }
+    /// ```
     ///
     /// - Parameter data: The next bytes received from the connection.
     /// - Returns: Parser events produced by the appended bytes. The array is empty when more bytes are needed.

@@ -1,6 +1,16 @@
 import Foundation
 
 /// The parsed HTTP response head produced from raw response bytes.
+///
+/// For example, convert a parsed response head into Foundation's response type:
+///
+/// ```swift
+/// func handle(_ parsed: HTTPParserResponseResult, url: URL) {
+///     if let response = parsed.urlResponse(with: url) {
+///         print(response.statusCode)
+///     }
+/// }
+/// ```
 public struct HTTPParserResponseResult: Sendable, Equatable {
     /// The raw HTTP version string returned by `CFHTTPMessage`, such as `HTTP/1.1`.
     public let versionRaw: String

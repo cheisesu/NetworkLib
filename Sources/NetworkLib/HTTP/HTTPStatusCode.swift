@@ -1,6 +1,15 @@
 import Foundation
 
 /// Common HTTP response status codes grouped by status class.
+///
+/// For example, classify a status returned by an HTTP response:
+///
+/// ```swift
+/// let status = HTTPStatusCode(rawValue: response.statusCode)
+/// if status.isSuccessful {
+///     // Handle a 2xx response.
+/// }
+/// ```
 public enum HTTPStatusCode: Int, Sendable, CaseIterable {
     /// An unrecognized status code MUST be treated as the x00 status code of its class.
     case unrecognized = 0

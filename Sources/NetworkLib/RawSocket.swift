@@ -38,6 +38,15 @@ public protocol RawSocketReceiveMessage: Sendable {
 }
 
 /// A lightweight wrapper around `NWConnection` that exposes callback and async socket operations.
+///
+/// For example, connect and receive data asynchronously:
+///
+/// ```swift
+/// let socket = try RawSocket(configuration)
+/// try await socket.connect()
+/// let data = try await socket.receiveNext()
+/// await socket.cancel()
+/// ```
 public class RawSocket: @unchecked Sendable {
     private enum _InternalState: Sendable, Equatable {
         case none
@@ -119,6 +128,16 @@ public class RawSocket: @unchecked Sendable {
     /// Only one connection attempt may be active at a time. The callback receives `.success` with connection details once the
     /// connection becomes ready, or `.failure` with the `NWError` reported by the underlying connection.
     ///
+    /// For example, start a callback-based connection:
+    ///
+    /// ```swift
+    /// socket.connect { result in
+    ///     if case .success(let info) = result {
+    ///         print(info.remoteEndpoint)
+    ///     }
+    /// }
+    /// ```
+    ///
     /// - Parameter block: A callback invoked when the connection succeeds or fails.
     public func connect(_ block: @escaping @Sendable (_ result: Result<ConnectionInfo, NWError>) -> Void) {
         accessQueue.async { [weak self] in
@@ -157,6 +176,14 @@ public class RawSocket: @unchecked Sendable {
     ///
     /// The socket must be connecting or connected. The completion receives `nil` on success or the `NWError` that prevented the
     /// send from completing.
+    ///
+    /// For example, send UTF-8 bytes:
+    ///
+    /// ```swift
+    /// socket.send(Data("ping".utf8)) { error in
+    ///     if let error { print(error) }
+    /// }
+    /// ```
     ///
     /// - Parameters:
     ///   - data: The bytes to send.
@@ -212,6 +239,16 @@ public class RawSocket: @unchecked Sendable {
     ///
     /// The result is `.success(data)` when bytes are received, `.success(nil)` when the connection completes cleanly with no
     /// more data, or `.failure` when the receive fails.
+    ///
+    /// For example, read the next block and handle end-of-stream:
+    ///
+    /// ```swift
+    /// socket.receiveNext { result in
+    ///     if case .success(let data?) = result {
+    ///         print(data.count)
+    ///     }
+    /// }
+    /// ```
     ///
     /// - Parameter completion: A callback invoked with the next raw data block or receive error.
     public func receiveNext(_ completion: @escaping @Sendable (_ result: Result<Data?, NWError>) -> Void) {

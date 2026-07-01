@@ -10,6 +10,14 @@ final class HTTPRequestParser: Sendable {
     /// The serializer adds `Content-Length` when the request has an HTTP body, adds `Host` for HTTP/1.1 requests when missing,
     /// and sets `Connection: close`.
     ///
+    /// For example, serialize a request before writing it to a raw connection:
+    ///
+    /// ```swift
+    /// let request = URLRequest(url: URL(string: "https://example.com/path")!)
+    /// let parser = HTTPRequestParser(request)
+    /// let bytes = parser.parsedData
+    /// ```
+    ///
     /// - Parameters:
     ///   - urlRequest: The request to serialize.
     ///   - version: The HTTP version to use in the request line.

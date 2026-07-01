@@ -5,6 +5,13 @@ extension RawSocket {
     ///
     /// Cancelling the surrounding task cancels the socket.
     ///
+    /// For example, connect and inspect the selected endpoint:
+    ///
+    /// ```swift
+    /// let info = try await socket.connect()
+    /// print(info.remoteEndpoint)
+    /// ```
+    ///
     /// - Returns: Information about the established connection.
     @discardableResult
     public func connect() async throws -> ConnectionInfo {
@@ -22,6 +29,12 @@ extension RawSocket {
     /// Sends raw bytes on the socket.
     ///
     /// Cancelling the surrounding task cancels the socket.
+    ///
+    /// For example, send a small payload:
+    ///
+    /// ```swift
+    /// try await socket.send(Data("hello".utf8))
+    /// ```
     ///
     /// - Parameter data: The bytes to send.
     public func send(_ data: Data) async throws {
@@ -64,6 +77,14 @@ extension RawSocket {
     /// Receives the next available raw data block.
     ///
     /// Cancelling the surrounding task cancels the socket.
+    ///
+    /// For example, receive one block of data:
+    ///
+    /// ```swift
+    /// if let data = try await socket.receiveNext() {
+    ///     print(data.count)
+    /// }
+    /// ```
     ///
     /// - Returns: The next data block, or `nil` when the connection completes cleanly with no more data.
     public func receiveNext() async throws -> Data? {

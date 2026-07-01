@@ -5,6 +5,14 @@ import Foundation
 /// Use `HTTPHeaderKey` instead of raw `String` values when reading, writing, or storing
 /// HTTP header fields. The wrapper preserves the exact wire name in ``rawValue`` while
 /// making header dictionaries and `URLRequest` helpers harder to mix up with unrelated strings.
+///
+/// For example, set typed headers on a request:
+///
+/// ```swift
+/// var request = URLRequest(url: URL(string: "https://example.com")!)
+/// request.setValue("application/json", forHTTPHeaderField: .accept)
+/// request.addValue("NetworkLib", forHTTPHeaderField: .userAgent)
+/// ```
 public struct HTTPHeaderKey: RawRepresentable {
     /// The header field name as it appears on the HTTP wire, such as `"Content-Length"`.
     public let rawValue: String
