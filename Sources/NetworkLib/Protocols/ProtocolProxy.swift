@@ -82,7 +82,7 @@ private final class ProtocolProxy: NWProtocolFramerImplementation, @unchecked Se
             return 0
         }
         while true {
-            let hasMoreToParse = framer.parseInput(minimumIncompleteLength: 1, maximumLength: 100) { buffer, isComplete in
+            let hasMoreToParse = framer.parseInput(minimumIncompleteLength: 1, maximumLength: 100) { buffer, _ in
                 guard let buffer, !buffer.isEmpty else {
                     framer.markFailed(error: .posix(.ENODATA))
                     return 0
@@ -111,7 +111,7 @@ private final class ProtocolProxy: NWProtocolFramerImplementation, @unchecked Se
 
                 return buffer.count
             }
-            if !hasMoreToParse || isCompleted  {
+            if !hasMoreToParse || isCompleted {
                 break
             }
         }
@@ -122,7 +122,9 @@ private final class ProtocolProxy: NWProtocolFramerImplementation, @unchecked Se
     ///
     /// The proxy framer writes the CONNECT request during startup and then switches output to pass-through mode, so this hook
     /// does not transform application output.
-    public func handleOutput(framer: NWProtocolFramer.Instance, message: NWProtocolFramer.Message, messageLength: Int, isComplete: Bool) {
+    public func handleOutput(framer: NWProtocolFramer.Instance, message: NWProtocolFramer.Message,
+                             messageLength: Int, isComplete: Bool)
+    {
     }
 
     /// Handles scheduled framer wakeups.

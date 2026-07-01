@@ -30,7 +30,8 @@ struct HTTPParserResponseResult: Sendable, Equatable {
     /// Creates a Foundation response value for the supplied URL.
     ///
     /// - Parameter url: The URL associated with the parsed response.
-    /// - Returns: An `HTTPURLResponse` built from the parsed status, version, and headers, or `nil` if Foundation rejects the values.
+    /// - Returns: An `HTTPURLResponse` built from the parsed status, version, and headers,
+    /// or `nil` if Foundation rejects the values.
     public func urlResponse(with url: URL) -> HTTPURLResponse? {
         HTTPURLResponse(
             url: url,

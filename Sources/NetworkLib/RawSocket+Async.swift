@@ -26,7 +26,7 @@ extension RawSocket {
             self?.cancel(nil)
         }
     }
-    
+
     /// Sends raw bytes on the socket.
     ///
     /// Cancelling the surrounding task cancels the socket.
@@ -53,7 +53,7 @@ extension RawSocket {
             self?.cancel(nil)
         }
     }
-    
+
     /// Sends a typed message with protocol metadata.
     ///
     /// Cancelling the surrounding task cancels the socket.
@@ -74,7 +74,7 @@ extension RawSocket {
             self?.cancel(nil)
         }
     }
-    
+
     /// Receives the next available raw data block.
     ///
     /// Cancelling the surrounding task cancels the socket.
@@ -99,7 +99,7 @@ extension RawSocket {
             self?.cancel(nil)
         }
     }
-    
+
     /// Receives and decodes the next typed message.
     ///
     /// Cancelling the surrounding task cancels the socket.
@@ -117,7 +117,7 @@ extension RawSocket {
             self?.cancel(nil)
         }
     }
-    
+
     /// Cancels the socket and suspends until cancellation callbacks have been drained.
     public func cancel() async {
         await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
@@ -127,4 +127,3 @@ extension RawSocket {
         }
     }
 }
-

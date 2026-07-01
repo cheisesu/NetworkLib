@@ -102,7 +102,7 @@ public class RawSocket: @unchecked Sendable {
         }
 
         // - after init
-        timeoutEvent?.setHandler { [weak self] event in
+        timeoutEvent?.setHandler { [weak self] _ in
             printDebug("[socket] timeout event handler")
             self?.cancellingError = .posix(.ETIMEDOUT)
             self?.cancelUnsafe()
@@ -265,8 +265,8 @@ public class RawSocket: @unchecked Sendable {
             }
 
             timeoutEvent?.touch()
-            connection.receive(minimumIncompleteLength: 1, maximumLength: maxDataBlock)
-            { [weak self] content, contentContext, isComplete, error in
+            connection.receive(minimumIncompleteLength: 1,
+                               maximumLength: maxDataBlock) { [weak self] content, _, isComplete, error in
                 guard let self else { return completion(.failure(.posix(.ECANCELED))) }
                 self.timeoutEvent?.detouch()
                 if let content {

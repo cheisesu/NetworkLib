@@ -94,7 +94,8 @@ public final class HTTPNetworkTask: @unchecked Sendable {
     /// }
     /// ```
     ///
-    /// - Parameter callback: Optional one-shot callback that receives the request actually scheduled for execution or a scheduling error.
+    /// - Parameter callback: Optional one-shot callback that receives the request actually scheduled for execution
+    /// or a scheduling error.
     public func start(onScheduled callback: (@Sendable (_ startResult: Result<URLRequest, Error>) -> Void)? = nil) {
         let callback = callback ?? { _ in }
         accessQueue.async { [weak self] in

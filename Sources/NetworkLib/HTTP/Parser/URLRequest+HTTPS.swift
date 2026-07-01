@@ -9,7 +9,7 @@ extension URLRequest {
         let version = ["HTTP", version.rawValue].joined(separator: "/")
         return [method, target, version].joined(separator: " ")
     }
-    
+
     func httpHostLine() -> String? {
         let hostOriginal = url?.wrappedHost
         let host = if let ipV6 = hostOriginal?.asIPv6 {

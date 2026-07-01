@@ -45,7 +45,7 @@ extension IPv6Address {
         }!
         return String(cString: cIpString)
     }
-    
+
     /// The IPv6 address formatted for use as a URL host, including square brackets.
     ///
     /// Use this form when an IPv6 literal appears in a URL authority or an HTTP `Host` header. The unbracketed value from

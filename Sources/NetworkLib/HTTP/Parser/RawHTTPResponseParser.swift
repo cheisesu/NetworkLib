@@ -54,7 +54,8 @@ struct RawHTTPResponseParser: Sendable {
         let status = CFHTTPMessageGetResponseStatusCode(message)
         let versionRaw = CFHTTPMessageCopyVersion(message).takeRetainedValue() as String
         let leftBuffer = Data(buffer.dropFirst(http.count))
-        lastResult = HTTPParserResponseResult(versionRaw: versionRaw, status: status, headers: headers, rawSize: http.count, leftBuffer: leftBuffer)
+        lastResult = HTTPParserResponseResult(versionRaw: versionRaw, status: status, headers: headers,
+                                              rawSize: http.count, leftBuffer: leftBuffer)
         return lastResult
     }
 
@@ -65,9 +66,9 @@ struct RawHTTPResponseParser: Sendable {
     private func createHTTPMesage(from http: Data) -> CFHTTPMessage {
         return http.withUnsafeBytes { (pointer: UnsafeRawBufferPointer) in
             let count = pointer.count
-            let p = pointer.bindMemory(to: UInt8.self).baseAddress!
+            let bytesPointer = pointer.bindMemory(to: UInt8.self).baseAddress!
             let message = CFHTTPMessageCreateEmpty(nil, false).takeRetainedValue()
-            CFHTTPMessageAppendBytes(message, p, count)
+            CFHTTPMessageAppendBytes(message, bytesPointer, count)
             return message
         }
     }

@@ -1,0 +1,73 @@
+# By default, SwiftLint uses a set of sensible default rules you can adjust. Find all the available rules
+# by running `swiftlint rules` or visiting https://realm.github.io/SwiftLint/rule-directory.html.
+
+# Rules turned on by default can be disabled.
+disabled_rules:
+  - colon
+  - comma
+  - control_statement
+  - trailing_comma
+  
+# Rules turned off by default can be enabled.
+opt_in_rules:
+  - empty_count
+
+# Alternatively, specify all rules explicitly by uncommenting this option and removing the above two.
+# only_rules:
+#   - empty_parameters
+#   - vertical_whitespace
+
+# Rules only run by `swiftlint analyze`. These are all opt-in.
+analyzer_rules:
+  - explicit_self
+
+# Case-sensitive paths to include during linting. Directory paths supplied on the
+# command line will be ignored. Wildcards are supported.
+included: 
+  - Sources
+
+# If true, SwiftLint will not fail if no lintable files are found.
+allow_zero_lintable_files: false
+
+# If true, SwiftLint will treat all warnings as errors.
+strict: true
+
+# If true, SwiftLint will treat all errors as warnings.
+lenient: false
+
+# Configurable rules can be customized. All rules support setting their severity level.
+force_cast: error # implicitly
+force_try:
+  severity: error # explicitly
+  
+# Rules that have both warning and error levels can set just the warning level implicitly.
+line_length: 132
+
+# To set both levels implicitly, use an array.
+type_body_length:
+  - 300 # warning
+  - 400 # error
+
+# To set both levels explicitly, use a dictionary.
+file_length:
+  warning: 500
+  error: 1200
+  
+# Naming rules can set warnings/errors for `min_length` and `max_length`. Additionally, they can
+# set excluded names and allowed symbols.
+type_name:
+  min_length: 3 # warning
+  max_length: # warning and error
+    warning: 30
+    error: 40
+  allowed_symbols: ["_"]
+identifier_name:
+  min_length:
+    error: 3 # only error
+  excluded: # excluded via string array
+    - id
+    - ok
+  allowed_symbols: ["_"]
+
+opening_brace:
+  ignore_multiline_function_signatures: true
