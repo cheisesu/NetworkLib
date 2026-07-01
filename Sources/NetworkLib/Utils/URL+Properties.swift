@@ -2,7 +2,7 @@ import Foundation
 
 extension URL {
     var wrappedHost: String? {
-        if #available(macOS 13.0, iOS 16.0, *) {
+        if #available(iOS 16.0, tvOS 16.0, macOS 13.0, *) {
             return host()
         } else {
             return host
@@ -10,7 +10,7 @@ extension URL {
     }
 
     var wrappedPath: String? {
-        if #available(macOS 13.0, iOS 16.0, *) {
+        if #available(iOS 16.0, tvOS 16.0, macOS 13.0, *) {
             return path()
         } else {
             return path
@@ -18,7 +18,7 @@ extension URL {
     }
 
     var wrappedQuery: String? {
-        if #available(macOS 13.0, iOS 16.0, *) {
+        if #available(iOS 16.0, tvOS 16.0, macOS 13.0, *) {
             return query()
         } else {
             return query

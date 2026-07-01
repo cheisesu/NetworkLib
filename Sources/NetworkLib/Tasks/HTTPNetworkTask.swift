@@ -11,6 +11,7 @@ import Network
 /// let (response, data) = try await task.perform()
 /// print(response.statusCode, data.count)
 /// ```
+@available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
 public final class HTTPNetworkTask: @unchecked Sendable {
     private enum Scheme: String, Sendable {
         case http
@@ -184,7 +185,7 @@ extension HTTPNetworkTask {
                                                    port, isSecure: scheme.isSecure, sni: sni,
                                                    transport: .tcp, maxDataBlock: .max, timeout: request.timeoutInterval,
                                                    additionalProtocols: [.http()])
-        if let proxy, #available(macOS 12.3, iOS 15.4, *) {
+        if let proxy, #available(iOS 15.4, tvOS 15.4, macOS 12.3, *) {
             configuration = configuration.using(proxy: proxy)
         }
         var executingRequest = request

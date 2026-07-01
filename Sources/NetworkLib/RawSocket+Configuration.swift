@@ -1,11 +1,13 @@
 import Foundation
 @preconcurrency import Network
 
+@available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
 extension RawSocketConfiguration {
     /// The default maximum number of bytes requested by a single receive operation.
     public static let maxDataLength: Int = Int.bitWidth * 1024
 }
 
+@available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
 extension RawSocketConfiguration {
     /// HTTP CONNECT proxy settings used when creating a proxied socket connection.
     ///
@@ -68,6 +70,7 @@ extension RawSocketConfiguration {
 /// )
 /// let socket = try RawSocket(configuration)
 /// ```
+@available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
 public struct RawSocketConfiguration: Sendable {
     /// The remote host name or IP address to connect to.
     public let host: NWEndpoint.Host
@@ -148,7 +151,7 @@ public struct RawSocketConfiguration: Sendable {
     ///   - maxDataBlock: The maximum byte count requested by each raw receive operation.
     ///   - timeout: The socket operation timeout in seconds.
     ///   - additionalProtocols: Application protocols to insert above the final remote connection.
-    @available(macOS 12.3, iOS 15.4, *)
+    @available(iOS 15.4, tvOS 15.4, macOS 12.3, *)
     public init(_ host: NWEndpoint.Host, _ port: NWEndpoint.Port, ipVersion: NWProtocolIP.Options.Version = .any,
                 isSecure: Bool = true, sni: String? = nil,
                 proxy: Proxy, transport: RawSocketTransport = .tcp, maxDataBlock: Int = Self.maxDataLength,
@@ -170,7 +173,7 @@ public struct RawSocketConfiguration: Sendable {
     ///
     /// - Parameter proxy: The proxy server configuration to use.
     /// - Returns: A new configuration with the same destination and socket settings, plus the supplied proxy.
-    @available(macOS 12.3, iOS 15.4, *)
+    @available(iOS 15.4, tvOS 15.4, macOS 12.3, *)
     public func using(proxy: Proxy) -> RawSocketConfiguration {
         RawSocketConfiguration(
             host,
@@ -232,10 +235,10 @@ public struct RawSocketConfiguration: Sendable {
     }
     
     private func makeProxyParameters(_ proxy: Proxy) throws(NWError) -> NWParameters {
-        if #available(macOS 14.0, iOS 17.0, *), !disableInBoxProxy {
+        if #available(iOS 17.0, tvOS 17.0, macOS 14.0, *), !disableInBoxProxy {
             return makeInBoxProxyParameters(proxy)
         }
-        if #available(macOS 12.3, iOS 15.4, *) {
+        if #available(iOS 15.4, tvOS 15.4, macOS 12.3, *) {
             let parameters = makeDirectNWParameters(.tcp, ipVersion: overrideIpVersion, isSecure: proxy.isSecure, sni: proxy.sni)
             let options: NWProtocolFramer.Options = .proxy(
                 connectingToRemote: host,
@@ -252,16 +255,16 @@ public struct RawSocketConfiguration: Sendable {
     }
     
     private func makeProxyMainEndpoint(_ proxy: Proxy) throws(NWError) -> NWEndpoint {
-        if #available(macOS 14.0, iOS 17.0, *), !disableInBoxProxy {
+        if #available(iOS 17.0, tvOS 17.0, macOS 14.0, *), !disableInBoxProxy {
             return endpoint
         }
-        if #available(macOS 12.3, iOS 15.4, *) {
+        if #available(iOS 15.4, tvOS 15.4, macOS 12.3, *) {
             return proxy.endpoint
         }
         throw NWError.posix(.ENOTSUP)
     }
     
-    @available(macOS 14.0, iOS 17.0, *)
+    @available(iOS 17.0, tvOS 17.0, macOS 14.0, *)
     private func makeInBoxProxyParameters(_ proxy: Proxy) -> NWParameters {
         let parameters = makeDirectNWParameters(transport, ipVersion: overrideIpVersion, isSecure: isSecure, sni: sni)
         let tls: NWProtocolTLS.Options? = {

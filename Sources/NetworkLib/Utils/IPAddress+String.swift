@@ -1,6 +1,7 @@
 import Foundation
 import Network
 
+@available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
 extension IPv4Address {
     /// The canonical presentation string for this IPv4 address.
     ///
@@ -23,6 +24,7 @@ extension IPv4Address {
     }
 }
 
+@available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
 extension IPv6Address {
     /// The canonical presentation string for this IPv6 address, without URL host brackets.
     ///

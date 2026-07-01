@@ -2,6 +2,7 @@ import Foundation
 import Network
 
 /// Information reported when a ``RawSocket`` successfully establishes a connection.
+@available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
 public struct ConnectionInfo: Sendable, Equatable {
     /// The transport protocol used by the connection.
     public let transport: RawSocketTransport
@@ -17,6 +18,7 @@ public struct ConnectionInfo: Sendable, Equatable {
 }
 
 /// A typed outbound message that can be sent through a ``RawSocket`` message send operation.
+@available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
 public protocol RawSocketSendMessage: Sendable {
     /// The Network framework content context that carries protocol metadata for the message.
     var context: NWConnection.ContentContext { get }
@@ -26,6 +28,7 @@ public protocol RawSocketSendMessage: Sendable {
 }
 
 /// A typed inbound message that can be decoded from a Network framework content context and payload.
+@available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
 public protocol RawSocketReceiveMessage: Sendable {
     /// Creates a typed message from received protocol metadata and optional payload bytes.
     ///
@@ -47,6 +50,7 @@ public protocol RawSocketReceiveMessage: Sendable {
 /// let data = try await socket.receiveNext()
 /// await socket.cancel()
 /// ```
+@available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
 public class RawSocket: @unchecked Sendable {
     private enum _InternalState: Sendable, Equatable {
         case none

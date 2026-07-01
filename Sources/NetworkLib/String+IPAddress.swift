@@ -1,6 +1,7 @@
 import Foundation
 import Network
 
+@available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
 extension String {
     /// An IPv4 address parsed from this string after trimming whitespace, newlines, and URL host brackets.
     ///

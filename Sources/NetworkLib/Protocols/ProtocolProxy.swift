@@ -1,7 +1,7 @@
 import Foundation
 import Network
 
-@available(macOS 12.3, iOS 15.4, *)
+@available(iOS 15.4, tvOS 15.4, macOS 12.3, *)
 extension ProtocolProxy {
     /// ``NWEndpoint.Host``
     static let kOptionsEndpointHost = "kOptionsEndpointHost"
@@ -18,7 +18,7 @@ extension ProtocolProxy {
 }
 
 extension NWProtocolFramer.Options {
-    @available(macOS 12.3, iOS 15.4, *)
+    @available(iOS 15.4, tvOS 15.4, macOS 12.3, *)
     static func proxy(
         connectingToRemote host: NWEndpoint.Host,
         _ port: NWEndpoint.Port,
@@ -43,7 +43,7 @@ extension NWProtocolFramer.Options {
     }
 }
 
-@available(macOS 12.3, iOS 15.4, *)
+@available(iOS 15.4, tvOS 15.4, macOS 12.3, *)
 private final class ProtocolProxy: NWProtocolFramerImplementation, @unchecked Sendable {
     static let definition = NWProtocolFramer.Definition(implementation: ProtocolProxy.self)
     static let label: String = "ProtocolProxy"
@@ -142,7 +142,7 @@ private final class ProtocolProxy: NWProtocolFramerImplementation, @unchecked Se
     }
 }
 
-@available(macOS 12.3, iOS 15.4, *)
+@available(iOS 15.4, tvOS 15.4, macOS 12.3, *)
 extension ProtocolProxy {
     private func startAsync(with framer: NWProtocolFramer.Instance) {
         do {

@@ -13,6 +13,7 @@ import Foundation
 /// request.setValue("application/json", forHTTPHeaderField: .accept)
 /// request.addValue("NetworkLib", forHTTPHeaderField: .userAgent)
 /// ```
+@available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
 public struct HTTPHeaderKey: RawRepresentable {
     /// The header field name as it appears on the HTTP wire, such as `"Content-Length"`.
     public let rawValue: String
@@ -53,6 +54,7 @@ extension HTTPHeaderKey: ExpressibleByStringLiteral {
 
 // MARK: - CONVERSIONS
 
+@available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
 extension Dictionary where Key == HTTPHeaderKey, Value == String {
     /// Returns this dictionary using raw string header names as keys.
     ///
@@ -67,6 +69,7 @@ extension Dictionary where Key == HTTPHeaderKey, Value == String {
 
 // MARK: - EXTENDING URLREQUEST
 
+@available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
 extension URLRequest {
     /// The request's HTTP headers keyed by ``HTTPHeaderKey``.
     ///

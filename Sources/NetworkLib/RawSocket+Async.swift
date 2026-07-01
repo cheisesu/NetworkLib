@@ -1,5 +1,6 @@
 import Foundation
 
+@available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
 extension RawSocket {
     /// Starts the underlying network connection and returns connection details when it becomes ready.
     ///
