@@ -5,9 +5,6 @@ on:
     branches:
       - 'develop'
       - 'master'
-  push:
-    branches:
-      - '56-add-swiftlint-checks'
 jobs:
   pr-test:
     name: Test package with Swift ${{ matrix.swift }} on ${{ matrix.os }}
