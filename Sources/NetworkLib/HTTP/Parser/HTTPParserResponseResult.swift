@@ -11,7 +11,7 @@ import Foundation
 ///     }
 /// }
 /// ```
-public struct HTTPParserResponseResult: Sendable, Equatable {
+struct HTTPParserResponseResult: Sendable, Equatable {
     /// The raw HTTP version string returned by `CFHTTPMessage`, such as `HTTP/1.1`.
     public let versionRaw: String
 
