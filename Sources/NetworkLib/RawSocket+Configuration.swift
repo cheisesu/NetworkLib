@@ -36,7 +36,7 @@ extension RawSocketConfiguration {
         var endpoint: NWEndpoint {
             .hostPort(host: host, port: port)
         }
-        
+
         /// Creates HTTP CONNECT proxy settings.
         ///
         /// - Parameters:
@@ -137,7 +137,7 @@ public struct RawSocketConfiguration: Sendable {
         proxy = nil
         self.additionalProtocols = additionalProtocols
     }
-    
+
     /// Creates a configuration for a socket connection through an HTTP CONNECT proxy.
     ///
     /// - Parameters:
@@ -195,19 +195,19 @@ public struct RawSocketConfiguration: Sendable {
         }
         return makeDirectNWConnection()
     }
-    
+
     private func makeProxyNWConnection(_ proxy: Proxy) throws(NWError) -> NWConnection {
         let parameters = try makeProxyParameters(proxy)
         let endpoint = try makeProxyMainEndpoint(proxy)
         return NWConnection(to: endpoint, using: parameters)
     }
-    
+
     private func makeDirectNWConnection() -> NWConnection {
         let parameters = makeDirectNWParameters(transport, ipVersion: overrideIpVersion, isSecure: isSecure, sni: sni)
         parameters.defaultProtocolStack.applicationProtocols.insert(contentsOf: additionalProtocols, at: 0)
         return NWConnection(to: endpoint, using: parameters)
     }
-    
+
     private func makeDirectNWParameters(_ transport: RawSocketTransport, ipVersion: NWProtocolIP.Options.Version,
                                         isSecure: Bool, sni: String?) -> NWParameters
     {
@@ -233,7 +233,7 @@ public struct RawSocketConfiguration: Sendable {
         ipProtocol?.version = ipVersion
         return parameters
     }
-    
+
     private func makeProxyParameters(_ proxy: Proxy) throws(NWError) -> NWParameters {
         if #available(iOS 17.0, tvOS 17.0, macOS 14.0, *), !disableInBoxProxy {
             return makeInBoxProxyParameters(proxy)
@@ -253,7 +253,7 @@ public struct RawSocketConfiguration: Sendable {
         }
         throw NWError.posix(.ENOTSUP)
     }
-    
+
     private func makeProxyMainEndpoint(_ proxy: Proxy) throws(NWError) -> NWEndpoint {
         if #available(iOS 17.0, tvOS 17.0, macOS 14.0, *), !disableInBoxProxy {
             return endpoint
@@ -263,7 +263,7 @@ public struct RawSocketConfiguration: Sendable {
         }
         throw NWError.posix(.ENOTSUP)
     }
-    
+
     @available(iOS 17.0, tvOS 17.0, macOS 14.0, *)
     private func makeInBoxProxyParameters(_ proxy: Proxy) -> NWParameters {
         let parameters = makeDirectNWParameters(transport, ipVersion: overrideIpVersion, isSecure: isSecure, sni: sni)

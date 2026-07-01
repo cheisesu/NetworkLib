@@ -1,5 +1,6 @@
 import Foundation
 
+// swiftlint:disable identifier_name
 @available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
 extension HTTPHeaderKey {
     /// The `Accept` request header.
@@ -149,3 +150,4 @@ extension HTTPHeaderKey {
     /// The `X-Requested-With` de-facto request header.
     public static let xRequestedWith: Self = "X-Requested-With"
 }
+// swiftlint:enable identifier_name

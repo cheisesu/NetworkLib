@@ -15,12 +15,16 @@ let package = Package(
             targets: ["NetworkLib"]
         ),
     ],
+    dependencies: [
+        .package(url: "https://github.com/SimplyDanny/SwiftLintPlugins", from: "0.63.0")
+    ],
     targets: [
         .target(
             name: "NetworkLib",
             swiftSettings: [
                 .unsafeFlags(["-warnings-as-errors"])
-            ]
+            ],
+            plugins: [.plugin(name: "SwiftLintBuildToolPlugin", package: "SwiftLintPlugins")]
         ),
         .testTarget(
             name: "NetworkLibTests",

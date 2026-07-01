@@ -81,27 +81,8 @@ private final class ProtocolHTTP: NWProtocolFramerImplementation, @unchecked Sen
         }
         while true {
             var ended = false
-            let parsed = framer.parseInput(minimumIncompleteLength: 1, maximumLength: .max) { buffer, isComplete in
-                guard let buffer, !buffer.isEmpty else { return 0 }
-                let assumedBuffer = buffer.assumingMemoryBound(to: UInt8.self)
-                let data = Data(bytes: assumedBuffer.baseAddress!, count: buffer.count)
-                do throws(HTTPResponseParser.Error) {
-                    let events = try parser.append(data)
-                    pendingEvents.append(contentsOf: events)
-                    if deliverPendingEventsUnsafe(with: framer) {
-                        ended = events.contains {
-                            if case .end = $0 { return true }
-                            return false
-                        }
-                    }
-                } catch {
-                    switch error {
-                    case .invalidChunkSize: framer.markFailed(error: .posix(.EIO))
-                    case .invalidChunkTerminator: framer.markFailed(error: .posix(.EPROTO))
-                    case .parsingCompleted: framer.markFailed(error: .posix(.EINVAL))
-                    }
-                }
-                return buffer.count
+            let parsed = framer.parseInput(minimumIncompleteLength: 1, maximumLength: .max) { buffer, _ in
+                foo(with: framer, buffer, &ended)
             }
             if !parsed { return 0 }
             if ended { return 0 }
@@ -139,6 +120,30 @@ private final class ProtocolHTTP: NWProtocolFramerImplementation, @unchecked Sen
 }
 
 extension ProtocolHTTP {
+    private func foo(with framer: NWProtocolFramer.Instance, _ buffer: UnsafeMutableRawBufferPointer?,
+                     _ ended: inout Bool) -> Int
+    {
+        guard let buffer, !buffer.isEmpty else { return 0 }
+        let assumedBuffer = buffer.assumingMemoryBound(to: UInt8.self)
+        let data = Data(bytes: assumedBuffer.baseAddress!, count: buffer.count)
+        do throws(HTTPResponseParser.Error) {
+            let events = try parser.append(data)
+            pendingEvents.append(contentsOf: events)
+            if deliverPendingEventsUnsafe(with: framer) {
+                ended = events.contains {
+                    if case .end = $0 { return true }
+                    return false
+                }
+            }
+        } catch {
+            switch error {
+            case .invalidChunkSize: framer.markFailed(error: .posix(.EIO))
+            case .invalidChunkTerminator: framer.markFailed(error: .posix(.EPROTO))
+            case .parsingCompleted: framer.markFailed(error: .posix(.EINVAL))
+            }
+        }
+        return buffer.count
+    }
     private func deliverPendingEventsUnsafe(with framer: NWProtocolFramer.Instance) -> Bool {
         while !pendingEvents.isEmpty {
             let event = pendingEvents[0]

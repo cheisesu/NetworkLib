@@ -31,7 +31,7 @@ extension String {
         let trimmed = trimmingCharacters(in: Self.trimmingSet)
         return IPv4Address(trimmed)
     }
-    
+
     /// An IPv6 address parsed from this string after trimming whitespace, newlines, and URL host brackets.
     ///
     /// The parser removes surrounding square brackets before passing the value to `IPv6Address`, which makes URL host strings
@@ -52,7 +52,7 @@ extension String {
         let trimmed = trimmingCharacters(in: Self.trimmingSet)
         return IPv6Address(trimmed)
     }
-    
+
     /// A Boolean value indicating whether this string can be parsed as an IPv4 address.
     ///
     /// This is equivalent to checking whether ``asIPv4`` is non-`nil`. The same trimming rules apply: leading and trailing
