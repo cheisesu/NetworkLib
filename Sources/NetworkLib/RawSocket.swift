@@ -89,7 +89,7 @@ public class RawSocket: @unchecked Sendable {
 
     init(_ configuration: RawSocketConfiguration, accessQueue: DispatchQueue?) throws(NWError) {
         internalState = .none
-        self.accessQueue = accessQueue ?? DispatchQueue(label: "com.network.lib.raw-socket", target: .global())
+        self.accessQueue = accessQueue ?? DispatchQueue(label: "com.network.lib.raw-socket")
         accessKey = DispatchSpecificKey()
         self.accessQueue.setSpecific(key: accessKey, value: ObjectIdentifier(self.accessQueue))
         cancellingCallbacks = []

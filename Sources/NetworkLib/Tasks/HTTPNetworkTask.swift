@@ -66,7 +66,7 @@ public final class HTTPNetworkTask: @unchecked Sendable {
         self.proxy = proxy
         self.sni = sni
         isFinished = false
-        accessQueue = DispatchQueue(label: "com.network.lib.http_network_task", target: .global())
+        accessQueue = DispatchQueue(label: "com.network.lib.http_network_task")
         accessKey = DispatchSpecificKey()
         accessQueue.setSpecific(key: accessKey, value: ObjectIdentifier(self.accessQueue))
     }
