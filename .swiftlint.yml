@@ -71,8 +71,3 @@ identifier_name:
 
 opening_brace:
   ignore_multiline_function_signatures: true
-    
-# The default reporter (SwiftLint's output format) can be configured as `checkstyle`, `codeclimate`, `csv`,
-# `emoji`, `github-actions-logging`, `gitlab`, `html`, `json`, `junit`, `markdown`, `relative-path`, `sarif`,
-# `sonarqube`, `summary`, or `xcode` (default).
-reporter: "xcode"
