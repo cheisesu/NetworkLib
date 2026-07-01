@@ -1,6 +1,15 @@
 // swift-tools-version: 6.0
 
 import PackageDescription
+import Foundation
+
+let isCI = ProcessInfo.processInfo.environment["CI"] == "true"
+
+let swiftLintPlugins: [Target.PluginUsage] = if isCI {
+    []
+} else {
+    [.plugin(name: "SwiftLintBuildToolPlugin", package: "SwiftLintPlugins")]
+}
 
 let package = Package(
     name: "NetworkLib",
@@ -24,7 +33,7 @@ let package = Package(
             swiftSettings: [
                 .unsafeFlags(["-warnings-as-errors"])
             ],
-            plugins: [.plugin(name: "SwiftLintBuildToolPlugin", package: "SwiftLintPlugins")]
+            plugins: swiftLintPlugins
         ),
         .testTarget(
             name: "NetworkLibTests",
