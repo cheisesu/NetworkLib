@@ -37,7 +37,7 @@ final class HTTPServerMock: @unchecked Sendable {
 
     init(isSecure: Bool, flow: Flow) throws {
         let secIdentity = try loadIdentityFromP12()
-        let queue = DispatchQueue(label: "com.network.lib.http-server-mock", target: .global())
+        let queue = DispatchQueue(label: "com.network.lib.http-server-mock")
         self.queue = queue
         self.flow = flow
         connection = nil
@@ -145,6 +145,6 @@ final class HTTPServerMock: @unchecked Sendable {
             default: break
             }
         }
-        newConnection.start(queue: DispatchQueue(label: "com.network.lib.server-mock.connection", qos: .background, target: .global()))
+        newConnection.start(queue: DispatchQueue(label: "com.network.lib.server-mock.connection", qos: .background))
     }
 }
