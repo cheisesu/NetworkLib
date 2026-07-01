@@ -1,5 +1,6 @@
 import Foundation
 
+@available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
 extension HTTPHeaderKey {
     /// The `Accept` request header.
     public static let accept: Self = "Accept"

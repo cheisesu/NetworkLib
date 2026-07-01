@@ -1,6 +1,17 @@
 import Foundation
 import Network
 
+/// A single HTTP request task backed by ``RawSocket``.
+///
+/// For example, perform a request asynchronously:
+///
+/// ```swift
+/// let request = URLRequest(url: URL(string: "https://example.com")!)
+/// let task = HTTPNetworkTask(request)
+/// let (response, data) = try await task.perform()
+/// print(response.statusCode, data.count)
+/// ```
+@available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
 public final class HTTPNetworkTask: @unchecked Sendable {
     private enum Scheme: String, Sendable {
         case http
@@ -18,6 +29,7 @@ public final class HTTPNetworkTask: @unchecked Sendable {
         }
     }
 
+    /// Callback invoked when an HTTP task finishes with either a response and body data or an error.
     public typealias ResultCallback = @Sendable (_ result: Result<(HTTPURLResponse, Data), Error>) -> Void
 
     private let proxy: RawSocketConfiguration.Proxy?
@@ -30,13 +42,24 @@ public final class HTTPNetworkTask: @unchecked Sendable {
     private let accessQueue: DispatchQueue
     private let accessKey: DispatchSpecificKey<ObjectIdentifier>
 
+    /// The received HTTP response, if the task has parsed one.
     public private(set) var response: HTTPURLResponse?
+
+    /// The accumulated response body bytes, if any body data has been received.
     public private(set) var data: Data?
+
+    /// The callback invoked when a started task completes.
     public var callback: ResultCallback? {
         get { callbackLock.withLock { _callback } }
         set { callbackLock.withLock { _callback = newValue } }
     }
 
+    /// Creates an HTTP task for a request.
+    ///
+    /// - Parameters:
+    ///   - urlRequest: The `http` or `https` request to perform.
+    ///   - proxy: Optional HTTP CONNECT proxy settings.
+    ///   - sni: Optional TLS Server Name Indication value for the remote server.
     public init(_ urlRequest: URLRequest, through proxy: RawSocketConfiguration.Proxy? = nil, sni: String? = nil) {
         callbackLock = NSLock()
         originalRequest = urlRequest
@@ -48,6 +71,30 @@ public final class HTTPNetworkTask: @unchecked Sendable {
         accessQueue.setSpecific(key: accessKey, value: ObjectIdentifier(self.accessQueue))
     }
 
+    /// Starts the task and optionally reports the request scheduled for execution.
+    ///
+    /// The `onScheduled` callback is not stored. It is invoked once after the original request has been validated, normalized for
+    /// execution, and associated with a socket. The request in the success result may differ from the original request, for
+    /// example by filling in a default port or normalized host value required by the connection.
+    ///
+    /// Set ``callback`` separately to receive the final HTTP response or failure.
+    ///
+    /// For example, observe the scheduled request and handle the final result:
+    ///
+    /// ```swift
+    /// task.callback = { result in
+    ///     if case .success(let (response, data)) = result {
+    ///         print(response.statusCode, data.count)
+    ///     }
+    /// }
+    /// task.start { scheduled in
+    ///     if case .success(let request) = scheduled {
+    ///         print(request.url?.absoluteString ?? "")
+    ///     }
+    /// }
+    /// ```
+    ///
+    /// - Parameter callback: Optional one-shot callback that receives the request actually scheduled for execution or a scheduling error.
     public func start(onScheduled callback: (@Sendable (_ startResult: Result<URLRequest, Error>) -> Void)? = nil) {
         let callback = callback ?? { _ in }
         accessQueue.async { [weak self] in
@@ -57,6 +104,7 @@ public final class HTTPNetworkTask: @unchecked Sendable {
         }
     }
 
+    /// Cancels the current HTTP task if it is running.
     public func cancel() {
         accessQueue.async { [weak self] in
             printDebug("[http] cancel")
@@ -65,6 +113,12 @@ public final class HTTPNetworkTask: @unchecked Sendable {
         }
     }
 
+    /// Performs the request asynchronously and returns the complete response and body data.
+    ///
+    /// Cancelling the surrounding task cancels the underlying socket. The method throws validation, socket, parser, and URL
+    /// errors produced while executing the request.
+    ///
+    /// - Returns: The final HTTP response and accumulated body bytes.
     public func perform() async throws -> (HTTPURLResponse, Data) {
         printDebug("[http] call perform")
         return try await withTaskCancellationHandler {
@@ -131,7 +185,7 @@ extension HTTPNetworkTask {
                                                    port, isSecure: scheme.isSecure, sni: sni,
                                                    transport: .tcp, maxDataBlock: .max, timeout: request.timeoutInterval,
                                                    additionalProtocols: [.http()])
-        if let proxy, #available(macOS 12.3, iOS 15.4, *) {
+        if let proxy, #available(iOS 15.4, tvOS 15.4, macOS 12.3, *) {
             configuration = configuration.using(proxy: proxy)
         }
         var executingRequest = request

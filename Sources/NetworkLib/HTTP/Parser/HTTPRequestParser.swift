@@ -2,8 +2,25 @@ import Foundation
 import Network
 
 final class HTTPRequestParser: Sendable {
+    /// The serialized HTTP request bytes ready to send on a connection.
     public let parsedData: Data
 
+    /// Serializes a `URLRequest` into an HTTP request message.
+    ///
+    /// The serializer adds `Content-Length` when the request has an HTTP body, adds `Host` for HTTP/1.1 requests when missing,
+    /// and sets `Connection: close`.
+    ///
+    /// For example, serialize a request before writing it to a raw connection:
+    ///
+    /// ```swift
+    /// let request = URLRequest(url: URL(string: "https://example.com/path")!)
+    /// let parser = HTTPRequestParser(request)
+    /// let bytes = parser.parsedData
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - urlRequest: The request to serialize.
+    ///   - version: The HTTP version to use in the request line.
     public init(_ urlRequest: URLRequest, version: HTTPVersion = .v1_1) {
         var urlRequest = urlRequest
         let startLine = urlRequest.httpStartLine(version)
@@ -29,6 +46,12 @@ final class HTTPRequestParser: Sendable {
         parsedData = Data([headerData, urlRequest.httpBody].compactMap { $0 }.joined())
     }
 
+    /// Serializes an HTTP CONNECT request for a proxy tunnel.
+    ///
+    /// - Parameters:
+    ///   - host: The target host that the proxy should connect to.
+    ///   - port: The target port, or `nil` to omit the port from the CONNECT target.
+    ///   - headers: Additional raw string headers to include in the CONNECT request.
     public convenience init(connectTo host: NWEndpoint.Host, _ port: NWEndpoint.Port?, headers: [String: String]) {
         let headers = headers.reduce(into: [HTTPHeaderKey: String]()) { partialResult, keyValue in
             partialResult[HTTPHeaderKey(keyValue.key)] = keyValue.value
