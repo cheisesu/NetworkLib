@@ -1,6 +1,7 @@
 import Foundation
 import Network
 
+/// A single HTTP request task backed by ``RawSocket``.
 public final class HTTPNetworkTask: @unchecked Sendable {
     private enum Scheme: String, Sendable {
         case http
@@ -18,6 +19,7 @@ public final class HTTPNetworkTask: @unchecked Sendable {
         }
     }
 
+    /// Callback invoked when an HTTP task finishes with either a response and body data or an error.
     public typealias ResultCallback = @Sendable (_ result: Result<(HTTPURLResponse, Data), Error>) -> Void
 
     private let proxy: RawSocketConfiguration.Proxy?
@@ -30,13 +32,24 @@ public final class HTTPNetworkTask: @unchecked Sendable {
     private let accessQueue: DispatchQueue
     private let accessKey: DispatchSpecificKey<ObjectIdentifier>
 
+    /// The received HTTP response, if the task has parsed one.
     public private(set) var response: HTTPURLResponse?
+
+    /// The accumulated response body bytes, if any body data has been received.
     public private(set) var data: Data?
+
+    /// The callback invoked when a started task completes.
     public var callback: ResultCallback? {
         get { callbackLock.withLock { _callback } }
         set { callbackLock.withLock { _callback = newValue } }
     }
 
+    /// Creates an HTTP task for a request.
+    ///
+    /// - Parameters:
+    ///   - urlRequest: The `http` or `https` request to perform.
+    ///   - proxy: Optional HTTP CONNECT proxy settings.
+    ///   - sni: Optional TLS Server Name Indication value for the remote server.
     public init(_ urlRequest: URLRequest, through proxy: RawSocketConfiguration.Proxy? = nil, sni: String? = nil) {
         callbackLock = NSLock()
         originalRequest = urlRequest
@@ -48,6 +61,12 @@ public final class HTTPNetworkTask: @unchecked Sendable {
         accessQueue.setSpecific(key: accessKey, value: ObjectIdentifier(self.accessQueue))
     }
 
+    /// Starts the task using the callback stored in ``callback``.
+    ///
+    /// The scheduling callback is invoked after the request has been validated and the socket has been created, before the final
+    /// response callback is invoked.
+    ///
+    /// - Parameter callback: Optional callback that receives the request actually scheduled for execution or a scheduling error.
     public func start(onScheduled callback: (@Sendable (_ startResult: Result<URLRequest, Error>) -> Void)? = nil) {
         let callback = callback ?? { _ in }
         accessQueue.async { [weak self] in
@@ -57,6 +76,7 @@ public final class HTTPNetworkTask: @unchecked Sendable {
         }
     }
 
+    /// Cancels the current HTTP task if it is running.
     public func cancel() {
         accessQueue.async { [weak self] in
             printDebug("[http] cancel")
@@ -65,6 +85,12 @@ public final class HTTPNetworkTask: @unchecked Sendable {
         }
     }
 
+    /// Performs the request asynchronously and returns the complete response and body data.
+    ///
+    /// Cancelling the surrounding task cancels the underlying socket. The method throws validation, socket, parser, and URL
+    /// errors produced while executing the request.
+    ///
+    /// - Returns: The final HTTP response and accumulated body bytes.
     public func perform() async throws -> (HTTPURLResponse, Data) {
         printDebug("[http] call perform")
         return try await withTaskCancellationHandler {

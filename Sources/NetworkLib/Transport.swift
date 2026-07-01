@@ -1,9 +1,10 @@
 import Foundation
 
-/// Protocol of transport layer used in ``RawSocket``
+/// The transport protocol used by a ``RawSocket`` connection.
 public enum RawSocketTransport: Sendable {
-    /// TCP protocol
+    /// Transmission Control Protocol.
     case tcp
-    /// UDP protocol
+
+    /// User Datagram Protocol.
     case udp
 }

@@ -2,21 +2,40 @@ import Foundation
 @preconcurrency import Network
 
 extension RawSocketConfiguration {
+    /// The default maximum number of bytes requested by a single receive operation.
     public static let maxDataLength: Int = Int.bitWidth * 1024
 }
 
 extension RawSocketConfiguration {
+    /// HTTP CONNECT proxy settings used when creating a proxied socket connection.
     public struct Proxy: Sendable, Equatable {
+        /// The proxy server host name or IP address.
         public let host: NWEndpoint.Host
+
+        /// The proxy server port.
         public let port: NWEndpoint.Port
+
+        /// A Boolean value indicating whether the connection to the proxy itself uses TLS.
         public let isSecure: Bool
+
+        /// The Server Name Indication value used for TLS when connecting to the proxy.
         public let sni: String?
+
+        /// Credentials sent to the proxy in the `Proxy-Authorization` header when required.
         public let authorization: HTTPAuthorization?
 
         var endpoint: NWEndpoint {
             .hostPort(host: host, port: port)
         }
         
+        /// Creates HTTP CONNECT proxy settings.
+        ///
+        /// - Parameters:
+        ///   - host: The proxy server host name or IP address.
+        ///   - port: The proxy server port.
+        ///   - isSecure: Whether to use TLS for the connection to the proxy server.
+        ///   - sni: The TLS server name to send when connecting to the proxy, or `nil` to use the system default behavior.
+        ///   - authorization: Optional proxy authentication credentials.
         public init(host: NWEndpoint.Host, port: NWEndpoint.Port, isSecure: Bool = true, sni: String? = nil,
                     authorization: HTTPAuthorization? = nil)
         {
@@ -29,16 +48,36 @@ extension RawSocketConfiguration {
     }
 }
 
+/// Configuration used to create a ``RawSocket``.
 public struct RawSocketConfiguration: Sendable {
+    /// The remote host name or IP address to connect to.
     public let host: NWEndpoint.Host
+
+    /// The remote port to connect to.
     public let port: NWEndpoint.Port
+
+    /// A Boolean value indicating whether the remote connection uses TLS or DTLS.
     public let isSecure: Bool
+
+    /// The Server Name Indication value used for TLS or DTLS, or `nil` for the default server name behavior.
     public let sni: String?
+
+    /// The transport protocol used by the socket.
     public let transport: RawSocketTransport
+
+    /// The IP protocol version preference applied to the connection parameters.
     public let overrideIpVersion: NWProtocolIP.Options.Version
+
+    /// The maximum number of bytes requested by each raw receive operation.
     public let maxDataBlock: Int
+
+    /// The timeout, in seconds, used by socket operations that touch the timeout timer.
     public let timeout: TimeInterval
+
+    /// Optional HTTP CONNECT proxy settings.
     public let proxy: Proxy?
+
+    /// Additional Network framework application protocols inserted into the protocol stack.
     public let additionalProtocols: [NWProtocolOptions]
 #if DEBUG
     var disableInBoxProxy: Bool = false
@@ -48,6 +87,18 @@ public struct RawSocketConfiguration: Sendable {
         return .hostPort(host: host, port: port)
     }
 
+    /// Creates a configuration for a direct socket connection.
+    ///
+    /// - Parameters:
+    ///   - host: The remote host name or IP address.
+    ///   - port: The remote port.
+    ///   - ipVersion: The IP version preference for the underlying connection.
+    ///   - isSecure: Whether to enable TLS for TCP or DTLS for UDP.
+    ///   - sni: The TLS or DTLS server name, or `nil` for the system default behavior.
+    ///   - transport: The transport protocol to use.
+    ///   - maxDataBlock: The maximum byte count requested by each raw receive operation.
+    ///   - timeout: The socket operation timeout in seconds.
+    ///   - additionalProtocols: Application protocols to insert before the transport protocol stack is used.
     public init(_ host: NWEndpoint.Host, _ port: NWEndpoint.Port, ipVersion: NWProtocolIP.Options.Version = .any,
                 isSecure: Bool = true, sni: String? = nil,
                 transport: RawSocketTransport = .tcp, maxDataBlock: Int = Self.maxDataLength,
@@ -65,6 +116,19 @@ public struct RawSocketConfiguration: Sendable {
         self.additionalProtocols = additionalProtocols
     }
     
+    /// Creates a configuration for a socket connection through an HTTP CONNECT proxy.
+    ///
+    /// - Parameters:
+    ///   - host: The final remote host name or IP address.
+    ///   - port: The final remote port.
+    ///   - ipVersion: The IP version preference for the underlying connection.
+    ///   - isSecure: Whether to enable TLS for TCP or DTLS for UDP after the proxy tunnel is established.
+    ///   - sni: The TLS or DTLS server name for the final remote connection.
+    ///   - proxy: The proxy server configuration.
+    ///   - transport: The transport protocol to use for the final connection.
+    ///   - maxDataBlock: The maximum byte count requested by each raw receive operation.
+    ///   - timeout: The socket operation timeout in seconds.
+    ///   - additionalProtocols: Application protocols to insert above the final remote connection.
     @available(macOS 12.3, iOS 15.4, *)
     public init(_ host: NWEndpoint.Host, _ port: NWEndpoint.Port, ipVersion: NWProtocolIP.Options.Version = .any,
                 isSecure: Bool = true, sni: String? = nil,
@@ -83,6 +147,10 @@ public struct RawSocketConfiguration: Sendable {
         self.additionalProtocols = additionalProtocols
     }
 
+    /// Returns a copy of this configuration that connects through the specified proxy.
+    ///
+    /// - Parameter proxy: The proxy server configuration to use.
+    /// - Returns: A new configuration with the same destination and socket settings, plus the supplied proxy.
     @available(macOS 12.3, iOS 15.4, *)
     public func using(proxy: Proxy) -> RawSocketConfiguration {
         RawSocketConfiguration(

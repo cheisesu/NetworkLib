@@ -4,18 +4,31 @@ struct RawHTTPResponseParser: Sendable {
     private var buffer: Data
     private var lastResult: HTTPParserResponseResult?
 
+    /// A Boolean value indicating whether this parser has already produced a response result.
     public var isCompleted: Bool { lastResult != nil }
 
+    /// Creates an empty raw HTTP response-head parser.
     public init() {
         buffer = Data()
         lastResult = nil
     }
 
+    /// Appends bytes to the parser buffer while parsing is incomplete.
+    ///
+    /// Bytes appended after a response has been parsed are ignored.
+    ///
+    /// - Parameter data: Raw bytes received from the connection.
     public mutating func append(_ data: Data) {
         guard !isCompleted else { return }
         buffer.append(contentsOf: data)
     }
 
+    /// Attempts to parse the buffered bytes as an HTTP response head.
+    ///
+    /// Parsing succeeds only after the buffer contains the `\r\n\r\n` header terminator. Any bytes after that terminator are
+    /// returned as ``HTTPParserResponseResult/leftBuffer``.
+    ///
+    /// - Returns: The parsed response head, or `nil` when more bytes are needed.
     public mutating func tryParse() -> HTTPParserResponseResult? {
         guard let crlfEndIndex = findCRLF()?.upperBound else { return nil }
         let http = buffer.subdata(in: buffer.startIndex..<crlfEndIndex)
