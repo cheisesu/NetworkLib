@@ -41,6 +41,7 @@ public final class HTTPNetworkTask: @unchecked Sendable {
     private var currentConnection: RawSocket?
     private let accessQueue: DispatchQueue
     private let accessKey: DispatchSpecificKey<ObjectIdentifier>
+    private let delegateQueue: DispatchQueue
 
     /// The received HTTP response, if the task has parsed one.
     public private(set) var response: HTTPURLResponse?
@@ -60,15 +61,17 @@ public final class HTTPNetworkTask: @unchecked Sendable {
     ///   - urlRequest: The `http` or `https` request to perform.
     ///   - proxy: Optional HTTP CONNECT proxy settings.
     ///   - sni: Optional TLS Server Name Indication value for the remote server.
-    public init(_ urlRequest: URLRequest, through proxy: RawSocketConfiguration.Proxy? = nil, sni: String? = nil) {
+    public init(_ urlRequest: URLRequest, through proxy: RawSocketConfiguration.Proxy? = nil,
+                sni: String? = nil, delegateQueue: DispatchQueue? = nil) {
         callbackLock = NSLock()
         originalRequest = urlRequest
         self.proxy = proxy
         self.sni = sni
         isFinished = false
-        accessQueue = DispatchQueue(label: "com.network.lib.http_network_task")
+        accessQueue = .HTTPTask.access
         accessKey = DispatchSpecificKey()
         accessQueue.setSpecific(key: accessKey, value: ObjectIdentifier(self.accessQueue))
+        self.delegateQueue = delegateQueue ?? .HTTPTask.delegate
     }
 
     /// Starts the task and optionally reports the request scheduled for execution.
@@ -160,7 +163,7 @@ extension HTTPNetworkTask {
 
     private func startWithRequestUnsafe(_ urlRequest: URLRequest) throws -> URLRequest {
         let (configuration, executingRequest) = try makeConfiguration(from: urlRequest)
-        let rawSocket = try RawSocket(configuration, accessQueue: accessQueue)
+        let rawSocket = try RawSocket(configuration, accessQueue: accessQueue, delegateQueue: delegateQueue)
         currentConnection = rawSocket
         rawSocket.connect { [weak self] result in
             printDebug("[http] connected", result)

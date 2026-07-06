@@ -84,16 +84,16 @@ public class RawSocket: @unchecked Sendable {
     ///
     /// - Parameter configuration: The destination, transport, security, proxy, and timeout settings.
     /// - Throws: An `NWError` if the underlying `NWConnection` cannot be created from the configuration.
-    public convenience init(_ configuration: RawSocketConfiguration) throws(NWError) {
-        try self.init(configuration, accessQueue: nil)
+    public convenience init(_ configuration: RawSocketConfiguration, delegateQueue: DispatchQueue? = nil) throws(NWError) {
+        try self.init(configuration, accessQueue: nil, delegateQueue: delegateQueue)
     }
 
-    init(_ configuration: RawSocketConfiguration, accessQueue: DispatchQueue?) throws(NWError) {
+    init(_ configuration: RawSocketConfiguration, accessQueue: DispatchQueue?, delegateQueue: DispatchQueue?) throws(NWError) {
         internalState = .none
-        self.accessQueue = accessQueue ?? DispatchQueue(label: "com.network.lib.raw-socket")
+        self.accessQueue = accessQueue ?? .RawSocket.access
         accessKey = DispatchSpecificKey()
         self.accessQueue.setSpecific(key: accessKey, value: ObjectIdentifier(self.accessQueue))
-        callbackDelivery = CallbackDelivery()
+        callbackDelivery = CallbackDelivery(queue: delegateQueue ?? .RawSocket.delegate)
         cancellingCallbacks = []
         timeoutEvent = TimeoutRecursiveEvent(timeout: configuration.timeout, on: self.accessQueue)
         maxDataBlock = configuration.maxDataBlock
