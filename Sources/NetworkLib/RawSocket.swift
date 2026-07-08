@@ -80,9 +80,12 @@ public class RawSocket: @unchecked Sendable {
 
     /// Creates a socket from the supplied configuration.
     ///
-    /// The socket is not connected until ``connect(_:)`` or ``connect()`` is called.
+    /// The socket is not connected until ``connect(_:)`` or ``connect()`` is called. Callback-based APIs deliver their callbacks
+    /// on `delegateQueue`, or on the socket's default delegate queue when `delegateQueue` is `nil`.
     ///
-    /// - Parameter configuration: The destination, transport, security, proxy, and timeout settings.
+    /// - Parameters:
+    ///   - configuration: The destination, transport, security, proxy, and timeout settings.
+    ///   - delegateQueue: Optional queue used to deliver callback-based API completions.
     /// - Throws: An `NWError` if the underlying `NWConnection` cannot be created from the configuration.
     public convenience init(_ configuration: RawSocketConfiguration, delegateQueue: DispatchQueue? = nil) throws(NWError) {
         try self.init(configuration, accessQueue: nil, delegateQueue: delegateQueue)

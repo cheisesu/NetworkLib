@@ -3,17 +3,11 @@ import Network
 
 @available(iOS 15.4, tvOS 15.4, macOS 12.3, *)
 extension ProtocolProxy {
-    /// ``NWEndpoint.Host``
     static let kOptionsEndpointHost = "kOptionsEndpointHost"
-    /// ``NWEndpoint.Port``
     static let kOptionsEndpointPort = "kOptionsEndpointPort"
-    /// ``Bool``
     static let kOptionsIsSecure = "kOptionsIsSecure"
-    /// ``String``
     static let kOptionsServerName = "kOptionsServerName"
-    /// ``HTTPAuthorization``
     static let kOptionsProxyAuth = "kOptionsProxyAuth"
-    /// ``Array<NWProtocolOptions>``
     static let kOptionsProxyTopProtocols = "kOptionsProxyTopProtocols"
 }
 
@@ -54,18 +48,11 @@ private final class ProtocolProxy: NWProtocolFramerImplementation, @unchecked Se
         parserLock.withLock { parser.isCompleted }
     }
 
-    /// Creates the proxy framer implementation for a Network framework framer instance.
-    ///
-    /// - Parameter framer: The framer instance that owns this implementation.
     public init(framer: NWProtocolFramer.Instance) {
         parserLock = NSLock()
         parser = RawHTTPResponseParser()
     }
 
-    /// Starts the proxy handshake and marks the framer ready after the proxy tunnel is established.
-    ///
-    /// - Parameter framer: The framer instance driving the protocol.
-    /// - Returns: `.willMarkReady` because readiness is reported asynchronously after the CONNECT response is validated.
     public func start(framer: NWProtocolFramer.Instance) -> NWProtocolFramer.StartResult {
         framer.async { [weak self] in
             self?.startAsync(with: framer)
@@ -73,10 +60,6 @@ private final class ProtocolProxy: NWProtocolFramerImplementation, @unchecked Se
         return .willMarkReady
     }
 
-    /// Parses the proxy's HTTP CONNECT response and passes through subsequent input after success.
-    ///
-    /// - Parameter framer: The framer instance that provides input bytes.
-    /// - Returns: `0` because this framer either consumes handshake bytes internally or switches to pass-through mode.
     public func handleInput(framer: NWProtocolFramer.Instance) -> Int {
         if isCompleted {
             return 0
@@ -118,28 +101,18 @@ private final class ProtocolProxy: NWProtocolFramerImplementation, @unchecked Se
         return 0
     }
 
-    /// Handles outbound data before the proxy tunnel is ready.
-    ///
-    /// The proxy framer writes the CONNECT request during startup and then switches output to pass-through mode, so this hook
-    /// does not transform application output.
     public func handleOutput(framer: NWProtocolFramer.Instance, message: NWProtocolFramer.Message,
                              messageLength: Int, isComplete: Bool)
     {
     }
 
-    /// Handles scheduled framer wakeups.
     public func wakeup(framer: NWProtocolFramer.Instance) {
     }
 
-    /// Stops the proxy framer.
-    ///
-    /// - Parameter framer: The framer instance being stopped.
-    /// - Returns: `true` to allow the connection to stop immediately.
     public func stop(framer: NWProtocolFramer.Instance) -> Bool {
         true
     }
 
-    /// Cleans up framer state after the proxy protocol stops.
     public func cleanup(framer: NWProtocolFramer.Instance) {
     }
 }

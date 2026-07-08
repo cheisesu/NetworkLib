@@ -57,10 +57,14 @@ public final class HTTPNetworkTask: @unchecked Sendable {
 
     /// Creates an HTTP task for a request.
     ///
+    /// Callback-based APIs deliver their callbacks on `delegateQueue`, or on the task's default delegate queue when
+    /// `delegateQueue` is `nil`.
+    ///
     /// - Parameters:
     ///   - urlRequest: The `http` or `https` request to perform.
     ///   - proxy: Optional HTTP CONNECT proxy settings.
     ///   - sni: Optional TLS Server Name Indication value for the remote server.
+    ///   - delegateQueue: Optional queue used to deliver ``callback`` and `start(onScheduled:)` callbacks.
     public init(_ urlRequest: URLRequest, through proxy: RawSocketConfiguration.Proxy? = nil,
                 sni: String? = nil, delegateQueue: DispatchQueue? = nil) {
         callbackLock = NSLock()
@@ -80,7 +84,8 @@ public final class HTTPNetworkTask: @unchecked Sendable {
     /// execution, and associated with a socket. The request in the success result may differ from the original request, for
     /// example by filling in a default port or normalized host value required by the connection.
     ///
-    /// Set ``callback`` separately to receive the final HTTP response or failure.
+    /// Set ``callback`` separately to receive the final HTTP response or failure. The scheduling callback is delivered on the
+    /// task's delegate queue.
     ///
     /// For example, observe the scheduled request and handle the final result:
     ///
