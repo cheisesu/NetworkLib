@@ -4,19 +4,19 @@ struct RawHTTPResponseParser: Sendable {
     private var buffer: Data
     private var lastResult: HTTPParserResponseResult?
 
-    public var isCompleted: Bool { lastResult != nil }
+    var isCompleted: Bool { lastResult != nil }
 
-    public init() {
+    init() {
         buffer = Data()
         lastResult = nil
     }
 
-    public mutating func append(_ data: Data) {
+    mutating func append(_ data: Data) {
         guard !isCompleted else { return }
         buffer.append(contentsOf: data)
     }
 
-    public mutating func tryParse() -> HTTPParserResponseResult? {
+    mutating func tryParse() -> HTTPParserResponseResult? {
         guard let crlfEndIndex = findCRLF()?.upperBound else { return nil }
         let http = buffer.subdata(in: buffer.startIndex..<crlfEndIndex)
         let message = createHTTPMesage(from: http)

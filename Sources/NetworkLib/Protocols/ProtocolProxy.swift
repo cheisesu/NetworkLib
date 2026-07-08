@@ -48,19 +48,19 @@ private final class ProtocolProxy: NWProtocolFramerImplementation, @unchecked Se
         parserLock.withLock { parser.isCompleted }
     }
 
-    public init(framer: NWProtocolFramer.Instance) {
+    init(framer: NWProtocolFramer.Instance) {
         parserLock = NSLock()
         parser = RawHTTPResponseParser()
     }
 
-    public func start(framer: NWProtocolFramer.Instance) -> NWProtocolFramer.StartResult {
+    func start(framer: NWProtocolFramer.Instance) -> NWProtocolFramer.StartResult {
         framer.async { [weak self] in
             self?.startAsync(with: framer)
         }
         return .willMarkReady
     }
 
-    public func handleInput(framer: NWProtocolFramer.Instance) -> Int {
+    func handleInput(framer: NWProtocolFramer.Instance) -> Int {
         if isCompleted {
             return 0
         }
@@ -101,19 +101,19 @@ private final class ProtocolProxy: NWProtocolFramerImplementation, @unchecked Se
         return 0
     }
 
-    public func handleOutput(framer: NWProtocolFramer.Instance, message: NWProtocolFramer.Message,
-                             messageLength: Int, isComplete: Bool)
+    func handleOutput(framer: NWProtocolFramer.Instance, message: NWProtocolFramer.Message,
+                      messageLength: Int, isComplete: Bool)
     {
     }
 
-    public func wakeup(framer: NWProtocolFramer.Instance) {
+    func wakeup(framer: NWProtocolFramer.Instance) {
     }
 
-    public func stop(framer: NWProtocolFramer.Instance) -> Bool {
+    func stop(framer: NWProtocolFramer.Instance) -> Bool {
         true
     }
 
-    public func cleanup(framer: NWProtocolFramer.Instance) {
+    func cleanup(framer: NWProtocolFramer.Instance) {
     }
 }
 

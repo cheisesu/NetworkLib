@@ -1,30 +1,30 @@
 import Foundation
 
 extension HTTPResponseParser {
-    public enum Event: Sendable {
+    enum Event: Sendable {
         case response(HTTPParserResponseResult)
         case data(Data)
         case end
 
-        public var isEnd: Bool {
+        var isEnd: Bool {
             switch self {
             case .end: return true
             default: return false
             }
         }
 
-        public var response: HTTPParserResponseResult? {
+        var response: HTTPParserResponseResult? {
             guard case let .response(response) = self else { return nil }
             return response
         }
 
-        public var data: Data? {
+        var data: Data? {
             guard case let .data(data) = self else { return nil }
             return data
         }
     }
 
-    public enum Error: Swift.Error, Sendable {
+    enum Error: Swift.Error, Sendable {
         case invalidChunkSize
         case invalidChunkTerminator
         case parsingCompleted
@@ -32,7 +32,7 @@ extension HTTPResponseParser {
 }
 
 extension HTTPResponseParser.Event: CustomStringConvertible {
-    public var description: String {
+    var description: String {
         switch self {
         case let .response(response): return "RESPONSE: \(response)"
         case let .data(data): return "DATA: \(data.count)"
@@ -54,13 +54,13 @@ final class HTTPResponseParser: @unchecked Sendable {
     private var parsedResponse: HTTPParserResponseResult?
     private var bodyKind: BodyKind
 
-    public init() {
+    init() {
         currentBuffer = Data()
         fullDataBuffer = Data()
         bodyKind = .none
     }
 
-    public func append(_ data: Data) throws(HTTPResponseParser.Error) -> [Event] {
+    func append(_ data: Data) throws(HTTPResponseParser.Error) -> [Event] {
         guard bodyKind != .finished else { throw .parsingCompleted }
         currentBuffer.append(data)
         var result: [Event] = []

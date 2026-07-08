@@ -2,9 +2,9 @@ import Foundation
 import Network
 
 final class HTTPRequestParser: Sendable {
-    public let parsedData: Data
+    let parsedData: Data
 
-    public init(_ urlRequest: URLRequest, version: HTTPVersion = .v1_1) {
+    init(_ urlRequest: URLRequest, version: HTTPVersion = .v1_1) {
         var urlRequest = urlRequest
         let startLine = urlRequest.httpStartLine(version)
         var lines = [startLine]
@@ -29,7 +29,7 @@ final class HTTPRequestParser: Sendable {
         parsedData = Data([headerData, urlRequest.httpBody].compactMap { $0 }.joined())
     }
 
-    public convenience init(connectTo host: NWEndpoint.Host, _ port: NWEndpoint.Port?, headers: [String: String]) {
+    convenience init(connectTo host: NWEndpoint.Host, _ port: NWEndpoint.Port?, headers: [String: String]) {
         let headers = headers.reduce(into: [HTTPHeaderKey: String]()) { partialResult, keyValue in
             partialResult[HTTPHeaderKey(keyValue.key)] = keyValue.value
         }
