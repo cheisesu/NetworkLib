@@ -65,6 +65,7 @@ public class RawSocket: @unchecked Sendable {
     private let maxDataBlock: Int
     private let accessKey: DispatchSpecificKey<ObjectIdentifier>
     private let transport: RawSocketTransport
+    private let callbackDelivery: CallbackDelivery
     private var internalState: _InternalState {
         didSet {
             printDebug("[socket] internal state changed", internalState)
@@ -83,15 +84,16 @@ public class RawSocket: @unchecked Sendable {
     ///
     /// - Parameter configuration: The destination, transport, security, proxy, and timeout settings.
     /// - Throws: An `NWError` if the underlying `NWConnection` cannot be created from the configuration.
-    public convenience init(_ configuration: RawSocketConfiguration) throws(NWError) {
-        try self.init(configuration, accessQueue: nil)
+    public convenience init(_ configuration: RawSocketConfiguration, delegateQueue: DispatchQueue? = nil) throws(NWError) {
+        try self.init(configuration, accessQueue: nil, delegateQueue: delegateQueue)
     }
 
-    init(_ configuration: RawSocketConfiguration, accessQueue: DispatchQueue?) throws(NWError) {
+    init(_ configuration: RawSocketConfiguration, accessQueue: DispatchQueue?, delegateQueue: DispatchQueue?) throws(NWError) {
         internalState = .none
-        self.accessQueue = accessQueue ?? DispatchQueue(label: "com.network.lib.raw-socket")
+        self.accessQueue = accessQueue ?? .RawSocket.access
         accessKey = DispatchSpecificKey()
         self.accessQueue.setSpecific(key: accessKey, value: ObjectIdentifier(self.accessQueue))
+        callbackDelivery = CallbackDelivery(queue: delegateQueue ?? .RawSocket.delegate)
         cancellingCallbacks = []
         timeoutEvent = TimeoutRecursiveEvent(timeout: configuration.timeout, on: self.accessQueue)
         maxDataBlock = configuration.maxDataBlock
@@ -193,6 +195,7 @@ public class RawSocket: @unchecked Sendable {
     ///   - data: The bytes to send.
     ///   - completion: A closure invoked when the send is processed.
     public func send(_ data: Data, _ completion: (@Sendable (_ error: NWError?) -> Void)?) {
+        let completion = delivered(completion)
         accessQueue.async { [weak self] in
             guard let self else {
                 completion?(.posix(.ECANCELED))
@@ -220,6 +223,7 @@ public class RawSocket: @unchecked Sendable {
     ///   - message: The typed message that supplies content and context.
     ///   - completion: A closure invoked when the send is processed.
     public func sendMessage<M: RawSocketSendMessage>(_ message: M, _ completion: (@Sendable (_ error: NWError?) -> Void)?) {
+        let completion = delivered(completion)
         accessQueue.async { [weak self] in
             guard let self else {
                 completion?(.posix(.ECANCELED))
@@ -256,6 +260,7 @@ public class RawSocket: @unchecked Sendable {
     ///
     /// - Parameter completion: A callback invoked with the next raw data block or receive error.
     public func receiveNext(_ completion: @escaping @Sendable (_ result: Result<Data?, NWError>) -> Void) {
+        let completion = delivered(completion)
         accessQueue.async { [weak self, maxDataBlock] in
             guard let self else { return completion(.failure(.posix(.ECANCELED))) }
             printDebug("[socket] receive next")
@@ -300,6 +305,7 @@ public class RawSocket: @unchecked Sendable {
         of type: M.Type = M.self,
         _ completion: @escaping @Sendable (_ result: Result<M, NWError>) -> Void
     ) {
+        let completion = delivered(completion)
         accessQueue.async { [weak self] in
             guard let self else { return completion(.failure(.posix(.ECANCELED))) }
             printDebug("[socket] receive next message")
@@ -344,10 +350,10 @@ public class RawSocket: @unchecked Sendable {
     private func connectUnsafeNoTimer(_ block: @escaping @Sendable (Result<ConnectionInfo, NWError>) -> Void) {
         timeoutEvent?.touch()
         if internalState == .closed || internalState == .cancelling {
-            return block(.failure(.posix(.ECANCELED)))
+            return callbackDelivery.call(.failure(.posix(.ECANCELED)), block)
         }
-        if internalState == .connecting { return block(.failure(.posix(.EALREADY))) }
-        if internalState == .connected { return block(.failure(.posix(.EISCONN))) }
+        if internalState == .connecting { return callbackDelivery.call(.failure(.posix(.EALREADY)), block) }
+        if internalState == .connected { return callbackDelivery.call(.failure(.posix(.EISCONN)), block) }
         connectingCallback = block
         internalState = .connecting
         connection.start(queue: accessQueue)
@@ -405,7 +411,7 @@ public class RawSocket: @unchecked Sendable {
         let callbacks = cancellingCallbacks
         cancellingCallbacks = []
         for callback in callbacks {
-            callback()
+            callbackDelivery.call(callback)
         }
     }
 
@@ -416,7 +422,9 @@ public class RawSocket: @unchecked Sendable {
     private func finishConnectionUnsafe(_ result: Result<ConnectionInfo, NWError>) {
         let callback = connectingCallback
         connectingCallback = nil
-        callback?(result)
+        if let callback {
+            callbackDelivery.call(result, callback)
+        }
     }
 
     private func activeOperationCheckErrorUnsafe() -> NWError? {
@@ -427,5 +435,32 @@ public class RawSocket: @unchecked Sendable {
             return cancellingError ?? .posix(.ECANCELED)
         }
         return nil
+    }
+}
+
+@available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
+private extension RawSocket {
+    func delivered(_ callback: (@Sendable () -> Void)?) -> (@Sendable () -> Void)? {
+        guard let callback else { return nil }
+        return { [callbackDelivery, callback] in
+            callbackDelivery.call(callback)
+        }
+    }
+
+    func delivered<Value: Sendable>(
+        _ callback: @Sendable @escaping (_ value: Value) -> Void
+    ) -> @Sendable (_ value: Value) -> Void {
+        { [callbackDelivery, callback] value in
+            callbackDelivery.call(value, callback)
+        }
+    }
+
+    func delivered<Value: Sendable>(
+        _ callback: (@Sendable (_ value: Value) -> Void)?
+    ) -> (@Sendable (_ value: Value) -> Void)? {
+        guard let callback else { return nil }
+        return { [callbackDelivery, callback] value in
+            callbackDelivery.call(value, callback)
+        }
     }
 }
