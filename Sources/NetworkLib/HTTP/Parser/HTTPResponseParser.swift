@@ -1,66 +1,38 @@
 import Foundation
 
 extension HTTPResponseParser {
-    /// Events emitted while incrementally parsing an HTTP response.
-    ///
-    /// For example, switch over events returned from ``HTTPResponseParser/append(_:)``:
-    ///
-    /// ```swift
-    /// for event in events {
-    ///     switch event {
-    ///     case .response(let response): print(response.status)
-    ///     case .data(let data): print(data.count)
-    ///     case .end: print("complete")
-    ///     }
-    /// }
-    /// ```
-    public enum Event: Sendable {
-        /// The response head, including status, version, and headers, has been parsed.
+    enum Event: Sendable {
         case response(HTTPParserResponseResult)
-
-        /// A body data fragment has been parsed.
         case data(Data)
-
-        /// The parser reached the end of the response body.
         case end
 
-        /// A Boolean value indicating whether this event marks the end of the response body.
-        public var isEnd: Bool {
+        var isEnd: Bool {
             switch self {
             case .end: return true
             default: return false
             }
         }
 
-        /// The parsed response head when this event is ``response(_:)``.
-        public var response: HTTPParserResponseResult? {
+        var response: HTTPParserResponseResult? {
             guard case let .response(response) = self else { return nil }
             return response
         }
 
-        /// The parsed body fragment when this event is ``data(_:)``.
-        public var data: Data? {
+        var data: Data? {
             guard case let .data(data) = self else { return nil }
             return data
         }
     }
 
-    /// Errors that can occur while parsing an HTTP response body.
-    public enum Error: Swift.Error, Sendable {
-        /// A chunked-transfer chunk size line could not be parsed as hexadecimal.
+    enum Error: Swift.Error, Sendable {
         case invalidChunkSize
-
-        /// A chunk body was not followed by the required CRLF terminator.
         case invalidChunkTerminator
-
-        /// Additional data was appended after the parser had already emitted an end event.
         case parsingCompleted
     }
 }
 
 extension HTTPResponseParser.Event: CustomStringConvertible {
-    /// A short debug description of the parser event.
-    public var description: String {
+    var description: String {
         switch self {
         case let .response(response): return "RESPONSE: \(response)"
         case let .data(data): return "DATA: \(data.count)"
@@ -69,7 +41,6 @@ extension HTTPResponseParser.Event: CustomStringConvertible {
     }
 }
 
-/// - warning: This class must be used synchronously.
 final class HTTPResponseParser: @unchecked Sendable {
     private enum BodyKind {
         case none
@@ -83,32 +54,13 @@ final class HTTPResponseParser: @unchecked Sendable {
     private var parsedResponse: HTTPParserResponseResult?
     private var bodyKind: BodyKind
 
-    /// Creates an empty incremental HTTP response parser.
-    public init() {
+    init() {
         currentBuffer = Data()
         fullDataBuffer = Data()
         bodyKind = .none
     }
 
-    /// Appends bytes and returns every parser event that can be produced from the current buffer.
-    ///
-    /// The parser first emits a response event after the full response head is available. It then emits data events for either
-    /// `Content-Length` bodies or `Transfer-Encoding: chunked` bodies, followed by an end event when the body is complete.
-    ///
-    /// For example, feed bytes as they arrive and handle every produced event:
-    ///
-    /// ```swift
-    /// let parser = HTTPResponseParser()
-    /// let events = try parser.append(receivedData)
-    /// for event in events where event.isEnd {
-    ///     print("response complete")
-    /// }
-    /// ```
-    ///
-    /// - Parameter data: The next bytes received from the connection.
-    /// - Returns: Parser events produced by the appended bytes. The array is empty when more bytes are needed.
-    /// - Throws: ``HTTPResponseParser/Error`` when the response body framing is invalid or parsing has already completed.
-    public func append(_ data: Data) throws(HTTPResponseParser.Error) -> [Event] {
+    func append(_ data: Data) throws(HTTPResponseParser.Error) -> [Event] {
         guard bodyKind != .finished else { throw .parsingCompleted }
         currentBuffer.append(data)
         var result: [Event] = []

@@ -41,7 +41,7 @@ public final class HTTPNetworkTask: @unchecked Sendable {
     private var currentConnection: RawSocket?
     private let accessQueue: DispatchQueue
     private let accessKey: DispatchSpecificKey<ObjectIdentifier>
-    private let delegateQueue: DispatchQueue
+    private let callbackDelivery: CallbackDelivery
 
     /// The received HTTP response, if the task has parsed one.
     public private(set) var response: HTTPURLResponse?
@@ -57,10 +57,14 @@ public final class HTTPNetworkTask: @unchecked Sendable {
 
     /// Creates an HTTP task for a request.
     ///
+    /// Callback-based APIs deliver their callbacks on `delegateQueue`, or on the task's default delegate queue when
+    /// `delegateQueue` is `nil`.
+    ///
     /// - Parameters:
     ///   - urlRequest: The `http` or `https` request to perform.
     ///   - proxy: Optional HTTP CONNECT proxy settings.
     ///   - sni: Optional TLS Server Name Indication value for the remote server.
+    ///   - delegateQueue: Optional queue used to deliver ``callback`` and `start(onScheduled:)` callbacks.
     public init(_ urlRequest: URLRequest, through proxy: RawSocketConfiguration.Proxy? = nil,
                 sni: String? = nil, delegateQueue: DispatchQueue? = nil) {
         callbackLock = NSLock()
@@ -71,7 +75,7 @@ public final class HTTPNetworkTask: @unchecked Sendable {
         accessQueue = .HTTPTask.access
         accessKey = DispatchSpecificKey()
         accessQueue.setSpecific(key: accessKey, value: ObjectIdentifier(self.accessQueue))
-        self.delegateQueue = delegateQueue ?? .HTTPTask.delegate
+        callbackDelivery = CallbackDelivery(queue: delegateQueue ?? .HTTPTask.delegate)
     }
 
     /// Starts the task and optionally reports the request scheduled for execution.
@@ -80,7 +84,8 @@ public final class HTTPNetworkTask: @unchecked Sendable {
     /// execution, and associated with a socket. The request in the success result may differ from the original request, for
     /// example by filling in a default port or normalized host value required by the connection.
     ///
-    /// Set ``callback`` separately to receive the final HTTP response or failure.
+    /// Set ``callback`` separately to receive the final HTTP response or failure. The scheduling callback is delivered on the
+    /// task's delegate queue.
     ///
     /// For example, observe the scheduled request and handle the final result:
     ///
@@ -100,11 +105,13 @@ public final class HTTPNetworkTask: @unchecked Sendable {
     /// - Parameter callback: Optional one-shot callback that receives the request actually scheduled for execution
     /// or a scheduling error.
     public func start(onScheduled callback: (@Sendable (_ startResult: Result<URLRequest, Error>) -> Void)? = nil) {
-        let callback = callback ?? { _ in }
         accessQueue.async { [weak self] in
             printDebug("[http] call start")
             guard let self else { return }
-            self.startUnsafe(callback)
+            self.startUnsafe { [weak self] result in
+                guard let self, let callback else { return }
+                self.deliverStartResult(result, to: callback)
+            }
         }
     }
 
@@ -148,6 +155,24 @@ public final class HTTPNetworkTask: @unchecked Sendable {
     }
 }
 
+@available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
+private extension HTTPNetworkTask {
+    func deliverStartResult(
+        _ result: Result<URLRequest, Error>,
+        to callback: @escaping @Sendable (_ startResult: Result<URLRequest, Error>) -> Void
+    ) {
+        callbackDelivery.call {
+            callback(result)
+        }
+    }
+
+    func deliverTaskResult(_ result: Result<(HTTPURLResponse, Data), Error>, to callback: @escaping ResultCallback) {
+        callbackDelivery.call {
+            callback(result)
+        }
+    }
+}
+
 extension HTTPNetworkTask {
     private func startUnsafe(_ onScheduleComplete: @Sendable(_ startResult: Result<URLRequest, Error>) -> Void) {
         guard currentConnection == nil else { return onScheduleComplete(.failure(NWError.posix(.EALREADY))) }
@@ -163,7 +188,7 @@ extension HTTPNetworkTask {
 
     private func startWithRequestUnsafe(_ urlRequest: URLRequest) throws -> URLRequest {
         let (configuration, executingRequest) = try makeConfiguration(from: urlRequest)
-        let rawSocket = try RawSocket(configuration, accessQueue: accessQueue, delegateQueue: delegateQueue)
+        let rawSocket = try RawSocket(configuration, delegateQueue: accessQueue)
         currentConnection = rawSocket
         rawSocket.connect { [weak self] result in
             printDebug("[http] connected", result)
@@ -264,15 +289,16 @@ extension HTTPNetworkTask {
         currentConnection = nil
         let callback = self.callback
         self.callback = nil
+        guard let callback else { return }
         if let error {
-            callback?(.failure(error))
+            deliverTaskResult(.failure(error), to: callback)
         } else {
             guard let response else {
-                callback?(.failure(URLError(.cannotParseResponse)))
+                deliverTaskResult(.failure(URLError(.cannotParseResponse)), to: callback)
                 return
             }
             let result = (response, data ?? Data())
-            callback?(.success(result))
+            deliverTaskResult(.success(result), to: callback)
         }
     }
 }

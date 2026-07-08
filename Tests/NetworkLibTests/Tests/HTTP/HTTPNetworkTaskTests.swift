@@ -334,6 +334,111 @@ struct HTTPNetworkTaskTests {
         try #require(executingRequest.url?.port == Int(expectedPort))
     }
 
+    @Test(.tags(.httpNetwork))
+    func startScheduledCallbackRunsOnDelegateQueue() async throws {
+        let delegateQueue = DispatchQueue(label: "http-network-task.delegate.scheduled")
+        let probe = HTTPTaskQueueProbe()
+        probe.install(on: delegateQueue)
+        var request = URLRequest(url: try #require(URL(string: "http://example.com")))
+        request.url = nil
+        let task = HTTPNetworkTask(request, delegateQueue: delegateQueue)
+
+        let check = try await withAsyncTimeout(.seconds(1)) { () async throws -> HTTPTaskDelegateQueueCheck in
+            await withCheckedContinuation { continuation in
+                task.start { result in
+                    let isExpectedResult: Bool
+                    if case let .failure(error as URLError) = result {
+                        isExpectedResult = error.code == .badURL
+                    } else {
+                        isExpectedResult = false
+                    }
+                    continuation.resume(returning: HTTPTaskDelegateQueueCheck(
+                        isOnDelegateQueue: probe.isCurrentQueue,
+                        isExpectedResult: isExpectedResult
+                    ))
+                }
+            }
+        }
+
+        #expect(check.isOnDelegateQueue)
+        #expect(check.isExpectedResult)
+    }
+
+    @Test(.tags(.httpNetwork))
+    func finalFailureCallbackRunsOnDelegateQueue() async throws {
+        let delegateQueue = DispatchQueue(label: "http-network-task.delegate.failure")
+        let probe = HTTPTaskQueueProbe()
+        probe.install(on: delegateQueue)
+        var request = URLRequest(url: try #require(URL(string: "http://example.com")))
+        request.url = nil
+        let task = HTTPNetworkTask(request, delegateQueue: delegateQueue)
+
+        let check = try await withAsyncTimeout(.seconds(1)) { () async throws -> HTTPTaskDelegateQueueCheck in
+            await withCheckedContinuation { continuation in
+                task.callback = { result in
+                    let isExpectedResult: Bool
+                    if case let .failure(error as URLError) = result {
+                        isExpectedResult = error.code == .badURL
+                    } else {
+                        isExpectedResult = false
+                    }
+                    continuation.resume(returning: HTTPTaskDelegateQueueCheck(
+                        isOnDelegateQueue: probe.isCurrentQueue,
+                        isExpectedResult: isExpectedResult
+                    ))
+                }
+                task.start()
+            }
+        }
+
+        #expect(check.isOnDelegateQueue)
+        #expect(check.isExpectedResult)
+    }
+
+    @Test(.tags(.httpNetwork))
+    func finalSuccessCallbackRunsOnDelegateQueue() async throws {
+        let delegateQueue = DispatchQueue(label: "http-network-task.delegate.success")
+        let probe = HTTPTaskQueueProbe()
+        probe.install(on: delegateQueue)
+        let body = Data("Hello World".utf8)
+        let lines = [
+            "HTTP/1.1 200 OK",
+            "Content-Length: \(body.count)",
+            "Connection: close",
+            "",
+            "",
+        ]
+        let responseData = Data(lines.joined(separator: "\r\n").utf8) + body
+        let server = try HTTPServerMock(isSecure: false, flow: .sendResponse(responseData))
+        let port = try await server.start()
+        defer { server.stop() }
+        let url = try #require(URL(string: "http://localhost:\(port)"))
+        let request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalAndRemoteCacheData, timeoutInterval: 2)
+        let task = HTTPNetworkTask(request, delegateQueue: delegateQueue)
+        defer { task.cancel() }
+
+        let check = try await withAsyncTimeout(.seconds(3)) { () async throws -> HTTPTaskDelegateQueueCheck in
+            await withCheckedContinuation { continuation in
+                task.callback = { result in
+                    let isExpectedResult: Bool
+                    if case let .success((response, data)) = result {
+                        isExpectedResult = response.statusCode == 200 && data == body
+                    } else {
+                        isExpectedResult = false
+                    }
+                    continuation.resume(returning: HTTPTaskDelegateQueueCheck(
+                        isOnDelegateQueue: probe.isCurrentQueue,
+                        isExpectedResult: isExpectedResult
+                    ))
+                }
+                task.start()
+            }
+        }
+
+        #expect(check.isOnDelegateQueue)
+        #expect(check.isExpectedResult)
+    }
+
     @Test(.disabled("Not implemented"), .tags(.httpNetwork))
     func noRedirect_SendRequestFailed_Callback_ReturnsError() async throws {
         
@@ -342,5 +447,23 @@ struct HTTPNetworkTaskTests {
     @Test(.disabled("Not implemented"), .tags(.httpNetwork))
     func noRedirect_SendRequestFailed_Async_ReturnsError() async throws {
 
+    }
+}
+
+private struct HTTPTaskDelegateQueueCheck: Sendable {
+    let isOnDelegateQueue: Bool
+    let isExpectedResult: Bool
+}
+
+private final class HTTPTaskQueueProbe: @unchecked Sendable {
+    private let key = DispatchSpecificKey<Int>()
+    private let value = 1
+
+    var isCurrentQueue: Bool {
+        DispatchQueue.getSpecific(key: key) == value
+    }
+
+    func install(on queue: DispatchQueue) {
+        queue.setSpecific(key: key, value: value)
     }
 }
