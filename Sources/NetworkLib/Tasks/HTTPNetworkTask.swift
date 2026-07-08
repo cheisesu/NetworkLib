@@ -1,12 +1,19 @@
 import Foundation
 import Network
 
-/// Additional keys used in `URLError` user info dictionaries produced by ``HTTPNetworkTask``.
+/// Additional keys used in `URLError` user-info dictionaries produced by ``HTTPNetworkTask``.
+///
+/// These keys supplement Foundation URL Loading System keys such as `NSUnderlyingErrorKey`,
+/// `NSURLErrorFailingURLErrorKey`, and `NSURLErrorFailingURLStringErrorKey`.
 public enum HTTPTaskErrorInfoKey {
     /// The HTTP task phase where the error occurred.
+    ///
+    /// The value is a `String`, for example `"connecting"`, `"sending"`, or `"receiving"`.
     public static let phase = "NetworkLib.HTTPTask.phase"
 
     /// A short string describing the original error.
+    ///
+    /// The value is a `String`. Use `NSUnderlyingErrorKey` when the original typed error is needed.
     public static let error = "NetworkLib.HTTPTask.error"
 }
 
@@ -38,7 +45,10 @@ public final class HTTPNetworkTask: @unchecked Sendable {
         }
     }
 
-    /// Callback invoked when an HTTP task finishes with either a response and body data or an error.
+    /// Callback invoked when an HTTP task finishes with either a response and body data or a `URLError`.
+    ///
+    /// The callback type uses `Error` to match Swift result conventions, but failures produced by this task are `URLError`
+    /// values. Inspect `errorUserInfo` for Foundation URL Loading System keys and ``HTTPTaskErrorInfoKey`` values.
     public typealias ResultCallback = @Sendable (_ result: Result<(HTTPURLResponse, Data), Error>) -> Void
 
     private let proxy: RawSocketConfiguration.Proxy?
@@ -93,8 +103,8 @@ public final class HTTPNetworkTask: @unchecked Sendable {
     /// execution, and associated with a socket. The request in the success result may differ from the original request, for
     /// example by filling in a default port or normalized host value required by the connection.
     ///
-    /// Set ``callback`` separately to receive the final HTTP response or failure. The scheduling callback is delivered on the
-    /// task's delegate queue.
+    /// Set ``callback`` separately to receive the final HTTP response or failure. Scheduling and task failures are delivered as
+    /// `URLError` values. The scheduling callback is delivered on the task's delegate queue.
     ///
     /// For example, observe the scheduled request and handle the final result:
     ///
@@ -112,7 +122,7 @@ public final class HTTPNetworkTask: @unchecked Sendable {
     /// ```
     ///
     /// - Parameter callback: Optional one-shot callback that receives the request actually scheduled for execution
-    /// or a scheduling error.
+    /// or a scheduling `URLError`.
     public func start(onScheduled callback: (@Sendable (_ startResult: Result<URLRequest, Error>) -> Void)? = nil) {
         accessQueue.async { [weak self] in
             printDebug("[http] call start")
@@ -135,10 +145,12 @@ public final class HTTPNetworkTask: @unchecked Sendable {
 
     /// Performs the request asynchronously and returns the complete response and body data.
     ///
-    /// Cancelling the surrounding task cancels the underlying socket. The method throws validation, socket, parser, and URL
-    /// errors produced while executing the request.
+    /// Cancelling the surrounding task cancels the underlying socket. The method throws `URLError` values for validation,
+    /// socket, parser, and URL failures produced while executing the request. The error's `errorUserInfo` may include
+    /// Foundation URL Loading System keys, `NSUnderlyingErrorKey`, and ``HTTPTaskErrorInfoKey`` values.
     ///
     /// - Returns: The final HTTP response and accumulated body bytes.
+    /// - Throws: A `URLError` describing the failure.
     public func perform() async throws -> (HTTPURLResponse, Data) {
         printDebug("[http] call perform")
         return try await withTaskCancellationHandler {
