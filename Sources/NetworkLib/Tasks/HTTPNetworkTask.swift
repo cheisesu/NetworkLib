@@ -1,6 +1,22 @@
 import Foundation
 import Network
 
+/// Additional keys used in `URLError` user-info dictionaries produced by ``HTTPNetworkTask``.
+///
+/// These keys supplement Foundation URL Loading System keys such as `NSUnderlyingErrorKey`,
+/// `NSURLErrorFailingURLErrorKey`, and `NSURLErrorFailingURLStringErrorKey`.
+public enum HTTPTaskErrorInfoKey {
+    /// The HTTP task phase where the error occurred.
+    ///
+    /// The value is a `String`, for example `"connecting"`, `"sending"`, or `"receiving"`.
+    public static let phase = "NetworkLib.HTTPTask.phase"
+
+    /// A short string describing the original error.
+    ///
+    /// The value is a `String`. Use `NSUnderlyingErrorKey` when the original typed error is needed.
+    public static let error = "NetworkLib.HTTPTask.error"
+}
+
 /// A single HTTP request task backed by ``RawSocket``.
 ///
 /// For example, perform a request asynchronously:
@@ -29,7 +45,10 @@ public final class HTTPNetworkTask: @unchecked Sendable {
         }
     }
 
-    /// Callback invoked when an HTTP task finishes with either a response and body data or an error.
+    /// Callback invoked when an HTTP task finishes with either a response and body data or a `URLError`.
+    ///
+    /// The callback type uses `Error` to match Swift result conventions, but failures produced by this task are `URLError`
+    /// values. Inspect `errorUserInfo` for Foundation URL Loading System keys and ``HTTPTaskErrorInfoKey`` values.
     public typealias ResultCallback = @Sendable (_ result: Result<(HTTPURLResponse, Data), Error>) -> Void
 
     private let proxy: RawSocketConfiguration.Proxy?
@@ -84,8 +103,8 @@ public final class HTTPNetworkTask: @unchecked Sendable {
     /// execution, and associated with a socket. The request in the success result may differ from the original request, for
     /// example by filling in a default port or normalized host value required by the connection.
     ///
-    /// Set ``callback`` separately to receive the final HTTP response or failure. The scheduling callback is delivered on the
-    /// task's delegate queue.
+    /// Set ``callback`` separately to receive the final HTTP response or failure. Scheduling and task failures are delivered as
+    /// `URLError` values. The scheduling callback is delivered on the task's delegate queue.
     ///
     /// For example, observe the scheduled request and handle the final result:
     ///
@@ -103,7 +122,7 @@ public final class HTTPNetworkTask: @unchecked Sendable {
     /// ```
     ///
     /// - Parameter callback: Optional one-shot callback that receives the request actually scheduled for execution
-    /// or a scheduling error.
+    /// or a scheduling `URLError`.
     public func start(onScheduled callback: (@Sendable (_ startResult: Result<URLRequest, Error>) -> Void)? = nil) {
         accessQueue.async { [weak self] in
             printDebug("[http] call start")
@@ -126,10 +145,12 @@ public final class HTTPNetworkTask: @unchecked Sendable {
 
     /// Performs the request asynchronously and returns the complete response and body data.
     ///
-    /// Cancelling the surrounding task cancels the underlying socket. The method throws validation, socket, parser, and URL
-    /// errors produced while executing the request.
+    /// Cancelling the surrounding task cancels the underlying socket. The method throws `URLError` values for validation,
+    /// socket, parser, and URL failures produced while executing the request. The error's `errorUserInfo` may include
+    /// Foundation URL Loading System keys, `NSUnderlyingErrorKey`, and ``HTTPTaskErrorInfoKey`` values.
     ///
     /// - Returns: The final HTTP response and accumulated body bytes.
+    /// - Throws: A `URLError` describing the failure.
     public func perform() async throws -> (HTTPURLResponse, Data) {
         printDebug("[http] call perform")
         return try await withTaskCancellationHandler {
@@ -175,14 +196,21 @@ private extension HTTPNetworkTask {
 
 extension HTTPNetworkTask {
     private func startUnsafe(_ onScheduleComplete: @Sendable(_ startResult: Result<URLRequest, Error>) -> Void) {
-        guard currentConnection == nil else { return onScheduleComplete(.failure(NWError.posix(.EALREADY))) }
+        guard currentConnection == nil else {
+            let error = urlError(from: NWError.posix(.EALREADY), request: originalRequest, phase: .scheduling)
+            return onScheduleComplete(.failure(error))
+        }
         do {
-            guard !isFinished else { return onScheduleComplete(.failure(NWError.posix(.ECANCELED))) }
+            guard !isFinished else {
+                let error = urlError(from: NWError.posix(.ECANCELED), request: originalRequest, phase: .scheduling)
+                return onScheduleComplete(.failure(error))
+            }
             let executingRequest = try startWithRequestUnsafe(originalRequest)
             onScheduleComplete(.success(executingRequest))
         } catch {
-            onScheduleComplete(.failure(error))
-            finishAndNotifyUnsafe(nil, originalRequest, with: error)
+            let urlError = urlError(from: error, request: originalRequest, phase: .scheduling)
+            onScheduleComplete(.failure(urlError))
+            finishAndNotifyUnsafe(nil, originalRequest, with: error, phase: .scheduling)
         }
     }
 
@@ -194,7 +222,7 @@ extension HTTPNetworkTask {
             printDebug("[http] connected", result)
             switch result {
             case .success: self?.successConnectUnsafe(rawSocket, urlRequest)
-            case let .failure(error): self?.finishAndNotifyUnsafe(rawSocket, urlRequest, with: error)
+            case let .failure(error): self?.finishAndNotifyUnsafe(rawSocket, urlRequest, with: error, phase: .connecting)
             }
         }
         return executingRequest
@@ -235,7 +263,7 @@ extension HTTPNetworkTask {
         rawSocket.sendMessage(HTTPSendMessage(urlRequest)) { [weak self, urlRequest] error in
             printDebug("[http] sent", error, "request", urlRequest)
             if let error {
-                self?.finishAndNotifyUnsafe(rawSocket, urlRequest, with: error)
+                self?.finishAndNotifyUnsafe(rawSocket, urlRequest, with: error, phase: .sending)
             } else {
                 self?.successSendHTTPUnsafe(rawSocket, urlRequest)
             }
@@ -252,7 +280,7 @@ extension HTTPNetworkTask {
             printDebug("[http] receive message", result)
             switch result {
             case let .success(message): self?.successReceiveNextUnsafe(rawSocket, urlRequest, with: message)
-            case let .failure(error): self?.finishAndNotifyUnsafe(rawSocket, urlRequest, with: error)
+            case let .failure(error): self?.finishAndNotifyUnsafe(rawSocket, urlRequest, with: error, phase: .receiving)
             }
         }
     }
@@ -271,7 +299,7 @@ extension HTTPNetworkTask {
             case .end: finishAndNotifyUnsafe(rawSocket, urlRequest, with: nil)
             }
         } catch {
-            finishAndNotifyUnsafe(rawSocket, urlRequest, with: error)
+            finishAndNotifyUnsafe(rawSocket, urlRequest, with: error, phase: .parsing)
         }
     }
 
@@ -282,7 +310,12 @@ extension HTTPNetworkTask {
         self.data?.append(contentsOf: data)
     }
 
-    private func finishAndNotifyUnsafe(_ rawSocket: RawSocket?, _ urlRequest: URLRequest, with error: Error?) {
+    private func finishAndNotifyUnsafe(
+        _ rawSocket: RawSocket?,
+        _ urlRequest: URLRequest,
+        with error: Error?,
+        phase: FailurePhase? = nil
+    ) {
         guard !isFinished else { return }
         isFinished = true
         rawSocket?.cancel(nil)
@@ -291,14 +324,85 @@ extension HTTPNetworkTask {
         self.callback = nil
         guard let callback else { return }
         if let error {
-            deliverTaskResult(.failure(error), to: callback)
+            deliverTaskResult(.failure(urlError(from: error, request: urlRequest, phase: phase)), to: callback)
         } else {
             guard let response else {
-                deliverTaskResult(.failure(URLError(.cannotParseResponse)), to: callback)
+                let error = urlError(from: URLError(.cannotParseResponse), request: urlRequest, phase: .parsing)
+                deliverTaskResult(.failure(error), to: callback)
                 return
             }
             let result = (response, data ?? Data())
             deliverTaskResult(.success(result), to: callback)
         }
+    }
+
+    private func urlError(from error: Error, request: URLRequest, phase: FailurePhase?) -> URLError {
+        var userInfo = (error as? URLError)?.errorUserInfo ?? [:]
+        if !(error is URLError) {
+            userInfo[NSUnderlyingErrorKey] = error
+        }
+        if let url = request.url {
+            userInfo[NSURLErrorFailingURLErrorKey] = url as NSURL
+            userInfo[NSURLErrorFailingURLStringErrorKey] = url.absoluteString
+            userInfo[NSURLErrorKey] = url as NSURL
+        }
+        if let phase {
+            userInfo[HTTPTaskErrorInfoKey.phase] = phase.rawValue
+        }
+        userInfo[HTTPTaskErrorInfoKey.error] = String(describing: error)
+        return URLError(urlErrorCode(from: error), userInfo: userInfo)
+    }
+
+    private func urlErrorCode(from error: Error) -> URLError.Code {
+        if let error = error as? URLError {
+            return error.code
+        }
+        guard let error = error as? NWError else {
+            return .unknown
+        }
+        switch error {
+        case let .posix(code):
+            return urlErrorCode(from: code)
+        case .dns:
+            return .cannotFindHost
+        case .tls:
+            return .secureConnectionFailed
+        default:
+            return .unknown
+        }
+    }
+
+    private func urlErrorCode(from code: POSIXErrorCode) -> URLError.Code {
+        switch code {
+        case .ECANCELED:
+            return .cancelled
+        case .ETIMEDOUT:
+            return .timedOut
+        case .ECONNREFUSED, .EHOSTUNREACH, .ENETUNREACH:
+            return .cannotConnectToHost
+        case .ECONNRESET, .ECONNABORTED, .EPIPE:
+            return .networkConnectionLost
+        case .ENOTCONN:
+            return .notConnectedToInternet
+        case .EAUTH, .EACCES:
+            return .userAuthenticationRequired
+        case .EBADMSG, .EPROTO, .EIO, .EINVAL:
+            return .cannotParseResponse
+        case .ENOTSUP:
+            return .unsupportedURL
+        default:
+            return .unknown
+        }
+    }
+}
+
+@available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
+private extension HTTPNetworkTask {
+    enum FailurePhase: String, Sendable {
+        case scheduling
+        case connecting
+        case sending
+        case receiving
+        case parsing
     }
 }

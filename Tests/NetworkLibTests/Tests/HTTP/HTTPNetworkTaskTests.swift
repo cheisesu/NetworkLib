@@ -71,7 +71,12 @@ struct HTTPNetworkTaskTests {
                 try await task.perform()
             }
             throw TestError.unexpectedEntrance
-        } catch NWError.posix(.ETIMEDOUT) {
+        } catch let error as URLError where error.code == .timedOut {
+            let errorInfo = error as NSError
+            #expect(errorInfo.userInfo[HTTPTaskErrorInfoKey.phase] as? String == "receiving")
+            #expect(errorInfo.userInfo[HTTPTaskErrorInfoKey.error] != nil)
+            #expect(errorInfo.userInfo[NSUnderlyingErrorKey] as? NWError == .posix(.ETIMEDOUT))
+            #expect(errorInfo.userInfo[NSURLErrorFailingURLStringErrorKey] as? String == url.absoluteString)
         } catch { throw error }
     }
 
@@ -93,7 +98,7 @@ struct HTTPNetworkTaskTests {
                 task.cancel()
             }
             throw TestError.unexpectedEntrance
-        } catch NWError.posix(.ECANCELED) {
+        } catch let error as URLError where error.code == .cancelled {
         } catch { throw error }
     }
 
@@ -119,7 +124,7 @@ struct HTTPNetworkTaskTests {
             _ = try await request.value
             _ = await cancelTask.value
             throw TestError.unexpectedEntrance
-        } catch NWError.posix(.ECANCELED) {
+        } catch let error as URLError where error.code == .cancelled {
         } catch { throw error }
     }
 
@@ -144,7 +149,7 @@ struct HTTPNetworkTaskTests {
                 try await group.next()
             }
             throw TestError.unexpectedEntrance
-        } catch NWError.posix(.EALREADY) {
+        } catch let error as URLError where error.code == .unknown {
         }
     }
 
@@ -190,7 +195,7 @@ struct HTTPNetworkTaskTests {
                 }
             }
             throw TestError.unexpectedEntrance
-        } catch NWError.posix(.EALREADY) {
+        } catch let error as URLError where error.code == .unknown {
         } catch { throw error }
     }
 
@@ -220,7 +225,7 @@ struct HTTPNetworkTaskTests {
         do {
             _ = try await task.perform()
             throw TestError.unexpectedEntrance
-        } catch NWError.posix(.ECANCELED) {
+        } catch let error as URLError where error.code == .cancelled {
         }
     }
 
