@@ -5,7 +5,6 @@ import Testing
 
 extension Tag {
     @Tag static var httpNetwork: Self
-    @Tag static var httpNetworkDelegateQueue: Self
 }
 
 struct HTTPNetworkTaskTests {
@@ -335,7 +334,7 @@ struct HTTPNetworkTaskTests {
         try #require(executingRequest.url?.port == Int(expectedPort))
     }
 
-    @Test(.tags(.httpNetworkDelegateQueue))
+    @Test(.tags(.httpNetwork))
     func startScheduledCallbackRunsOnDelegateQueue() async throws {
         let delegateQueue = DispatchQueue(label: "http-network-task.delegate.scheduled")
         let probe = HTTPTaskQueueProbe()
@@ -365,7 +364,7 @@ struct HTTPNetworkTaskTests {
         #expect(check.isExpectedResult)
     }
 
-    @Test(.tags(.httpNetworkDelegateQueue))
+    @Test(.tags(.httpNetwork))
     func finalFailureCallbackRunsOnDelegateQueue() async throws {
         let delegateQueue = DispatchQueue(label: "http-network-task.delegate.failure")
         let probe = HTTPTaskQueueProbe()
@@ -396,7 +395,7 @@ struct HTTPNetworkTaskTests {
         #expect(check.isExpectedResult)
     }
 
-    @Test(.tags(.httpNetworkDelegateQueue))
+    @Test(.tags(.httpNetwork))
     func finalSuccessCallbackRunsOnDelegateQueue() async throws {
         let delegateQueue = DispatchQueue(label: "http-network-task.delegate.success")
         let probe = HTTPTaskQueueProbe()
