@@ -53,7 +53,7 @@ public protocol RawSocketReceiveMessage: Sendable {
 @available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
 public class RawSocket: @unchecked Sendable {
     private enum _InternalState: Sendable, Equatable {
-        case none
+        case initial
         case connecting
         case connected
         case cancelling
@@ -92,7 +92,7 @@ public class RawSocket: @unchecked Sendable {
     }
 
     init(_ configuration: RawSocketConfiguration, accessQueue: DispatchQueue?, delegateQueue: DispatchQueue?) throws(NWError) {
-        internalState = .none
+        internalState = .initial
         self.accessQueue = accessQueue ?? .RawSocket.access
         accessKey = DispatchSpecificKey()
         self.accessQueue.setSpecific(key: accessKey, value: ObjectIdentifier(self.accessQueue))
@@ -365,7 +365,7 @@ public class RawSocket: @unchecked Sendable {
     private func cancelUnsafe() {
         printDebug("[socket] cancel unsafe")
         timeoutEvent?.cancel()
-        if internalState == _InternalState.none { // cause state update may not be called
+        if internalState == _InternalState.initial { // cause state update may not be called
             internalState = .closed
             connection.cancel()
             callAllCancelsUnsafe()
@@ -431,7 +431,7 @@ public class RawSocket: @unchecked Sendable {
     }
 
     private func activeOperationCheckErrorUnsafe() -> NWError? {
-        if internalState == .none {
+        if internalState == .initial {
             return .posix(.ENOTCONN)
         }
         if ![.connected, .connecting].contains(internalState) {
