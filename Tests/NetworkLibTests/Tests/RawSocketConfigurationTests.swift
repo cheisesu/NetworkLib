@@ -3,13 +3,13 @@ import Testing
 @preconcurrency import Network
 @testable import NetworkLib
 
-extension Tag.RawSocketConnect {
+extension Tag.RawSocket {
     @Tag static var configuration: Tag
 }
 
 struct RawSocketConfigurationTests {
     struct Proxy {
-        @Test(.tags(.RawSocketConnect.configuration))
+        @Test(.tags(.RawSocket.configuration))
         func authorizationHeader() throws {
             let expected = "Basic Zm9vOnBhcykwMQ=="
             let auth = HTTPAuthorization.basic(userName: "foo", password: "pas)01")
@@ -17,7 +17,7 @@ struct RawSocketConfigurationTests {
             try #require(header == expected)
         }
 
-        @Test(.tags(.RawSocketConnect.configuration))
+        @Test(.tags(.RawSocket.configuration))
         func initDefault_AssignsProperties() throws {
             let proxy = RawSocketConfiguration.Proxy(host: "some.host", port: 9999)
             try #require(proxy.authorization == nil)
@@ -27,7 +27,7 @@ struct RawSocketConfigurationTests {
             try #require(proxy.sni == nil)
         }
 
-        @Test(.tags(.RawSocketConnect.configuration))
+        @Test(.tags(.RawSocket.configuration))
         func initAssignsProperties() throws {
             let auth = HTTPAuthorization.basic(userName: "foo", password: "pas)01")
             let proxy = RawSocketConfiguration.Proxy(host: "some.host", port: 9999, isSecure: true, sni: "sni-value",
@@ -39,7 +39,7 @@ struct RawSocketConfigurationTests {
             try #require(proxy.sni == "sni-value")
         }
 
-        @Test(.tags(.RawSocketConnect.configuration))
+        @Test(.tags(.RawSocket.configuration))
         func endpointCorrect() throws {
             let expected = NWEndpoint.hostPort(host: "some.host", port: 9999)
             let proxy = RawSocketConfiguration.Proxy(host: "some.host", port: 9999)
@@ -53,7 +53,7 @@ struct RawSocketConfigurationTests {
             try #require(RawSocketConfiguration.maxDataLength == Int.bitWidth * 1024)
         }
 
-        @Test(.tags(.RawSocketConnect.configuration), arguments: [RawSocketTransport.tcp, .udp])
+        @Test(.tags(.RawSocket.configuration), arguments: [RawSocketTransport.tcp, .udp])
         func init_NoProxy_AssignsProperties(_ transport: RawSocketTransport) throws {
             let config = RawSocketConfiguration("some.host", 9999, ipVersion: .v6, isSecure: true, sni: "sni-value",
                                                 transport: transport, maxDataBlock: 256, timeout: 20,
@@ -70,7 +70,7 @@ struct RawSocketConfigurationTests {
             try #require(config.additionalProtocols.count == 1)
         }
 
-        @Test(.tags(.RawSocketConnect.configuration))
+        @Test(.tags(.RawSocket.configuration))
         func initDefault_NoProxy_AssignsProperties() throws {
             let config = RawSocketConfiguration("some.host", 9999)
             try #require(config.proxy == nil)
@@ -85,7 +85,7 @@ struct RawSocketConfigurationTests {
             try #require(config.additionalProtocols.isEmpty)
         }
 
-        @Test(.tags(.RawSocketConnect.configuration), arguments: [RawSocketTransport.tcp, .udp])
+        @Test(.tags(.RawSocket.configuration), arguments: [RawSocketTransport.tcp, .udp])
         func usingProxy_AssignsProperties(_ transport: RawSocketTransport) throws {
             let auth = HTTPAuthorization.basic(userName: "foo", password: "pas)01")
             let proxy = RawSocketConfiguration.Proxy(host: "some.host", port: 9999, isSecure: true, sni: "sni-value",
@@ -106,7 +106,7 @@ struct RawSocketConfigurationTests {
             try #require(config.additionalProtocols.count == 1)
         }
 
-        @Test(.tags(.RawSocketConnect.configuration), arguments: [RawSocketTransport.tcp, .udp])
+        @Test(.tags(.RawSocket.configuration), arguments: [RawSocketTransport.tcp, .udp])
         func init_WithProxy_AssignsProperties(_ transport: RawSocketTransport) throws {
             let auth = HTTPAuthorization.basic(userName: "foo", password: "pas)01")
             let proxy = RawSocketConfiguration.Proxy(host: "some.host", port: 9999, isSecure: true, sni: "sni-value",
@@ -126,7 +126,7 @@ struct RawSocketConfigurationTests {
             try #require(config.additionalProtocols.count == 1)
         }
 
-        @Test(.tags(.RawSocketConnect.configuration))
+        @Test(.tags(.RawSocket.configuration))
         func initDefault_WithProxy_AssignsProperties() throws {
             let auth = HTTPAuthorization.basic(userName: "foo", password: "pas)01")
             let proxy = RawSocketConfiguration.Proxy(host: "some.host", port: 9999, isSecure: true, sni: "sni-value",
@@ -144,7 +144,7 @@ struct RawSocketConfigurationTests {
             try #require(config.additionalProtocols.isEmpty)
         }
 
-        @Test(.tags(.RawSocketConnect.configuration))
+        @Test(.tags(.RawSocket.configuration))
         func endpointCorrect() throws {
             let expected = NWEndpoint.hostPort(host: "some.host", port: 9999)
             let config = RawSocketConfiguration("some.host", 9999)
@@ -155,7 +155,7 @@ struct RawSocketConfigurationTests {
     struct CreateNWConnection {
         // MARK: NO PROXY
 
-        @Test(.tags(.RawSocketConnect.configuration),
+        @Test(.tags(.RawSocket.configuration),
               arguments: [RawSocketTransport.tcp, .udp], [NWProtocolIP.Options.Version.any, .v4, .v6])
         func noProxy_Insecure_NoAdditionalProtocols_ReturnsCorrect(_ transport: RawSocketTransport,
                                                                    _ ipVersion: NWProtocolIP.Options.Version) throws
@@ -177,7 +177,7 @@ struct RawSocketConfigurationTests {
             try #require(parameters.defaultProtocolStack.applicationProtocols.isEmpty)
         }
 
-        @Test(.tags(.RawSocketConnect.configuration), arguments: [RawSocketTransport.tcp, .udp])
+        @Test(.tags(.RawSocket.configuration), arguments: [RawSocketTransport.tcp, .udp])
         func noProxy_Insecure_WithAdditionalProtocols_ReturnsCorrect(_ transport: RawSocketTransport) throws {
             let http = NWProtocolFramer.Options.http()
             let config = RawSocketConfiguration("some.host", 9999, isSecure: false, transport: transport,
@@ -196,7 +196,7 @@ struct RawSocketConfigurationTests {
             try #require(parameters.defaultProtocolStack.applicationProtocols.count == 1)
         }
 
-        @Test(.tags(.RawSocketConnect.configuration), arguments: [RawSocketTransport.tcp, .udp])
+        @Test(.tags(.RawSocket.configuration), arguments: [RawSocketTransport.tcp, .udp])
         func noProxy_Secure_NoAdditionalProtocols_ReturnsCorrect(_ transport: RawSocketTransport) throws {
             let config = RawSocketConfiguration("some.host", 9999, isSecure: true, transport: transport,
                                                 additionalProtocols: [])
@@ -216,7 +216,7 @@ struct RawSocketConfigurationTests {
             try #require(tls != nil)
         }
 
-        @Test(.tags(.RawSocketConnect.configuration), arguments: [RawSocketTransport.tcp, .udp])
+        @Test(.tags(.RawSocket.configuration), arguments: [RawSocketTransport.tcp, .udp])
         func noProxy_Secure_WithAdditionalProtocols_ReturnsCorrect(_ transport: RawSocketTransport) throws {
             let http = NWProtocolFramer.Options.http()
             let config = RawSocketConfiguration("some.host", 9999, isSecure: true, transport: transport,
@@ -241,7 +241,7 @@ struct RawSocketConfigurationTests {
 
         // MARK: WITH PROXY INBOX
 
-        @Test(.disabled("Not possible to get privacyContext"), .tags(.RawSocketConnect.configuration),
+        @Test(.disabled("Not possible to get privacyContext"), .tags(.RawSocket.configuration),
               arguments: [RawSocketTransport.tcp, .udp])
         func withInsecureProxy_Insecure_InBox_NoAdditionalProtocols_ReturnsCorrect(_ transport: RawSocketTransport) throws {
         }
@@ -255,7 +255,7 @@ struct RawSocketConfigurationTests {
         static let customProxyProtocolsEmpty: [NWProtocolOptions] = []
         static let customProxyProtocolsHttp: [NWProtocolOptions] = [.http()]
 
-        @Test(.tags(.RawSocketConnect.configuration),
+        @Test(.tags(.RawSocket.configuration),
               arguments: [
                 (false, "some.host", RawSocketTransport.tcp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty, NWProtocolIP.Options.Version.any),
                 (false, "some.host", RawSocketTransport.tcp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v4),

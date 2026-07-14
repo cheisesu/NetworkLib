@@ -3,13 +3,13 @@ import Testing
 import Network
 @testable import NetworkLib
 
-extension Tag.RawSocketConnect {
+extension Tag.RawSocket {
     @Tag static var receive: Tag
 }
 
 struct RawSocketReceiveTests {
     @Test("When continuation is called multiple times it will fall with fatal error and test fail",
-          .tags(.RawSocketConnect.receive),
+          .tags(.RawSocket.receive),
           arguments: [RawSocketTransport.tcp, .udp], [nil, "localhost"])
     func continuationCalledOnlyOnce(_ transport: RawSocketTransport, _ sni: String?) async throws {
         let timeout: TimeInterval = 0
@@ -29,7 +29,7 @@ struct RawSocketReceiveTests {
     }
     
     @Test("When timeout of socket is reached it throws NWError.posix(.ETIMEDOUT)",
-          .tags(.RawSocketConnect.receive),
+          .tags(.RawSocket.receive),
           arguments: [RawSocketTransport.tcp, .udp], [nil, "localhost"])
     func timeoutThrowsError(_ transport: RawSocketTransport, _ sni: String?) async throws {
         let timeout: TimeInterval = 1
@@ -54,7 +54,7 @@ struct RawSocketReceiveTests {
     }
     
     @Test("When socket is receiving data and called cancel in different thread result is nil",
-          .tags(.RawSocketConnect.receive),
+          .tags(.RawSocket.receive),
           arguments: [RawSocketTransport.tcp, .udp], [nil, "localhost"])
     func cancelSeparatelyThrowsError(_ transport: RawSocketTransport, _ sni: String?) async throws {
         let timeout: TimeInterval = 0
@@ -80,7 +80,7 @@ struct RawSocketReceiveTests {
     }
     
     @Test("Cancelled a task during receiving",
-          .tags(.RawSocketConnect.receive),
+          .tags(.RawSocket.receive),
           arguments: [RawSocketTransport.tcp, .udp], [nil, "localhost"])
     func cancelDuringSendThrowsError(_ transport: RawSocketTransport, _ sni: String?) async throws {
         let timeout: TimeInterval = 0

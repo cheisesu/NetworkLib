@@ -3,7 +3,7 @@ import Testing
 import Network
 @testable import NetworkLib
 
-extension Tag.RawSocketConnect {
+extension Tag.RawSocket {
     @Tag static var sendMessage: Tag
 }
 
@@ -14,7 +14,7 @@ struct RawSocketSendMessageTests {
     }
 
     @Test("When continuation is called multiple times it will fall with fatal error and test fail",
-          .tags(.RawSocketConnect.sendMessage),
+          .tags(.RawSocket.sendMessage),
           arguments: [RawSocketTransport.tcp, .udp], [nil, "localhost"])
     func continuationCalledOnlyOnce(_ transport: RawSocketTransport, _ sni: String?) async throws {
         let timeout: TimeInterval = 0
@@ -32,7 +32,7 @@ struct RawSocketSendMessageTests {
     }
     
     @Test("When timeout of socket is reached it throws NWError.posix(.ETIMEDOUT)",
-          .tags(.RawSocketConnect.sendMessage),
+          .tags(.RawSocket.sendMessage),
           arguments: [nil, "localhost"])
     func timeoutThrowsError(_ sni: String?) async throws {
         let transport: RawSocketTransport = .tcp
@@ -57,7 +57,7 @@ struct RawSocketSendMessageTests {
     
     /// - note: UDP is not applicable here as it can call completion really fast
     @Test("When socket is sending data and called cancel in different thread it throws NWError.posix(.ECANCELED)",
-          .tags(.RawSocketConnect.sendMessage),
+          .tags(.RawSocket.sendMessage),
           arguments: [
             (RawSocketTransport.tcp, Data(repeating: 0xde, count: 16 * 1024 * 1024), nil as String?),
             (RawSocketTransport.tcp, Data(repeating: 0xde, count: 16 * 1024 * 1024), "localhost"),
@@ -87,7 +87,7 @@ struct RawSocketSendMessageTests {
     }
     
     @Test("Cancelled a task during sending",
-          .tags(.RawSocketConnect.sendMessage),
+          .tags(.RawSocket.sendMessage),
           arguments: [
             (RawSocketTransport.tcp, Data(repeating: 0xde, count: 16 * 1024 * 1024), nil as String?),
             (RawSocketTransport.tcp, Data(repeating: 0xde, count: 16 * 1024 * 1024), "localhost"),

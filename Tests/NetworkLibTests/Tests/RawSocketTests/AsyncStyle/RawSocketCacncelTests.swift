@@ -3,13 +3,13 @@ import Testing
 import Network
 @testable import NetworkLib
 
-extension Tag.RawSocketConnect {
+extension Tag.RawSocket {
     @Tag static var cancel: Tag
 }
 
 struct RawSocketCancelTests {
     @Test("When continuation is called multiple times it will fall with fatal error and test fail",
-          .tags(.RawSocketConnect.cancel), arguments: [RawSocketTransport.tcp, .udp], [nil, "localhost"])
+          .tags(.RawSocket.cancel), arguments: [RawSocketTransport.tcp, .udp], [nil, "localhost"])
     func continuationCalledOnlyOnce(_ transport: RawSocketTransport, _ sni: String?) async throws {
         let timeout: TimeInterval = 0
         let server = try ServerMock(transport: transport, isSecure: sni != nil)
@@ -24,7 +24,7 @@ struct RawSocketCancelTests {
     }
     
     @Test("When cancel, socket closes",
-          .tags(.RawSocketConnect.cancel), arguments: [RawSocketTransport.tcp, .udp], [nil, "localhost"])
+          .tags(.RawSocket.cancel), arguments: [RawSocketTransport.tcp, .udp], [nil, "localhost"])
     func cancelCancelsOperation(_ transport: RawSocketTransport, _ sni: String?) async throws {
         let timeout: TimeInterval = 0
         let server = try ServerMock(transport: transport, isSecure: sni != nil)
