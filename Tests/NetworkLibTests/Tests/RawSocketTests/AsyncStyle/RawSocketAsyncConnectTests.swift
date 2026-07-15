@@ -7,6 +7,7 @@ extension Tag {
     enum RawSocket {
         @Tag static var connect: Tag
     }
+    @Tag static var rawSocketAll: Tag
 }
 
 struct RawSocketAsyncConnectTests {

@@ -3,12 +3,12 @@ import Network
 import Testing
 @testable import NetworkLib
 
-extension Tag {
-    @Tag static var rawSocketDelegateQueue: Self
+extension Tag.RawSocket {
+    @Tag static var rawSocketDelegateQueue: Tag
 }
 
 struct RawSocketDelegateQueueTests {
-    @Test(.tags(.rawSocketDelegateQueue))
+    @Test(.tags(.RawSocket.rawSocketDelegateQueue))
     func connectCallbackRunsOnDelegateQueue() async throws {
         let delegateQueue = DispatchQueue(label: "raw-socket.delegate.connect")
         let probe = DelegateQueueProbe()
@@ -34,7 +34,7 @@ struct RawSocketDelegateQueueTests {
         #expect(check.isExpectedResult)
     }
 
-    @Test(.tags(.rawSocketDelegateQueue))
+    @Test(.tags(.RawSocket.rawSocketDelegateQueue))
     func cancelCallbackRunsOnDelegateQueue() async throws {
         let delegateQueue = DispatchQueue(label: "raw-socket.delegate.cancel")
         let probe = DelegateQueueProbe()
@@ -52,7 +52,7 @@ struct RawSocketDelegateQueueTests {
         #expect(isOnDelegateQueue)
     }
 
-    @Test(.tags(.rawSocketDelegateQueue))
+    @Test(.tags(.RawSocket.rawSocketDelegateQueue))
     func sendCallbackRunsOnDelegateQueue() async throws {
         let delegateQueue = DispatchQueue(label: "raw-socket.delegate.send")
         let probe = DelegateQueueProbe()
@@ -75,7 +75,7 @@ struct RawSocketDelegateQueueTests {
         #expect(check.isExpectedResult)
     }
 
-    @Test(.tags(.rawSocketDelegateQueue))
+    @Test(.tags(.RawSocket.rawSocketDelegateQueue))
     func sendMessageCallbackRunsOnDelegateQueue() async throws {
         let delegateQueue = DispatchQueue(label: "raw-socket.delegate.send-message")
         let probe = DelegateQueueProbe()
@@ -98,7 +98,7 @@ struct RawSocketDelegateQueueTests {
         #expect(check.isExpectedResult)
     }
 
-    @Test(.tags(.rawSocketDelegateQueue))
+    @Test(.tags(.RawSocket.rawSocketDelegateQueue))
     func receiveNextCallbackRunsOnDelegateQueue() async throws {
         let delegateQueue = DispatchQueue(label: "raw-socket.delegate.receive")
         let probe = DelegateQueueProbe()
@@ -121,7 +121,7 @@ struct RawSocketDelegateQueueTests {
         #expect(check.isExpectedResult)
     }
 
-    @Test(.tags(.rawSocketDelegateQueue))
+    @Test(.tags(.RawSocket.rawSocketDelegateQueue))
     func receiveNextMessageCallbackRunsOnDelegateQueue() async throws {
         let delegateQueue = DispatchQueue(label: "raw-socket.delegate.receive-message")
         let probe = DelegateQueueProbe()

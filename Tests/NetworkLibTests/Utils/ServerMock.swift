@@ -113,7 +113,7 @@ final class ServerMock: @unchecked Sendable {
 
     private func handleNewConnection(_ newConnection: NWConnection) {
         if flow == .cancel {
-            newConnection.cancel()
+            newConnection.forceCancel()
             return
         }
         let id = UUID()
