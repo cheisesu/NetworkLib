@@ -239,35 +239,39 @@ public class RawSocket: @unchecked Sendable {
     /// - Parameter completion: A callback invoked with the next raw data block or receive error.
     public func receiveNext(_ completion: @escaping @Sendable (_ result: Result<Data?, NWError>) -> Void) {
         let completion = delivered(completion)
-        accessQueue.async { [weak self, maxDataBlock] in
-            guard let self else { return completion(.failure(.posix(.ECANCELED))) }
+        accessQueue.async {
             printDebug("[socket] receive next")
 
-            if let error = activeOperationCheckErrorUnsafe() {
+            if let error = self.activeOperationCheckErrorUnsafe() {
                 return completion(.failure(error))
             }
 
-            timeoutEvent?.touch()
-            connection.receive(minimumIncompleteLength: 1,
-                               maximumLength: maxDataBlock) { [weak self] content, _, isComplete, error in
-                guard let self else { return completion(.failure(.posix(.ECANCELED))) }
-                self.timeoutEvent?.detouch()
-                if let content {
-                    completion(.success(content))
-                } else if let error {
-                    self.cancelUnsafe()
-                    completion(.failure(error))
-                } else if isComplete {
-                    if let cancellingError = self.pendingError {
-                        completion(.failure(cancellingError))
-                    } else {
-                        completion(.success(nil))
-                    }
-                } else {
-                    assertionFailure("Unexpected receive state: content=nil, isComplete=false, error=nil")
-                    completion(.failure(.posix(.EIO)))
-                }
+            self.timeoutEvent?.touch()
+            self.connection.receive(minimumIncompleteLength: 1,
+                                    maximumLength: self.maxDataBlock) { content, _, isComplete, error in
+                self.receiveNextHandler(content, isComplete, error, completion: completion)
             }
+        }
+    }
+
+    private func receiveNextHandler(_ content: Data?, _ isComplete: Bool, _ error: NWError?,
+                                    completion: @escaping @Sendable (_ result: Result<Data?, NWError>) -> Void)
+    {
+        timeoutEvent?.detouch()
+        if let content {
+            completion(.success(content))
+        } else if let error {
+            cancelUnsafe()
+            completion(.failure(error))
+        } else if isComplete {
+            if let cancellingError = pendingError {
+                completion(.failure(cancellingError))
+            } else {
+                completion(.success(nil))
+            }
+        } else {
+            assertionFailure("Unexpected receive state: content=nil, isComplete=false, error=nil")
+            completion(.failure(.posix(.EIO)))
         }
     }
 
