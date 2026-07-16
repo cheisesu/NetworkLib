@@ -6,12 +6,12 @@ import Network
 extension Tag {
     enum RawSocket {
         @Tag static var connect: Tag
+        @Tag static var all: Tag
     }
-    @Tag static var rawSocketAll: Tag
 }
 
 struct RawSocketConnectTests {
-    @Test(.tags(.RawSocket.connect, .rawSocketAll), arguments: [
+    @Test(.tags(.RawSocket.connect, .RawSocket.all), arguments: [
         (RawSocketTransport.tcp, TimeInterval(0), nil as String?),
         (RawSocketTransport.tcp, TimeInterval(0), "localhost"),
         (RawSocketTransport.tcp, TimeInterval(1), nil as String?),
@@ -49,7 +49,7 @@ struct RawSocketConnectTests {
     }
 
     @available(swift, introduced: 6.2)
-    @Test(.tags(.RawSocket.connect, .rawSocketAll))
+    @Test(.tags(.RawSocket.connect, .RawSocket.all))
     func connectThenCancel_ConnectCallback_CalledOnlyOnce() async throws {
         try await #require(processExitsWith: .success) {
             let server = try ServerMock(transport: .tcp, isSecure: false)
@@ -74,7 +74,7 @@ struct RawSocketConnectTests {
         }
     }
 
-    @Test(.tags(.RawSocket.connect, .rawSocketAll))
+    @Test(.tags(.RawSocket.connect, .RawSocket.all))
     func whenServerSecureAndSocketInsecure_Success() async throws {
         let server = try ServerMock(transport: .tcp, isSecure: true)
         defer { server.stop() }
@@ -99,7 +99,7 @@ struct RawSocketConnectTests {
 
     // MARK: ERRORS TIMEOUTS
 
-    @Test(.tags(.RawSocket.connect, .rawSocketAll), arguments: [
+    @Test(.tags(.RawSocket.connect, .RawSocket.all), arguments: [
         (RawSocketTransport.tcp, nil as String?),
         (RawSocketTransport.tcp, "localhost"),
         (RawSocketTransport.udp, "localhost"),
@@ -124,7 +124,7 @@ struct RawSocketConnectTests {
         }
     }
 
-    @Test(.tags(.RawSocket.connect, .rawSocketAll), arguments: [
+    @Test(.tags(.RawSocket.connect, .RawSocket.all), arguments: [
         (RawSocketTransport.tcp, nil as String?),
         (RawSocketTransport.tcp, "localhost"),
         (RawSocketTransport.udp, "localhost"),
@@ -149,7 +149,7 @@ struct RawSocketConnectTests {
         }
     }
 
-    @Test(.tags(.RawSocket.connect, .rawSocketAll), arguments: [
+    @Test(.tags(.RawSocket.connect, .RawSocket.all), arguments: [
         (RawSocketTransport.tcp, "localhost"),
         (RawSocketTransport.udp, "localhost"),
     ])
@@ -175,7 +175,7 @@ struct RawSocketConnectTests {
         }
     }
 
-    @Test(.tags(.RawSocket.connect, .rawSocketAll), arguments: [
+    @Test(.tags(.RawSocket.connect, .RawSocket.all), arguments: [
         (RawSocketTransport.tcp, "localhost"),
         (RawSocketTransport.udp, "localhost"),
     ])
@@ -203,7 +203,7 @@ struct RawSocketConnectTests {
 
     // MARK: ERRORS ON DIFFERENT STATES
 
-    @Test(.tags(.RawSocket.connect, .rawSocketAll), arguments: [
+    @Test(.tags(.RawSocket.connect, .RawSocket.all), arguments: [
         (RawSocketTransport.tcp, nil as String?),
         (RawSocketTransport.tcp, "localhost"),
         (RawSocketTransport.udp, nil as String?),
@@ -234,7 +234,7 @@ struct RawSocketConnectTests {
         }
     }
 
-    @Test(.tags(.RawSocket.connect, .rawSocketAll), arguments: [
+    @Test(.tags(.RawSocket.connect, .RawSocket.all), arguments: [
         (RawSocketTransport.tcp, nil as String?),
         (RawSocketTransport.tcp, "localhost"),
         (RawSocketTransport.udp, nil as String?),
@@ -265,7 +265,7 @@ struct RawSocketConnectTests {
         }
     }
 
-    @Test(.tags(.RawSocket.connect, .rawSocketAll), arguments: [
+    @Test(.tags(.RawSocket.connect, .RawSocket.all), arguments: [
         (RawSocketTransport.tcp, nil as String?),
         (RawSocketTransport.tcp, "localhost"),
         (RawSocketTransport.udp, nil as String?),
@@ -297,7 +297,7 @@ struct RawSocketConnectTests {
         }
     }
 
-    @Test(.tags(.RawSocket.connect, .rawSocketAll), arguments: [
+    @Test(.tags(.RawSocket.connect, .RawSocket.all), arguments: [
         (RawSocketTransport.tcp, nil as String?),
         (RawSocketTransport.tcp, "localhost"),
         (RawSocketTransport.udp, nil as String?),
@@ -329,7 +329,7 @@ struct RawSocketConnectTests {
         }
     }
 
-    @Test(.tags(.RawSocket.connect, .rawSocketAll), arguments: [
+    @Test(.tags(.RawSocket.connect, .RawSocket.all), arguments: [
         (RawSocketTransport.tcp, nil as String?),
         (RawSocketTransport.tcp, "localhost"),
         (RawSocketTransport.udp, nil as String?),
@@ -360,7 +360,7 @@ struct RawSocketConnectTests {
         }
     }
 
-    @Test(.tags(.RawSocket.connect, .rawSocketAll), arguments: [
+    @Test(.tags(.RawSocket.connect, .RawSocket.all), arguments: [
         (RawSocketTransport.tcp, nil as String?),
         (RawSocketTransport.tcp, "localhost"),
         (RawSocketTransport.udp, nil as String?),
@@ -393,7 +393,7 @@ struct RawSocketConnectTests {
         }
     }
 
-    @Test(.tags(.RawSocket.connect, .rawSocketAll), arguments: [
+    @Test(.tags(.RawSocket.connect, .RawSocket.all), arguments: [
         (RawSocketTransport.tcp, nil as String?),
         (RawSocketTransport.tcp, "localhost"),
         (RawSocketTransport.udp, nil as String?),
@@ -424,7 +424,7 @@ struct RawSocketConnectTests {
         }
     }
 
-    @Test(.tags(.RawSocket.connect, .rawSocketAll), arguments: [
+    @Test(.tags(.RawSocket.connect, .RawSocket.all), arguments: [
         (RawSocketTransport.tcp, nil as String?),
         (RawSocketTransport.tcp, "localhost"),
         (RawSocketTransport.udp, nil as String?),
@@ -456,7 +456,7 @@ struct RawSocketConnectTests {
 
     // MARK: ENDPOINT ERRORS
 
-    @Test(.tags(.RawSocket.connect, .rawSocketAll))
+    @Test(.tags(.RawSocket.connect, .RawSocket.all))
     func whenAddressIsNotAvailable_FailsWithError() async throws {
         let config = RawSocketConfiguration("127-0-0-1", 65535, isSecure: false, sni: nil, transport: .tcp,
                                             maxDataBlock: 256, timeout: 0)
@@ -476,7 +476,7 @@ struct RawSocketConnectTests {
         }
     }
 
-    @Test(.tags(.RawSocket.connect, .rawSocketAll))
+    @Test(.tags(.RawSocket.connect, .RawSocket.all))
     func whenIpIsWrong_FailsWithError() async throws {
         let config = RawSocketConfiguration("127.0.0.256", 65535, isSecure: false, sni: nil, transport: .tcp,
                                             maxDataBlock: 256, timeout: 0)
@@ -498,7 +498,7 @@ struct RawSocketConnectTests {
 
     // MARK: ERRORS BY SERVER BEHAVIOUR
 
-    @Test(.tags(.RawSocket.connect, .rawSocketAll), arguments: [
+    @Test(.tags(.RawSocket.connect, .RawSocket.all), arguments: [
         (RawSocketTransport.tcp, "localhost"),
     ])
     func whenServerNotAcceptsConnection_FailsWithResetError(_ transport: RawSocketTransport, _ sni: String?) async throws {
@@ -524,7 +524,7 @@ struct RawSocketConnectTests {
         }
     }
 
-    @Test(.tags(.RawSocket.connect, .rawSocketAll))
+    @Test(.tags(.RawSocket.connect, .RawSocket.all))
     func whenServerNoExists_FailsWithRefusedError() async throws {
         let config = RawSocketConfiguration("127.0.0.1", 65535, isSecure: true, sni: "localhost", transport: .tcp,
                                             maxDataBlock: 256, timeout: 0)
@@ -544,7 +544,7 @@ struct RawSocketConnectTests {
         }
     }
 
-    @Test(.tags(.RawSocket.connect, .rawSocketAll))
+    @Test(.tags(.RawSocket.connect, .RawSocket.all))
     func differentTransports_FailsWithRefusedError() async throws {
         let server = try ServerMock(transport: .udp, isSecure: true)
         defer { server.stop() }
@@ -569,7 +569,7 @@ struct RawSocketConnectTests {
 
     // MARK: ON LEAKS
 
-    @Test(.tags(.RawSocket.connect, .rawSocketAll))
+    @Test(.tags(.RawSocket.connect, .RawSocket.all))
     func nillifyVariableAfterConnectStart_CallbackSuccess() async throws {
         struct _CallbackWasNotCalledError: Error {}
         let server = try ServerMock(transport: .tcp, isSecure: true)
@@ -601,7 +601,7 @@ struct RawSocketConnectTests {
 
     // MARK: CALLBACKS CALLED ON PROVIDED DELEGATE QUEUE
 
-    @Test(.tags(.RawSocket.connect, .rawSocketAll))
+    @Test(.tags(.RawSocket.connect, .RawSocket.all))
     func callbacksOnProvidedDelegateQueue() async throws {
         let server = try ServerMock(transport: .tcp, isSecure: false)
         defer { server.stop() }

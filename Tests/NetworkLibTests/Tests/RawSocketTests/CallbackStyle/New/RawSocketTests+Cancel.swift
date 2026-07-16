@@ -9,7 +9,7 @@ extension Tag.RawSocket {
 
 struct RawSocketCancelTests {
     struct OneCallback {
-        @Test(.tags(.RawSocket.cancel, .rawSocketAll), arguments: [
+        @Test(.tags(.RawSocket.cancel, .RawSocket.all), arguments: [
             (RawSocketTransport.tcp),
             (RawSocketTransport.udp),
         ])
@@ -26,7 +26,7 @@ struct RawSocketCancelTests {
             }
         }
 
-        @Test(.tags(.RawSocket.cancel, .rawSocketAll), arguments: [
+        @Test(.tags(.RawSocket.cancel, .RawSocket.all), arguments: [
             (RawSocketTransport.tcp),
             (RawSocketTransport.udp),
         ])
@@ -53,7 +53,7 @@ struct RawSocketCancelTests {
             }
         }
 
-        @Test(.tags(.RawSocket.cancel, .rawSocketAll), arguments: [
+        @Test(.tags(.RawSocket.cancel, .RawSocket.all), arguments: [
             (RawSocketTransport.tcp),
             (RawSocketTransport.udp),
         ])
@@ -84,7 +84,7 @@ struct RawSocketCancelTests {
             }
         }
 
-        @Test(.tags(.RawSocket.cancel, .rawSocketAll), arguments: [
+        @Test(.tags(.RawSocket.cancel, .RawSocket.all), arguments: [
             (RawSocketTransport.tcp),
             (RawSocketTransport.udp),
         ])
@@ -119,7 +119,7 @@ struct RawSocketCancelTests {
             }
         }
 
-        @Test(.tags(.RawSocket.cancel, .rawSocketAll), arguments: [
+        @Test(.tags(.RawSocket.cancel, .RawSocket.all), arguments: [
             (RawSocketTransport.tcp),
             (RawSocketTransport.udp),
         ])
@@ -142,7 +142,7 @@ struct RawSocketCancelTests {
     }
 
     struct WithoutThenWithCallback {
-        @Test(.tags(.RawSocket.cancel, .rawSocketAll), arguments: [
+        @Test(.tags(.RawSocket.cancel, .RawSocket.all), arguments: [
             (RawSocketTransport.tcp),
             (RawSocketTransport.udp),
         ])
@@ -160,7 +160,7 @@ struct RawSocketCancelTests {
             }
         }
 
-        @Test(.tags(.RawSocket.cancel, .rawSocketAll), arguments: [
+        @Test(.tags(.RawSocket.cancel, .RawSocket.all), arguments: [
             (RawSocketTransport.tcp),
             (RawSocketTransport.udp),
         ])
@@ -188,7 +188,7 @@ struct RawSocketCancelTests {
             }
         }
 
-        @Test(.tags(.RawSocket.cancel, .rawSocketAll), arguments: [
+        @Test(.tags(.RawSocket.cancel, .RawSocket.all), arguments: [
             (RawSocketTransport.tcp),
             (RawSocketTransport.udp),
         ])
@@ -220,7 +220,7 @@ struct RawSocketCancelTests {
             }
         }
 
-        @Test(.tags(.RawSocket.cancel, .rawSocketAll), arguments: [
+        @Test(.tags(.RawSocket.cancel, .RawSocket.all), arguments: [
             (RawSocketTransport.tcp),
             (RawSocketTransport.udp),
         ])
@@ -256,7 +256,7 @@ struct RawSocketCancelTests {
             }
         }
 
-        @Test(.tags(.RawSocket.cancel, .rawSocketAll), arguments: [
+        @Test(.tags(.RawSocket.cancel, .RawSocket.all), arguments: [
             (RawSocketTransport.tcp),
             (RawSocketTransport.udp),
         ])
@@ -280,7 +280,7 @@ struct RawSocketCancelTests {
     }
 
     struct WithThenWithoutCallback {
-        @Test(.tags(.RawSocket.cancel, .rawSocketAll), arguments: [
+        @Test(.tags(.RawSocket.cancel, .RawSocket.all), arguments: [
             (RawSocketTransport.tcp),
             (RawSocketTransport.udp),
         ])
@@ -298,7 +298,7 @@ struct RawSocketCancelTests {
             }
         }
 
-        @Test(.tags(.RawSocket.cancel, .rawSocketAll), arguments: [
+        @Test(.tags(.RawSocket.cancel, .RawSocket.all), arguments: [
             (RawSocketTransport.tcp),
             (RawSocketTransport.udp),
         ])
@@ -326,7 +326,7 @@ struct RawSocketCancelTests {
             }
         }
 
-        @Test(.tags(.RawSocket.cancel, .rawSocketAll), arguments: [
+        @Test(.tags(.RawSocket.cancel, .RawSocket.all), arguments: [
             (RawSocketTransport.tcp),
             (RawSocketTransport.udp),
         ])
@@ -358,7 +358,7 @@ struct RawSocketCancelTests {
             }
         }
 
-        @Test(.tags(.RawSocket.cancel, .rawSocketAll), arguments: [
+        @Test(.tags(.RawSocket.cancel, .RawSocket.all), arguments: [
             (RawSocketTransport.tcp),
             (RawSocketTransport.udp),
         ])
@@ -394,7 +394,7 @@ struct RawSocketCancelTests {
             }
         }
 
-        @Test(.tags(.RawSocket.cancel, .rawSocketAll), arguments: [
+        @Test(.tags(.RawSocket.cancel, .RawSocket.all), arguments: [
             (RawSocketTransport.tcp),
             (RawSocketTransport.udp),
         ])
@@ -418,7 +418,7 @@ struct RawSocketCancelTests {
     }
 
     struct MultipleCallbacks {
-        @Test(.tags(.RawSocket.cancel, .rawSocketAll), arguments: [
+        @Test(.tags(.RawSocket.cancel, .RawSocket.all), arguments: [
             (RawSocketTransport.tcp),
             (RawSocketTransport.udp),
         ])
@@ -444,7 +444,7 @@ struct RawSocketCancelTests {
             try #require(result == [1, 2])
         }
 
-        @Test(.tags(.RawSocket.cancel, .rawSocketAll), arguments: [
+        @Test(.tags(.RawSocket.cancel, .RawSocket.all), arguments: [
             (RawSocketTransport.tcp),
             (RawSocketTransport.udp),
         ])
@@ -474,7 +474,7 @@ struct RawSocketCancelTests {
             try #require(result == [1, 2])
         }
 
-        @Test(.tags(.RawSocket.cancel, .rawSocketAll), arguments: [
+        @Test(.tags(.RawSocket.cancel, .RawSocket.all), arguments: [
             (RawSocketTransport.tcp),
             (RawSocketTransport.udp),
         ])
@@ -511,7 +511,7 @@ struct RawSocketCancelTests {
             try #require(result == [1, 2, 3])
         }
 
-        @Test(.tags(.RawSocket.cancel, .rawSocketAll), arguments: [
+        @Test(.tags(.RawSocket.cancel, .RawSocket.all), arguments: [
             (RawSocketTransport.tcp),
             (RawSocketTransport.udp),
         ])
@@ -544,7 +544,7 @@ struct RawSocketCancelTests {
             try #require(result == [1, 2])
         }
 
-        @Test(.tags(.RawSocket.cancel, .rawSocketAll), arguments: [
+        @Test(.tags(.RawSocket.cancel, .RawSocket.all), arguments: [
             (RawSocketTransport.tcp),
             (RawSocketTransport.udp),
         ])

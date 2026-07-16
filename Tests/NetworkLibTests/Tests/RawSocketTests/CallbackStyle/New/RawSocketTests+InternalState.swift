@@ -7,7 +7,7 @@ extension Tag.RawSocket {
 }
 
 struct RawSocketInternalStateTests {
-    @Test(.tags(.RawSocket.internalState, .rawSocketAll))
+    @Test(.tags(.RawSocket.internalState, .RawSocket.all))
     func correctSequenceOfConnectThenCancel() async throws {
         let server = try ServerMock(transport: .tcp, isSecure: false)
         defer { server.stop() }
@@ -38,7 +38,7 @@ struct RawSocketInternalStateTests {
         try #require(states == [.connecting, .connected, .cancelling, .closed])
     }
 
-    @Test(.tags(.RawSocket.internalState, .rawSocketAll))
+    @Test(.tags(.RawSocket.internalState, .RawSocket.all))
     func oldStateIsLessThanNewState() async throws {
         let server = try ServerMock(transport: .tcp, isSecure: false)
         defer { server.stop() }
