@@ -49,7 +49,7 @@ struct CallbackWasNotCalledError: Error {}
 
 @discardableResult
 func withAsyncTimeoutForceThrowingContinuation<T: Sendable>(
-    _ timeout: Duration, forceTimeout: DispatchTimeInterval,
+    _ timeout: Duration, forceTimeout: Duration,
     block: @escaping @Sendable (_ continuation: CheckedContinuation<T, Error>, _ cancel: @escaping @Sendable () -> Void) -> Void,
     onCancel: (@Sendable () -> Void)? = nil
 ) async throws -> T {
@@ -57,7 +57,7 @@ func withAsyncTimeoutForceThrowingContinuation<T: Sendable>(
         group.addTask {
             try await withTaskCancellationHandler {
                 try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<T, Error>) in
-                    let cancel = createForceCancelOperation(for: continuation, after: forceTimeout)
+                    let cancel = createForceCancel(for: continuation, after: forceTimeout)
                     block(continuation, cancel)
                 }
             } onCancel: {
@@ -82,18 +82,13 @@ func withAsyncTimeoutForceThrowingContinuation<T: Sendable>(
     }
 }
 
-private func createForceCancelOperation<T: Sendable>(for continuation: CheckedContinuation<T, Error>,
-                                                     after forceTimeout: DispatchTimeInterval) -> @Sendable () -> Void
+private func createForceCancel<T: Sendable>(for continuation: CheckedContinuation<T, Error>,
+                                            after forceTimeout: Duration) -> @Sendable () -> Void
 {
-    let forceCancel = Operation()
-    forceCancel.completionBlock = {
-        guard !forceCancel.isCancelled else { return }
+    let scheduleTask = Task {
+        try await Task.sleep(for: forceTimeout)
+        print("==>> shceduled force cancel")
         continuation.resume(throwing: CallbackWasNotCalledError())
     }
-    let cancel = { @Sendable in forceCancel.cancel() }
-    let operationQueue = OperationQueue()
-    DispatchQueue.global().asyncAfter(deadline: .now() + forceTimeout) {
-        operationQueue.addOperation(forceCancel)
-    }
-    return cancel
+    return { scheduleTask.cancel() }
 }
