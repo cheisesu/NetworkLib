@@ -3,7 +3,7 @@ import Foundation
 struct AsyncTimeoutError: Error {}
 
 @discardableResult
-func withAsyncTimeout<T: Sendable>(_ timeout: Duration, block: @escaping @Sendable () async throws -> T) async rethrows -> T {
+func withAsyncTimeout<T: Sendable>(_ timeout: Duration, block: @escaping @Sendable () async throws -> T) async throws -> T {
     try await withThrowingTaskGroup { group in
         group.addTask {
             try await block()
@@ -14,8 +14,7 @@ func withAsyncTimeout<T: Sendable>(_ timeout: Duration, block: @escaping @Sendab
         }
 
         defer { group.cancelAll() }
-        guard let result = try await group.next() else { throw AsyncTimeoutError() }
-        return result
+        return try await group.next()!
     }
 }
 
