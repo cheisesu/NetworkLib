@@ -45,3 +45,56 @@ func withAsyncTimeoutCancelationContinuation<T: Sendable>(
         return result
     }
 }
+
+struct CallbackWasNotCalledError: Error {}
+
+@discardableResult
+func withAsyncTimeoutForceThrowingContinuation<T: Sendable>(
+    _ timeout: Duration, forceTimeout: DispatchTimeInterval,
+    block: @escaping @Sendable (_ continuation: CheckedContinuation<T, Error>, _ cancel: @escaping @Sendable () -> Void) -> Void,
+    onCancel: (@Sendable () -> Void)? = nil
+) async throws -> T {
+    try await withThrowingTaskGroup(of: T.self) { group in
+        group.addTask {
+            try await withTaskCancellationHandler {
+                try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<T, Error>) in
+                    let cancel = createForceCancelOperation(for: continuation, after: forceTimeout)
+                    block(continuation, cancel)
+                }
+            } onCancel: {
+                onCancel?()
+            }
+        }
+        group.addTask {
+            try await Task.sleep(for: timeout)
+            throw AsyncTimeoutError()
+        }
+
+        defer { group.cancelAll() }
+        var errors: [Error] = []
+        while let next = await group.nextResult() {
+            switch next {
+            case let .success(value): return value
+            case let .failure(error): errors.append(error)
+            }
+        }
+        guard let last = errors.last else { throw AsyncTimeoutError() }
+        throw last
+    }
+}
+
+private func createForceCancelOperation<T: Sendable>(for continuation: CheckedContinuation<T, Error>,
+                                                     after forceTimeout: DispatchTimeInterval) -> @Sendable () -> Void
+{
+    let forceCancel = Operation()
+    forceCancel.completionBlock = {
+        guard !forceCancel.isCancelled else { return }
+        continuation.resume(throwing: CallbackWasNotCalledError())
+    }
+    let cancel = { @Sendable in forceCancel.cancel() }
+    let operationQueue = OperationQueue()
+    DispatchQueue.global().asyncAfter(deadline: .now() + forceTimeout) {
+        operationQueue.addOperation(forceCancel)
+    }
+    return cancel
+}

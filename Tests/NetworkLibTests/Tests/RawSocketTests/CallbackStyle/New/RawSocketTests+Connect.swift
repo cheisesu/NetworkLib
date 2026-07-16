@@ -3,8 +3,6 @@ import Foundation
 import Network
 @testable import NetworkLib
 
-// TODO: добавить чтобы state failing был
-
 struct RawSocketConnectTests {
     @Test(.tags(.RawSocket.connect, .rawSocketAll), arguments: [
         (RawSocketTransport.tcp, TimeInterval(0), nil as String?),
@@ -572,9 +570,8 @@ struct RawSocketConnectTests {
         let port = try await server.start()
         let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: .tcp,
                                             maxDataBlock: 256, timeout: 0)
-        let delegateQueue = DispatchQueue(label: "delegate." + #function)
         let box = _SocketBox()
-        try box.set(RawSocket(config, delegateQueue: delegateQueue))
+        try box.set(RawSocket(config))
         defer { box.get()?.cancel(nil) }
 
         box.get()?.onInternalStateChange = { _, newState in
@@ -582,19 +579,11 @@ struct RawSocketConnectTests {
             box.set(nil)
         }
         let connectTask = Task {
-            try await withAsyncTimeoutCancelationContinuation(.seconds(1)) { (continuation: CheckedContinuation<ConnectionInfo, Error>) in
-                let forceCancel = Operation()
-                forceCancel.completionBlock = {
-                    guard !forceCancel.isCancelled else { return }
-                    continuation.resume(throwing: _CallbackWasNotCalledError())
-                }
-                let operationQueue = OperationQueue()
+            try await withAsyncTimeoutForceThrowingContinuation(.seconds(1),
+                                                                forceTimeout: .milliseconds(1500)) { continuation, cancel in
                 box.get()?.connect { result in
-                    forceCancel.cancel()
+                    cancel()
                     continuation.resume(with: result)
-                }
-                delegateQueue.asyncAfter(deadline: .now() + 1.5) {
-                    operationQueue.addOperation(forceCancel)
                 }
             } onCancel: {
                 box.get()?.cancel(nil)
