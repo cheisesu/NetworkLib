@@ -7,7 +7,7 @@ extension Tag.RawSocket {
     @Tag static var cancel: Tag
 }
 
-struct RawSocketCancelTests {
+struct _RawSocketCancelTests {
     @Test("When continuation is called multiple times it will fall with fatal error and test fail",
           .tags(.RawSocket.cancel), arguments: [RawSocketTransport.tcp, .udp], [nil, "localhost"])
     func continuationCalledOnlyOnce(_ transport: RawSocketTransport, _ sni: String?) async throws {
