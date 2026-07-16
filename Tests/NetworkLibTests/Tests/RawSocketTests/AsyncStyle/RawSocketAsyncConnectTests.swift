@@ -3,13 +3,6 @@ import Testing
 import Network
 @testable import NetworkLib
 
-extension Tag {
-    enum RawSocket {
-        @Tag static var connect: Tag
-    }
-    @Tag static var rawSocketAll: Tag
-}
-
 struct RawSocketAsyncConnectTests {
     @Test("When continuation is called multiple times it will fall with fatal error and test fail",
           .tags(.RawSocket.connect), arguments: [RawSocketTransport.tcp, .udp], [nil, "localhost"])

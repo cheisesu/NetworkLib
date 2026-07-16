@@ -3,6 +3,13 @@ import Foundation
 import Network
 @testable import NetworkLib
 
+extension Tag {
+    enum RawSocket {
+        @Tag static var connect: Tag
+    }
+    @Tag static var rawSocketAll: Tag
+}
+
 struct RawSocketConnectTests {
     @Test(.tags(.RawSocket.connect, .rawSocketAll), arguments: [
         (RawSocketTransport.tcp, TimeInterval(0), nil as String?),

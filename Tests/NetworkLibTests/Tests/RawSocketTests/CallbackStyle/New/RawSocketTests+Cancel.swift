@@ -3,6 +3,10 @@ import Foundation
 import Network
 @testable import NetworkLib
 
+extension Tag.RawSocket {
+    @Tag static var cancel: Tag
+}
+
 struct RawSocketCancelTests {
     struct OneCallback {
         @Test(.tags(.RawSocket.cancel, .rawSocketAll), arguments: [
