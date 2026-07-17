@@ -105,6 +105,19 @@ final class ServerMock: @unchecked Sendable {
         }
     }
 
+    func sendToConnection(data: Data) async throws {
+        guard let connection else { throw NWError.posix(.ENOTCONN) }
+        return try await withCheckedThrowingContinuation { continuation in
+            connection.send(content: data, completion: .contentProcessed({ error in
+                if let error {
+                    continuation.resume(throwing: error)
+                } else {
+                    continuation.resume()
+                }
+            }))
+        }
+    }
+
     private func handleNewConnection(_ newConnection: NWConnection) {
         if flow == .cancel {
             newConnection.forceCancel()
