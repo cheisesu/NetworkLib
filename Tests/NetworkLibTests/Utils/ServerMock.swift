@@ -31,14 +31,13 @@ final class ServerMock: @unchecked Sendable {
     private let listener: NWListener
     private let queue: DispatchQueue
     private let flow: Flow
-    private var connections: [UUID: NWConnection]
+    private var connection: NWConnection?
 
     init(transport: RawSocketTransport, isSecure: Bool, flow: Flow = .none) throws {
         let secIdentity = try loadIdentityFromP12()
         let queue = DispatchQueue(label: "com.network.lib.server-mock")
         self.queue = queue
         self.flow = flow
-        connections = [:]
         let tls: NWProtocolTLS.Options? = {
             guard isSecure else { return nil }
             let tls = NWProtocolTLS.Options()
@@ -68,6 +67,7 @@ final class ServerMock: @unchecked Sendable {
         }()
         listener = try NWListener(using: params, on: .any)
         listener.newConnectionHandler = { [weak self] newConnection in
+            guard self?.connection == nil else { fatalError("More than one connection is not supported") }
             self?.handleNewConnection(newConnection)
         }
     }
@@ -94,20 +94,14 @@ final class ServerMock: @unchecked Sendable {
     func stop() {
         listener.cancel()
         queue.async { [weak self] in
-            let connections = self?.connections ?? [:]
-            for (_, conn) in connections {
-                conn.cancel()
-            }
+            self?.connection?.cancel()
         }
     }
 
     func forceStop() {
         listener.cancel()
         queue.async { [weak self] in
-            let connections = self?.connections ?? [:]
-            for (_, conn) in connections {
-                conn.forceCancel()
-            }
+            self?.connection?.forceCancel()
         }
     }
 
@@ -116,8 +110,7 @@ final class ServerMock: @unchecked Sendable {
             newConnection.forceCancel()
             return
         }
-        let id = UUID()
-        connections[id] = newConnection
+        connection = newConnection
         newConnection.stateUpdateHandler = { [flow, weak self] state in
             printDebug("[server_connection] new state", state)
             switch state {
@@ -132,7 +125,7 @@ final class ServerMock: @unchecked Sendable {
                 }
             case .cancelled:
                 self?.queue.async { [weak self] in
-                    self?.connections[id] = nil
+                    self?.connection = nil
                 }
             default: break
             }
