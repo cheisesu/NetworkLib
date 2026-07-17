@@ -3,11 +3,7 @@ import Testing
 import Network
 @testable import NetworkLib
 
-extension Tag.RawSocket {
-    @Tag static var receive: Tag
-}
-
-struct RawSocketReceiveTests {
+struct _RawSocketReceiveTests {
     @Test("When continuation is called multiple times it will fall with fatal error and test fail",
           .tags(.RawSocket.receive),
           arguments: [RawSocketTransport.tcp, .udp], [nil, "localhost"])
