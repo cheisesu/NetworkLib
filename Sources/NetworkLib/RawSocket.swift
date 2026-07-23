@@ -418,10 +418,6 @@ extension RawSocket {
         }
     }
 
-    private func notifyConnectingComplete(code: POSIXErrorCode) {
-        notifyConnectingComplete(.failure(.posix(code)))
-    }
-
     private func notifyConnectingComplete(_ result: Result<ConnectionInfo, NWError>) {
         let callback = connectingCallback
         connectingCallback = nil
