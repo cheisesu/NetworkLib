@@ -70,15 +70,8 @@ func withAsyncTimeoutForceThrowingContinuation<T: Sendable>(
         }
 
         defer { group.cancelAll() }
-        var errors: [Error] = []
-        while let next = await group.nextResult() {
-            switch next {
-            case let .success(value): return value
-            case let .failure(error): errors.append(error)
-            }
-        }
-        guard let last = errors.last else { throw AsyncTimeoutError() }
-        throw last
+        let next = await group.nextResult()!
+        return try next.get()
     }
 }
 
@@ -87,7 +80,6 @@ private func createForceCancel<T: Sendable>(for continuation: CheckedContinuatio
 {
     let scheduleTask = Task {
         try await Task.sleep(for: forceTimeout)
-        print("==>> shceduled force cancel")
         continuation.resume(throwing: CallbackWasNotCalledError())
     }
     return { scheduleTask.cancel() }
