@@ -31,13 +31,7 @@ struct RawSocketConnectTests {
         let socket = try RawSocket(config)
         defer { socket.cancel(nil) }
 
-        let info = try await withAsyncTimeoutCancelationContinuation(.seconds(2)) { continuation in
-            socket.connect { result in
-                continuation.resume(with: result)
-            }
-        } onCancel: {
-            socket.cancel(nil)
-        }
+        let info = try await socket.testableConnect(.seconds(1), forceTimeout: .milliseconds(1500))
 
         try #require(info.transport == transport)
         try #require(info.interface?.name == "lo0")
@@ -84,13 +78,7 @@ struct RawSocketConnectTests {
         let socket = try RawSocket(config)
         defer { socket.cancel(nil) }
 
-        let info = try await withAsyncTimeoutCancelationContinuation(.seconds(2)) { continuation in
-            socket.connect { result in
-                continuation.resume(with: result)
-            }
-        } onCancel: {
-            socket.cancel(nil)
-        }
+        let info = try await socket.testableConnect(.seconds(1), forceTimeout: .milliseconds(1500))
 
         try #require(info.transport == .tcp)
         try #require(info.interface?.name == "lo0")
@@ -112,13 +100,7 @@ struct RawSocketConnectTests {
         defer { socket.cancel(nil) }
 
         do {
-            try await withAsyncTimeoutCancelationContinuation(.seconds(1)) { continuation in
-                socket.connect { result in
-                    continuation.resume(with: result)
-                }
-            } onCancel: {
-                socket.cancel(nil)
-            }
+            try await socket.testableConnect(.seconds(1), forceTimeout: .milliseconds(1500))
             Issue.record("Unexpected entrance")
         } catch is AsyncTimeoutError {
         }
@@ -137,13 +119,7 @@ struct RawSocketConnectTests {
         defer { socket.cancel(nil) }
 
         do {
-            try await withAsyncTimeoutCancelationContinuation(.seconds(1)) { continuation in
-                socket.connect { result in
-                    continuation.resume(with: result)
-                }
-            } onCancel: {
-                socket.cancel(nil)
-            }
+            try await socket.testableConnect(.seconds(1), forceTimeout: .milliseconds(1500))
             Issue.record("Unexpected entrance")
         } catch NWError.posix(.ETIMEDOUT) {
         }
@@ -163,13 +139,7 @@ struct RawSocketConnectTests {
         defer { socket.cancel(nil) }
 
         do {
-            try await withAsyncTimeoutCancelationContinuation(.seconds(1)) { continuation in
-                socket.connect { result in
-                    continuation.resume(with: result)
-                }
-            } onCancel: {
-                socket.cancel(nil)
-            }
+            try await socket.testableConnect(.seconds(1), forceTimeout: .milliseconds(1500))
             Issue.record("Unexpected entrance")
         } catch is AsyncTimeoutError {
         }
@@ -189,13 +159,7 @@ struct RawSocketConnectTests {
         defer { socket.cancel(nil) }
 
         do {
-            try await withAsyncTimeoutCancelationContinuation(.seconds(1)) { continuation in
-                socket.connect { result in
-                    continuation.resume(with: result)
-                }
-            } onCancel: {
-                socket.cancel(nil)
-            }
+            try await socket.testableConnect(.seconds(1), forceTimeout: .milliseconds(1500))
             Issue.record("Unexpected entrance")
         } catch NWError.posix(.ETIMEDOUT) {
         }
@@ -464,13 +428,7 @@ struct RawSocketConnectTests {
         defer { socket.cancel(nil) }
 
         do {
-            try await withAsyncTimeoutCancelationContinuation(.seconds(3)) { continuation in
-                socket.connect { result in
-                    continuation.resume(with: result)
-                }
-            } onCancel: {
-                socket.cancel(nil)
-            }
+            try await socket.testableConnect(.seconds(1), forceTimeout: .milliseconds(1500))
             Issue.record("Unexpected entrance")
         } catch NWError.dns(-65554) {
         }
@@ -484,13 +442,7 @@ struct RawSocketConnectTests {
         defer { socket.cancel(nil) }
 
         do {
-            try await withAsyncTimeoutCancelationContinuation(.seconds(3)) { continuation in
-                socket.connect { result in
-                    continuation.resume(with: result)
-                }
-            } onCancel: {
-                socket.cancel(nil)
-            }
+            try await socket.testableConnect(.seconds(1), forceTimeout: .milliseconds(1500))
             Issue.record("Unexpected entrance")
         } catch NWError.dns(-65554) {
         }
@@ -512,13 +464,7 @@ struct RawSocketConnectTests {
         defer { socket.cancel(nil) }
 
         do {
-            try await withAsyncTimeoutCancelationContinuation(.seconds(1)) { continuation in
-                socket.connect { result in
-                    continuation.resume(with: result)
-                }
-            } onCancel: {
-                socket.cancel(nil)
-            }
+            try await socket.testableConnect(.seconds(1), forceTimeout: .milliseconds(1500))
             Issue.record("Unexpected entrance")
         } catch NWError.posix(.ECONNRESET) {
         }
@@ -532,13 +478,7 @@ struct RawSocketConnectTests {
         defer { socket.cancel(nil) }
 
         do {
-            try await withAsyncTimeoutCancelationContinuation(.seconds(1)) { continuation in
-                socket.connect { result in
-                    continuation.resume(with: result)
-                }
-            } onCancel: {
-                socket.cancel(nil)
-            }
+            try await socket.testableConnect(.seconds(1), forceTimeout: .milliseconds(1500))
             Issue.record("Unexpected entrance")
         } catch NWError.posix(.ECONNREFUSED) {
         }
@@ -555,13 +495,7 @@ struct RawSocketConnectTests {
         defer { socket.cancel(nil) }
 
         do {
-            try await withAsyncTimeoutCancelationContinuation(.seconds(1)) { continuation in
-                socket.connect { result in
-                    continuation.resume(with: result)
-                }
-            } onCancel: {
-                socket.cancel(nil)
-            }
+            try await socket.testableConnect(.seconds(1), forceTimeout: .milliseconds(1500))
             Issue.record("Unexpected entrance")
         } catch NWError.posix(.ECONNREFUSED) {
         }
