@@ -32,6 +32,7 @@ final class ServerMock: @unchecked Sendable {
     private let queue: DispatchQueue
     private let flow: Flow
     private var connection: NWConnection?
+    private var waitConnectionContinuation: CheckedContinuation<(), Never>?
 
     init(transport: RawSocketTransport, isSecure: Bool, flow: Flow = .none) throws {
         let secIdentity = try loadIdentityFromP12()
@@ -105,16 +106,31 @@ final class ServerMock: @unchecked Sendable {
         }
     }
 
-    func sendToConnection(data: Data) async throws {
-        guard let connection else { throw NWError.posix(.ENOTCONN) }
-        return try await withCheckedThrowingContinuation { continuation in
-            connection.send(content: data, completion: .contentProcessed({ error in
-                if let error {
-                    continuation.resume(throwing: error)
-                } else {
-                    continuation.resume()
+    func waitForConnectionAppeared() async {
+        await withCheckedContinuation { continuation in
+            queue.async {
+                if self.connection != nil {
+                    return continuation.resume()
                 }
-            }))
+                self.waitConnectionContinuation = continuation
+            }
+        }
+    }
+
+    func sendToConnection(data: Data) async throws {
+        return try await withCheckedThrowingContinuation { continuation in
+            queue.async {
+                guard let connection = self.connection else {
+                    return continuation.resume(throwing: NWError.posix(.ENOTCONN))
+                }
+                connection.send(content: data, completion: .contentProcessed({ error in
+                    if let error {
+                        continuation.resume(throwing: error)
+                    } else {
+                        continuation.resume()
+                    }
+                }))
+            }
         }
     }
 
@@ -123,7 +139,11 @@ final class ServerMock: @unchecked Sendable {
             newConnection.forceCancel()
             return
         }
+        printDebug("[server_connection] handle new connection", newConnection)
         connection = newConnection
+        let continuation = waitConnectionContinuation
+        waitConnectionContinuation = nil
+        continuation?.resume()
         newConnection.stateUpdateHandler = { [flow, weak self] state in
             printDebug("[server_connection] new state", state)
             switch state {
