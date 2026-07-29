@@ -162,27 +162,30 @@ struct RawSocketReceiveTests {
     }
 
     @Test(.tags(.RawSocket.all, .RawSocket.receive), arguments: [RawSocketTransport.tcp, .udp])
-    func whenCancelledDuringReceiveFullData_ReturnsNoData(_ transport: RawSocketTransport) async throws {
+    func whenCancelledDuringReceiveFullData_ThrowsCancelledError(_ transport: RawSocketTransport) async throws {
         let timeout: TimeInterval = 0
-        let server = try ServerMock(transport: .tcp, isSecure: true, flow: .none)
+        let server = try ServerMock(transport: transport, isSecure: true, flow: .none)
         defer { server.stop() }
         let port = try await server.start()
-        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: .tcp,
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
                                             maxDataBlock: .max, timeout: timeout)
         let socket = try RawSocket(config)
         defer { socket.cancel(nil) }
         try await socket.testableConnect(.seconds(1), forceTimeout: .milliseconds(1500))
-        let receivedData = try await withAsyncTimeoutForceThrowingContinuation(.seconds(1),
-                                                                               forceTimeout: .milliseconds(1500)) { continuation, cancel in
-            socket.receiveNext { result in
-                cancel()
-                continuation.resume(with: result)
+        do {
+            try await withAsyncTimeoutForceThrowingContinuation(.seconds(1),
+                                                                forceTimeout: .milliseconds(1500)) { continuation, cancel in
+                socket.receiveNext { result in
+                    cancel()
+                    continuation.resume(with: result)
+                }
+                socket.cancel(nil)
+            } onCancel: {
+                socket.cancel(nil)
             }
-            socket.cancel(nil)
-        } onCancel: {
-            socket.cancel(nil)
+            Issue.record("Unexpected entrance")
+        } catch NWError.posix(.ECANCELED) {
         }
-        try #require(receivedData == nil)
     }
 
     // MARK: ERROR BY SERVER STATE
