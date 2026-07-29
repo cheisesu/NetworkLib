@@ -212,8 +212,42 @@ struct RawSocketReceiveTests {
         try #require(receivedData == nil)
     }
 
-    @Test(.disabled("No idea how to simulate yet"), .tags(.RawSocket.all, .RawSocket.receive), arguments: [RawSocketTransport.tcp, .udp])
+    @Test(.tags(.RawSocket.all, .RawSocket.receive), arguments: [RawSocketTransport.tcp/*, .udp*/])
     func serverClosesConnectionWhenSendsData_ReturnsConnectionResetError(_ transport: RawSocketTransport) async throws {
+        let timeout: TimeInterval = 0
+        let dataToSend = Data.random(of: 1000)
+        let server = try ServerMock(transport: transport, isSecure: true, flow: .none)
+        defer { server.stop() }
+        let port = try await server.start()
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
+                                            maxDataBlock: 1000, timeout: timeout)
+        let socket = try RawSocket(config)
+        defer { socket.cancel(nil) }
+        try await socket.testableConnect(.seconds(1), forceTimeout: .milliseconds(1500))
+        try await server.sendToConnection(data: dataToSend)
+        server.forceStop()
+        do {
+            try await withAsyncTimeoutForceThrowingContinuation(
+                .seconds(1), forceTimeout: .milliseconds(1500)
+            ) { continuation, cancel in
+                socket.receiveNext { result in
+                    do {
+                        _ = try result.get()
+                        socket.receiveNext { result in
+                            cancel()
+                            continuation.resume(with: result)
+                        }
+                    } catch {
+                        cancel()
+                        continuation.resume(throwing: error)
+                    }
+                }
+            } onCancel: {
+                socket.cancel(nil)
+            }
+            Issue.record("Unexpected entrance")
+        } catch NWError.posix(.ECONNRESET) {
+        }
     }
 
     @Test(.tags(.RawSocket.all, .RawSocket.receive))
