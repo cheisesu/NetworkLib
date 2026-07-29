@@ -81,6 +81,7 @@ public class RawSocket: @unchecked Sendable {
     }
     private let timeoutEvent: TimeoutRecursiveEvent?
     private var pendingError: NWError?
+    private var operationCancelError: NWError?
     private var connectingCallback: (@Sendable (Result<ConnectionInfo, NWError>) -> Void)?
     private var cancellingCallbacks: [(@Sendable () -> Void)]
 
@@ -264,8 +265,8 @@ public class RawSocket: @unchecked Sendable {
             cancelUnsafe()
             completion(.failure(error))
         } else if isComplete {
-            if let cancellingError = pendingError {
-                completion(.failure(cancellingError))
+            if let error = pendingError ?? operationCancelError {
+                completion(.failure(error))
             } else {
                 completion(.success(nil))
             }
@@ -374,6 +375,7 @@ extension RawSocket {
             return
         }
         internalState = .cancelling
+        operationCancelError = .posix(.ECANCELED)
         connection.cancel()
     }
 
