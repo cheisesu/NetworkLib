@@ -212,7 +212,7 @@ struct RawSocketReceiveTests {
         try #require(receivedData == nil)
     }
 
-    @Test(.tags(.RawSocket.all, .RawSocket.receive), arguments: [RawSocketTransport.tcp/*, .udp*/])
+    @Test(.tags(.RawSocket.all, .RawSocket.receive), arguments: [RawSocketTransport.tcp])
     func serverClosesConnectionWhenSendsData_ReturnsConnectionResetError(_ transport: RawSocketTransport) async throws {
         let timeout: TimeInterval = 0
         let dataToSend = Data.random(of: 1000)
@@ -247,6 +247,49 @@ struct RawSocketReceiveTests {
             }
             Issue.record("Unexpected entrance")
         } catch NWError.posix(.ECONNRESET) {
+        }
+    }
+
+    @Test(.tags(.RawSocket.all, .RawSocket.receive))
+    func udpServerClosesConnectionWhenSendsData_ReceivesDataAndWaitsForNextDatagram() async throws {
+        let timeout: TimeInterval = 0
+        let dataToSend = Data.random(of: 1000)
+        let server = try ServerMock(transport: .udp, isSecure: true, flow: .none)
+        defer { server.stop() }
+        let port = try await server.start()
+        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: .udp,
+                                            maxDataBlock: 1000, timeout: timeout)
+        let socket = try RawSocket(config)
+        defer { socket.cancel(nil) }
+        try await socket.testableConnect(.seconds(1), forceTimeout: .milliseconds(1500))
+        try await server.sendToConnection(data: dataToSend)
+        server.forceStop()
+
+        let receivedData = try await withAsyncTimeoutForceThrowingContinuation(
+            .seconds(1), forceTimeout: .milliseconds(1500)
+        ) { continuation, cancel in
+            socket.receiveNext { result in
+                cancel()
+                continuation.resume(with: result)
+            }
+        } onCancel: {
+            socket.cancel(nil)
+        }
+        try #require(receivedData == dataToSend)
+
+        do {
+            try await withAsyncTimeoutForceThrowingContinuation(
+                .milliseconds(300), forceTimeout: .milliseconds(800)
+            ) { continuation, cancel in
+                socket.receiveNext { result in
+                    cancel()
+                    continuation.resume(with: result)
+                }
+            } onCancel: {
+                socket.cancel(nil)
+            }
+            Issue.record("Unexpected entrance")
+        } catch is AsyncTimeoutError {
         }
     }
 
