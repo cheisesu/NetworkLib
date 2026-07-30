@@ -1,6 +1,8 @@
 import Foundation
 import Network
 
+#error("next is changing send method and its tests")
+
 /// Information reported when a ``RawSocket`` successfully establishes a connection.
 @available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
 public struct ConnectionInfo: Sendable, Equatable {
@@ -175,20 +177,16 @@ public class RawSocket: @unchecked Sendable {
     ///   - completion: A closure invoked when the send is processed.
     public func send(_ data: Data, _ completion: (@Sendable (_ error: NWError?) -> Void)?) {
         let completion = delivered(completion)
-        accessQueue.async { [weak self] in
-            guard let self else {
-                completion?(.posix(.ECANCELED))
-                return
-            }
+        accessQueue.async {
             printDebug("[socket] send", data)
-            if let error = activeOperationCheckErrorUnsafe() {
+            if let error = self.activeOperationCheckErrorUnsafe() {
                 completion?(error)
                 return
             }
-            timeoutEvent?.touch()
-            connection.send(content: data, completion: .contentProcessed({ [weak self] error in
-                self?.timeoutEvent?.detouch()
-                completion?(self?.pendingError ?? error)
+            self.timeoutEvent?.touch()
+            self.connection.send(content: data, completion: .contentProcessed({  error in
+                self.timeoutEvent?.detouch()
+                completion?(error ?? self.pendingError ?? self.operationCancelError)
             }))
         }
     }
@@ -435,7 +433,7 @@ extension RawSocket {
         if ![.connected, .connecting].contains(internalState) {
             return pendingError ?? .posix(.ECANCELED)
         }
-        return nil
+        return operationCancelError
     }
 
     private func clearResourcesUnsafe() {
