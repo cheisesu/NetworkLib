@@ -1,8 +1,6 @@
 import Foundation
 import Network
 
-#error("next is changing send method and its tests")
-
 /// Information reported when a ``RawSocket`` successfully establishes a connection.
 @available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
 public struct ConnectionInfo: Sendable, Equatable {
