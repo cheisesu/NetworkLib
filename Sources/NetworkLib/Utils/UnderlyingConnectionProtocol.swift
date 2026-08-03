@@ -6,8 +6,8 @@ import Network
 protocol UnderlyingConnection: AnyObject {
     var state: NWConnection.State { get }
     var stateUpdateHandler: (@Sendable (_ state: NWConnection.State) -> Void)? { get set }
-    var currentPath: NWPath? { get }
-    var endpoint: NWEndpoint { get }
+
+    func connectionInfo(with transport: RawSocketTransport) -> ConnectionInfo
 
     func start(queue: DispatchQueue)
     func cancel()

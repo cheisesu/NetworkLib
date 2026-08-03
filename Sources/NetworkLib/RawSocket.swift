@@ -397,9 +397,7 @@ extension RawSocket {
         case .ready:
             timeoutEvent?.detouch()
             internalState = .connected
-            let info = ConnectionInfo(transport: transport, remoteEndpoint: connection.endpoint,
-                                      localEndpoint: connection.currentPath?.localEndpoint,
-                                      interface: connection.currentPath?.availableInterfaces.first)
+            let info = connection.connectionInfo(with: transport)
             notifyConnectingComplete(.success(info))
         case let .failed(error):
             // TODO: check and reorder to remove timeoutevent cancel from here
