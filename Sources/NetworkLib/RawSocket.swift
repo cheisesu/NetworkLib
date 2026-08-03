@@ -199,21 +199,17 @@ public class RawSocket: @unchecked Sendable {
     ///   - completion: A closure invoked when the send is processed.
     public func sendMessage<M: RawSocketSendMessage>(_ message: M, _ completion: (@Sendable (_ error: NWError?) -> Void)?) {
         let completion = delivered(completion)
-        accessQueue.async { [weak self] in
-            guard let self else {
-                completion?(.posix(.ECANCELED))
-                return
-            }
+        accessQueue.async {
             printDebug("[socket] send", message)
-            if let error = activeOperationCheckErrorUnsafe() {
+            if let error = self.activeOperationCheckErrorUnsafe() {
                 completion?(error)
                 return
             }
-            timeoutEvent?.touch()
-            connection.send(content: message.content, contentContext: message.context, isComplete: true,
-                            completion: .contentProcessed({ [weak self] error in
-                self?.timeoutEvent?.detouch()
-                completion?(self?.pendingError ?? error)
+            self.timeoutEvent?.touch()
+            self.connection.send(content: message.content, contentContext: message.context, isComplete: true,
+                            completion: .contentProcessed({ error in
+                self.timeoutEvent?.detouch()
+                completion?(error ?? self.pendingError ?? self.operationCancelError)
             }))
         }
     }
@@ -285,18 +281,16 @@ public class RawSocket: @unchecked Sendable {
         _ completion: @escaping @Sendable (_ result: Result<M, NWError>) -> Void
     ) {
         let completion = delivered(completion)
-        accessQueue.async { [weak self] in
-            guard let self else { return completion(.failure(.posix(.ECANCELED))) }
+        accessQueue.async {
             printDebug("[socket] receive next message")
 
-            if let error = activeOperationCheckErrorUnsafe() {
+            if let error = self.activeOperationCheckErrorUnsafe() {
                 completion(.failure(error))
                 return
             }
 
-            timeoutEvent?.touch()
-            connection.receiveMessage { [weak self] content, contentContext, isComplete, error in
-                guard let self else { return completion(.failure(.posix(.ECANCELED))) }
+            self.timeoutEvent?.touch()
+            self.connection.receiveMessage { content, contentContext, isComplete, error in
                 self.timeoutEvent?.detouch()
 
                 if let error = error ?? self.pendingError {
@@ -309,7 +303,7 @@ public class RawSocket: @unchecked Sendable {
 
                     if let message = M.init(from: contentContext, with: content) {
                         completion(.success(message))
-                    } else if contentContext.isFinal, internalState == .closed || internalState == .cancelling {
+                    } else if contentContext.isFinal, self.internalState == .closed || self.internalState == .cancelling {
                         completion(.failure(.posix(.ECANCELED)))
                     } else {
                         completion(.failure(.posix(.EBADMSG)))
