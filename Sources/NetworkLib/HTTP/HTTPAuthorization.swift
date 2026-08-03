@@ -1,6 +1,6 @@
 import Foundation
 
-/// HTTP authorization credentials that can be rendered into an HTTP authentication header.
+/// HTTP authorization credentials that can be rendered as an authentication header value.
 ///
 /// For example, use a basic credential when configuring an HTTP CONNECT proxy:
 ///
@@ -14,7 +14,7 @@ import Foundation
 /// ```
 @available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
 public enum HTTPAuthorization: Sendable, Equatable {
-    /// Basic authentication credentials encoded as `username:password` using Base64.
+    /// Basic authentication credentials rendered as `Basic ` followed by Base64-encoded `username:password` bytes.
     case basic(userName: String, password: String)
 
     var httpHeader: String {

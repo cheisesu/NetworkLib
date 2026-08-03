@@ -4,7 +4,7 @@ import Foundation
 extension RawSocket {
     /// Starts the underlying network connection and returns connection details when it becomes ready.
     ///
-    /// Cancelling the surrounding task cancels the socket.
+    /// If the surrounding task is cancelled while this operation is suspended, the socket is cancelled.
     ///
     /// For example, connect and inspect the selected endpoint:
     ///
@@ -29,7 +29,7 @@ extension RawSocket {
 
     /// Sends raw bytes on the socket.
     ///
-    /// Cancelling the surrounding task cancels the socket.
+    /// If the surrounding task is cancelled while this operation is suspended, the socket is cancelled.
     ///
     /// For example, send a small payload:
     ///
@@ -56,7 +56,7 @@ extension RawSocket {
 
     /// Sends a typed message with protocol metadata.
     ///
-    /// Cancelling the surrounding task cancels the socket.
+    /// If the surrounding task is cancelled while this operation is suspended, the socket is cancelled.
     ///
     /// - Parameter message: The typed message that supplies content and context.
     public func sendMessage<M: RawSocketSendMessage>(_ message: M) async throws {
@@ -77,7 +77,7 @@ extension RawSocket {
 
     /// Receives the next available raw data block.
     ///
-    /// Cancelling the surrounding task cancels the socket.
+    /// If the surrounding task is cancelled while this operation is suspended, the socket is cancelled.
     ///
     /// For example, receive one block of data:
     ///
@@ -102,7 +102,7 @@ extension RawSocket {
 
     /// Receives and decodes the next typed message.
     ///
-    /// Cancelling the surrounding task cancels the socket.
+    /// If the surrounding task is cancelled while this operation is suspended, the socket is cancelled.
     ///
     /// - Parameter type: The typed message to decode. The default is inferred from the return type.
     /// - Returns: The decoded message.

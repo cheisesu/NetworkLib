@@ -3,21 +3,23 @@ import Network
 
 @available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
 extension String {
-    /// An IPv4 address parsed from this string after trimming whitespace, newlines, and URL host brackets.
+    /// An IPv4 address parsed from this string after trimming whitespace, newlines, and leading or trailing square brackets.
     ///
-    /// The parser uses the trimmed string directly with `IPv4Address`. Values that are valid IPv6 addresses, host names,
-    /// partial IPv4 addresses, or IPv4 addresses with out-of-range octets return `nil`.
+    /// The parser uses the trimmed string directly with `IPv4Address`, so Foundation's IPv4 normalization rules apply.
+    /// Host names, IPv6 addresses, malformed input, and IPv4 addresses with out-of-range octets return `nil`.
     ///
-    /// For example, parse plain and padded IPv4 input:
+    /// For example, parse plain, padded, and normalized IPv4 input:
     ///
     /// ```swift
     /// let loopback = "127.0.0.1".asIPv4
     /// let padded = "  192.0.2.1\n".asIPv4
+    /// let shortened = "192.168.0".asIPv4
     /// let invalid = "192.0.2.999".asIPv4
     ///
-    /// print(loopback != nil) // true
-    /// print(padded != nil)   // true
-    /// print(invalid == nil)  // true
+    /// print(loopback?.asString)  // Optional("127.0.0.1")
+    /// print(padded?.asString)    // Optional("192.0.2.1")
+    /// print(shortened?.asString) // Optional("192.168.0.0")
+    /// print(invalid == nil)      // true
     /// ```
     ///
     /// Use the parsed address when creating a Network framework host:
@@ -32,10 +34,10 @@ extension String {
         return IPv4Address(trimmed)
     }
 
-    /// An IPv6 address parsed from this string after trimming whitespace, newlines, and URL host brackets.
+    /// An IPv6 address parsed from this string after trimming whitespace, newlines, and leading or trailing square brackets.
     ///
-    /// The parser removes surrounding square brackets before passing the value to `IPv6Address`, which makes URL host strings
-    /// such as `[2001:db8::1]` valid input. IPv4 addresses and host names return `nil`.
+    /// The parser passes the trimmed value to `IPv6Address`, which makes URL host strings such as `[2001:db8::1]` valid input.
+    /// IPv4 addresses and host names return `nil`.
     ///
     /// For example, parse compressed and bracketed IPv6 input:
     ///
@@ -56,7 +58,7 @@ extension String {
     /// A Boolean value indicating whether this string can be parsed as an IPv4 address.
     ///
     /// This is equivalent to checking whether ``asIPv4`` is non-`nil`. The same trimming rules apply: leading and trailing
-    /// whitespace, newlines, and square brackets are ignored before parsing.
+    /// whitespace, newlines, and square bracket characters are ignored before parsing.
     ///
     /// ```swift
     /// "192.0.2.1".isIPv4        // true
@@ -72,7 +74,7 @@ extension String {
     /// A Boolean value indicating whether this string can be parsed as an IPv6 address.
     ///
     /// This is equivalent to checking whether ``asIPv6`` is non-`nil`. The same trimming rules apply: leading and trailing
-    /// whitespace, newlines, and square brackets are ignored before parsing.
+    /// whitespace, newlines, and square bracket characters are ignored before parsing.
     ///
     /// ```swift
     /// "2001:db8::1".isIPv6      // true
