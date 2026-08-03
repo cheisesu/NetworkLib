@@ -66,7 +66,7 @@ public class RawSocket: @unchecked Sendable {
 
     var onInternalStateChange: (@Sendable (_ oldState: _InternalState, _ newState: _InternalState) -> Void)?
 
-    private let connection: NWConnection
+    private let connection: UnderlyingConnection
     private let accessQueue: DispatchQueue
     private let maxDataBlock: Int
     private let accessKey: DispatchSpecificKey<ObjectIdentifier>
@@ -100,17 +100,32 @@ public class RawSocket: @unchecked Sendable {
         try self.init(configuration, accessQueue: nil, delegateQueue: delegateQueue)
     }
 
-    init(_ configuration: RawSocketConfiguration, accessQueue: DispatchQueue?, delegateQueue: DispatchQueue?) throws(NWError) {
+    convenience init(_ configuration: RawSocketConfiguration, accessQueue: DispatchQueue?,
+                     delegateQueue: DispatchQueue?) throws(NWError)
+    {
+        try self.init(
+            configuration.makeNWConnection(),
+            accessQueue: accessQueue,
+            delegateQueue: delegateQueue,
+            timeout: configuration.timeout,
+            maxDataBlock: configuration.maxDataBlock,
+            transport: configuration.transport
+        )
+    }
+
+    init(_ connection: UnderlyingConnection, accessQueue: DispatchQueue?, delegateQueue: DispatchQueue?,
+         timeout: TimeInterval, maxDataBlock: Int, transport: RawSocketTransport) throws(NWError)
+    {
+        self.connection = connection
         internalState = .initial
         self.accessQueue = accessQueue ?? .RawSocket.access
         accessKey = DispatchSpecificKey()
         self.accessQueue.setSpecific(key: accessKey, value: ObjectIdentifier(self.accessQueue))
         callbackDelivery = CallbackDelivery(queue: delegateQueue ?? .RawSocket.delegate)
         cancellingCallbacks = []
-        timeoutEvent = TimeoutRecursiveEvent(timeout: configuration.timeout, on: self.accessQueue)
-        maxDataBlock = configuration.maxDataBlock
-        transport = configuration.transport
-        connection = try configuration.makeNWConnection()
+        timeoutEvent = TimeoutRecursiveEvent(timeout: timeout, on: self.accessQueue)
+        self.maxDataBlock = maxDataBlock
+        self.transport = transport
 
         // - after init
         afterInitSetup()
@@ -432,8 +447,6 @@ extension RawSocket {
         timeoutEvent?.cancel()
         timeoutEvent?.setHandler { _ in }
         connection.stateUpdateHandler = nil
-        connection.pathUpdateHandler = nil
-        connection.viabilityUpdateHandler = nil
         selfKeeper = nil
     }
 }
