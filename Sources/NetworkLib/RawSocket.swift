@@ -160,7 +160,15 @@ public class RawSocket: @unchecked Sendable {
             self.timeoutEvent?.touch()
             self.connection.send(content: data, completion: .contentProcessed({  error in
                 self.timeoutEvent?.detouch()
-                completion?(error ?? self.pendingError ?? self.operationCancelError)
+                if let error = self.pendingError {
+                    completion?(error)
+                } else if let error = self.operationCancelError {
+                    completion?(error)
+                } else if let error {
+                    completion?(error)
+                } else {
+                    completion?(nil)
+                }
             }))
         }
     }
@@ -185,7 +193,15 @@ public class RawSocket: @unchecked Sendable {
             self.connection.send(content: message.content, contentContext: message.context, isComplete: true,
                             completion: .contentProcessed({ error in
                 self.timeoutEvent?.detouch()
-                completion?(error ?? self.pendingError ?? self.operationCancelError)
+                if let error = self.pendingError {
+                    completion?(error)
+                } else if let error = self.operationCancelError {
+                    completion?(error)
+                } else if let error {
+                    completion?(error)
+                } else {
+                    completion?(nil)
+                }
             }))
         }
     }
@@ -233,7 +249,9 @@ public class RawSocket: @unchecked Sendable {
             cancelUnsafe()
             completion(.failure(error))
         } else if isComplete {
-            if let error = pendingError ?? operationCancelError {
+            if let error = pendingError {
+                completion(.failure(error))
+            } else if let error = operationCancelError {
                 completion(.failure(error))
             } else {
                 completion(.success(nil))
@@ -269,8 +287,10 @@ public class RawSocket: @unchecked Sendable {
             self.connection.receiveMessage { content, contentContext, isComplete, error in
                 self.timeoutEvent?.detouch()
 
-                if let error = error ?? self.pendingError {
+                if let error {
                     self.cancelUnsafe()
+                    completion(.failure(error))
+                } else if let error = self.pendingError {
                     completion(.failure(error))
                 } else if let contentContext {
                     if !isComplete {
@@ -369,7 +389,11 @@ extension RawSocket {
             // TODO: check and reorder to remove timeoutevent cancel from here
             timeoutEvent?.cancel()
             internalState = .closed
-            notifyConnectingComplete(.failure(pendingError ?? .posix(.ECANCELED)))
+            if let pendingError {
+                notifyConnectingComplete(.failure(pendingError))
+            } else {
+                notifyConnectingComplete(.failure(.posix(.ECANCELED)))
+            }
             callAllCancelsUnsafe()
             clearResourcesUnsafe()
         @unknown default: break
@@ -397,9 +421,19 @@ extension RawSocket {
             return .posix(.ENOTCONN)
         }
         if ![.connected, .connecting].contains(internalState) {
-            return pendingError ?? .posix(.ECANCELED)
+            if let pendingError {
+                return pendingError
+            } else if let operationCancelError {
+                return operationCancelError
+            } else {
+                return .posix(.ECANCELED)
+            }
         }
-        return operationCancelError
+        if let operationCancelError {
+            assertionFailure("Investigate how it passed here.")
+            return operationCancelError
+        }
+        return nil
     }
 
     private func clearResourcesUnsafe() {
