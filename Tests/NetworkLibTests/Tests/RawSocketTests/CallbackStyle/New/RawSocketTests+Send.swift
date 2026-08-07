@@ -7,17 +7,301 @@ extension Tag.RawSocket {
     @Tag static var send: Tag
 }
 
-@Suite(.disabled("Not implemented"))
 struct RawSocketSendTests {
+    @Test(.tags(.RawSocket.send, .RawSocket.all), arguments: [RawSocketTransport.tcp, .udp], [Data("Hello".utf8)])
+    func underlyingConnection_MethodSendCalled(_ transport: RawSocketTransport, _ dataToSend: Data) async throws {
+        let timeout: TimeInterval = 0
+        let underlyingConnection = NWConnectionMock(overridedState: .preparing)
+        let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: timeout,
+                                   maxDataBlock: 256, transport: transport)
+        defer { socket.cancel(nil) }
+        socket.connect { _ in }
+        let _: Void = try await withCheckedThrowingContinuation { continuation in
+            socket.send(dataToSend) { error in
+                if let error {
+                    continuation.resume(throwing: error)
+                } else {
+                    continuation.resume()
+                }
+            }
+        }
+        try #require(underlyingConnection.sendDataPortions.count == 1)
+    }
+
     // MARK: SUCCESS IN DIFFERENT STATES
+
+    @Test(.tags(.RawSocket.send, .RawSocket.all), arguments: [RawSocketTransport.tcp, .udp])
+    func whenConnecting_CallbackSuccess(_ transport: RawSocketTransport) async throws {
+        let timeout: TimeInterval = 0
+        let dataToSend = Data("Hello".utf8)
+        let underlyingConnection = NWConnectionMock(overridedState: .preparing)
+        let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: timeout,
+                                   maxDataBlock: 256, transport: transport)
+        defer { socket.cancel(nil) }
+        socket.connect { _ in }
+        let _: Void = try await withCheckedThrowingContinuation { continuation in
+            socket.send(dataToSend) { error in
+                if let error {
+                    continuation.resume(throwing: error)
+                } else {
+                    continuation.resume()
+                }
+            }
+        }
+        try #require(underlyingConnection.sendDataFull == dataToSend)
+    }
+
+    @Test(.tags(.RawSocket.send, .RawSocket.all), arguments: [RawSocketTransport.tcp, .udp])
+    func whenConnected_CallbackSuccess(_ transport: RawSocketTransport) async throws {
+        let timeout: TimeInterval = 0
+        let dataToSend = Data("Hello".utf8)
+        let underlyingConnection = NWConnectionMock()
+        let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: timeout,
+                                   maxDataBlock: 256, transport: transport)
+        defer { socket.cancel(nil) }
+        socket.connect { _ in }
+        let _: Void = try await withCheckedThrowingContinuation { continuation in
+            socket.send(dataToSend) { error in
+                if let error {
+                    continuation.resume(throwing: error)
+                } else {
+                    continuation.resume()
+                }
+            }
+        }
+        try #require(underlyingConnection.sendDataFull == dataToSend)
+    }
 
     // MARK: ERRORS IN DIFFERENT STATES
 
+    @Test(.disabled("when state is connecting and operationCancellError not nil - probably not possible"),
+          .tags(.RawSocket.send, .RawSocket.all), arguments: [RawSocketTransport.tcp, .udp])
+    func whenConnecting_SentRightAfter_BeforeCancel_ReturnesCancelledError(_ transport: RawSocketTransport) async throws {
+    }
+
+    @Test(.disabled("when state is connected and operationCancellError not nil - probably not possible"),
+          .tags(.RawSocket.send, .RawSocket.all), arguments: [RawSocketTransport.tcp, .udp])
+    func whenConnected_SentRightAfter_BeforeCancel_ReturnesCancelledError(_ transport: RawSocketTransport) async throws {
+    }
+
+    @Test(.tags(.RawSocket.send, .RawSocket.all), arguments: [RawSocketTransport.tcp, .udp])
+    func whenNotConnected_ReturnsNotConnectedError(_ transport: RawSocketTransport) async throws {
+        let timeout: TimeInterval = 0
+        let dataToSend = Data("Hello".utf8)
+        let underlyingConnection = NWConnectionMock()
+        let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: timeout,
+                                   maxDataBlock: 256, transport: transport)
+        defer { socket.cancel(nil) }
+        do {
+            let _: Void = try await withCheckedThrowingContinuation { continuation in
+                socket.send(dataToSend) { error in
+                    if let error {
+                        continuation.resume(throwing: error)
+                    } else {
+                        continuation.resume()
+                    }
+                }
+            }
+            Issue.record("Unexpected entrance")
+        } catch NWError.posix(.ENOTCONN) {
+        }
+    }
+
+    @Test(.tags(.RawSocket.send, .RawSocket.all), arguments: [RawSocketTransport.tcp, .udp])
+    func whenCancelling_ReturnsCancelledError(_ transport: RawSocketTransport) async throws {
+        let timeout: TimeInterval = 0
+        let dataToSend = Data("Hello".utf8)
+        let underlyingConnection = NWConnectionMock()
+        let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: timeout,
+                                   maxDataBlock: 256, transport: transport)
+        defer { socket.cancel(nil) }
+        do {
+            let _: Void = try await withCheckedThrowingContinuation { continuation in
+                socket.onInternalStateChange = { _, newState in
+                    guard newState == .cancelling else { return }
+                    
+                    socket.send(dataToSend) { error in
+                        if let error {
+                            continuation.resume(throwing: error)
+                        } else {
+                            continuation.resume()
+                        }
+                    }
+                }
+                socket.connect { _ in
+                    socket.cancel(nil)
+                }
+            }
+            Issue.record("Unexpected entrance")
+        } catch NWError.posix(.ECANCELED) {
+        }
+    }
+
+    @Test(.tags(.RawSocket.send, .RawSocket.all), arguments: [RawSocketTransport.tcp, .udp])
+    func whenClosed_ReturnsCancelledError(_ transport: RawSocketTransport) async throws {
+        let timeout: TimeInterval = 0
+        let dataToSend = Data("Hello".utf8)
+        let underlyingConnection = NWConnectionMock()
+        let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: timeout,
+                                   maxDataBlock: 256, transport: transport)
+        defer { socket.cancel(nil) }
+        do {
+            let _: Void = try await withCheckedThrowingContinuation { continuation in
+                socket.cancel {
+                    socket.send(dataToSend) { error in
+                        if let error {
+                            continuation.resume(throwing: error)
+                        } else {
+                            continuation.resume()
+                        }
+                    }
+                }
+            }
+            Issue.record("Unexpected entrance")
+        } catch NWError.posix(.ECANCELED) {
+        }
+    }
+
+    @Test(.tags(.RawSocket.send, .RawSocket.all), arguments: [RawSocketTransport.tcp, .udp])
+    func whenClosedDuringSend_ReturnsCancelledError(_ transport: RawSocketTransport) async throws {
+        let timeout: TimeInterval = 0
+        let dataToSend = Data("Hello".utf8)
+        let underlyingConnection = NWConnectionMock(overridedSendError: .posix(.EINVAL), mode: [.methodSend, .dontCallCallback])
+        let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: timeout,
+                                   maxDataBlock: 256, transport: transport)
+        defer { socket.cancel(nil) }
+        do {
+            let _: Void = try await withCheckedThrowingContinuation { continuation in
+                socket.connect { _ in
+                    socket.send(dataToSend) { error in
+                        if let error {
+                            continuation.resume(throwing: error)
+                        } else {
+                            continuation.resume()
+                        }
+                    }
+                    socket.cancel(nil)
+                }
+            }
+            Issue.record("Unexpected entrance")
+        } catch NWError.posix(.ECANCELED) {
+        }
+    }
+
+    @Test(.tags(.RawSocket.send, .RawSocket.all), arguments: [RawSocketTransport.tcp, .udp])
+    func sendWhenTimeoutHappened_ReturnsTimeoutError(_ transport: RawSocketTransport) async throws {
+        let timeout: TimeInterval = 0.5
+        let dataToSend = Data("Hello".utf8)
+        let underlyingConnection = NWConnectionMock(overridedSendError: .posix(.EINVAL), mode: [.methodSend, .dontCallCallback])
+        let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: timeout,
+                                   maxDataBlock: 256, transport: transport)
+        defer { socket.cancel(nil) }
+        do {
+            let _: Void = try await withCheckedThrowingContinuation { continuation in
+                socket.connect { _ in
+                    socket.send(dataToSend) { error in
+                        if let error {
+                            switch error {
+                            case NWError.posix(.ETIMEDOUT):
+                                socket.send(dataToSend) { error in
+                                    if let error {
+                                        continuation.resume(throwing: error)
+                                    } else {
+                                        continuation.resume()
+                                    }
+                                }
+                            default: continuation.resume(throwing: error)
+                            }
+                        } else {
+                            continuation.resume()
+                        }
+                    }
+                }
+            }
+            Issue.record("Unexpected entrance")
+        } catch NWError.posix(.ETIMEDOUT) {
+        }
+    }
+
     // MARK: TIMEOUTS
 
-    // MARK: ERRORS BY SERVER BEHAVIOUR
+    @Test(.tags(.RawSocket.send, .RawSocket.all), arguments: [RawSocketTransport.tcp, .udp])
+    func timeoutNotZero_SendNotCompleted_ThrowsTimeoutError(_ transport: RawSocketTransport) async throws {
+        let timeout: TimeInterval = 0.5
+        let dataToSend = Data("Hello".utf8)
+        let underlyingConnection = NWConnectionMock(mode: [.methodSend, .dontCallCallback])
+        let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: timeout,
+                                   maxDataBlock: 256, transport: transport)
+        defer { socket.cancel(nil) }
+        do {
+            let _: Void = try await withCheckedThrowingContinuation { continuation in
+                socket.connect { _ in
+                    socket.send(dataToSend) { error in
+                        if let error {
+                            continuation.resume(throwing: error)
+                        } else {
+                            continuation.resume()
+                        }
+                    }
+                }
+            }
+            Issue.record("Unexpected entrance")
+        } catch NWError.posix(.ETIMEDOUT) {
+        }
+    }
 
-    // MARK: PROTOCOL ERRORS
+    // MARK: OTHER ERRORS
 
-    // MARK: ENDPOINT ERRORS
+    @Test(.tags(.RawSocket.send, .RawSocket.all),arguments: [RawSocketTransport.tcp, .udp], [NWError.posix(.ECONNRESET)])
+    func sendReturnsError_ThrowsTheSameError(_ transport: RawSocketTransport, _ expectedError: NWError) async throws {
+        let timeout: TimeInterval = 0
+        let dataToSend = Data("Hello".utf8)
+        let underlyingConnection = NWConnectionMock(overridedSendError: expectedError)
+        let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: timeout,
+                                   maxDataBlock: 256, transport: transport)
+        defer { socket.cancel(nil) }
+        do {
+            let _: Void = try await withCheckedThrowingContinuation { continuation in
+                socket.connect { _ in
+                    socket.send(dataToSend) { error in
+                        if let error {
+                            continuation.resume(throwing: error)
+                        } else {
+                            continuation.resume()
+                        }
+                    }
+                }
+            }
+            Issue.record("Unexpected entrance")
+        } catch let error as NWError {
+            try #require(error == expectedError)
+        }
+    }
+
+    // MARK: REFERENCE CYCLES
+
+    @Test(.timeLimit(.minutes(1)), .tags(.RawSocket.send, .RawSocket.all),arguments: [RawSocketTransport.tcp, .udp])
+    func whenSourceReferencesAllNil_ConnectionKeepsSelf(_ transport: RawSocketTransport) async throws {
+        let timeout: TimeInterval = 0
+        let dataToSend = Data("Hello".utf8)
+        let underlyingConnection = NWConnectionMock()
+        var tempSocket: RawSocket? = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil,
+                                                   timeout: timeout, maxDataBlock: 256, transport: transport)
+        let box = _SocketBox()
+        box.set(tempSocket)
+        tempSocket = nil
+        defer { box.get()?.cancel(nil) }
+        let _: Void = try await withCheckedThrowingContinuation { continuation in
+            box.get()?.connect { _ in
+            }
+            box.get()?.send(dataToSend) { error in
+                if let error {
+                    continuation.resume(throwing: error)
+                } else {
+                    continuation.resume()
+                }
+            }
+            box.set(nil)
+        }
+    }
 }
