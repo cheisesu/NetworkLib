@@ -158,7 +158,7 @@ public class RawSocket: @unchecked Sendable {
                 return
             }
             self.timeoutEvent?.touch()
-            self.connection.send(content: data, completion: .contentProcessed({  error in
+            self.connection.send(content: data, completion: .contentProcessed({ error in
                 self.timeoutEvent?.detouch()
                 if let error = self.pendingError {
                     completion?(error)
