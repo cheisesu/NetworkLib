@@ -25,6 +25,28 @@ struct RawSocketCancelTests {
         try #require(result)
     }
 
+    @Test(.tags(.RawSocket.cancel, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
+    func whenCancelled_AndSourceReferencesAllNil_NoReferences(_ transport: RawSocketTransport) async throws {
+        let underlyingConnection = NWConnectionMock()
+        var tempSocket: RawSocket? = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil,
+                                                   timeout: 0, maxDataBlock: 256, transport: transport)
+        let address = ReferencesCounter.shared.address(of: tempSocket)
+        let box = _SocketBox()
+        box.set(tempSocket)
+        tempSocket = nil
+        defer { box.get()?.cancel(nil) }
+        try #require(ReferencesCounter.shared.count(of: address) == 1)
+        let _: Void = try await withCheckedThrowingContinuation { continuation in
+            box.get()?.connect { _ in
+                box.set(nil)
+            }
+            box.get()?.cancel {
+                continuation.resume()
+            }
+        }
+        try #require(ReferencesCounter.shared.count(of: address) == 0)
+    }
+
     struct OneCallback {
         @Test(.tags(.RawSocket.cancel, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
         func whenNotConnected_CallbackCalled(_ transport: RawSocketTransport) async throws {
