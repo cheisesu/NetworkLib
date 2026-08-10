@@ -312,6 +312,7 @@ struct RawSocketSendTests {
     }
 
     // MARK: DELEGATE QUEUE
+
     @Test(.tags(.RawSocket.rawSocketDelegateQueue, .RawSocket.all), arguments: [RawSocketTransport.tcp, .udp])
     func connectCallbackRunsOnDelegateQueue(_ transport: RawSocketTransport) async throws {
         let dataToSend = Data("Hello".utf8)

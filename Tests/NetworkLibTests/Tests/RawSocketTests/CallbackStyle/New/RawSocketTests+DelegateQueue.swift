@@ -9,32 +9,6 @@ extension Tag.RawSocket {
 
 struct RawSocketDelegateQueueTests {
     @Test(.tags(.RawSocket.rawSocketDelegateQueue))
-    func connectCallbackRunsOnDelegateQueue() async throws {
-        let delegateQueue = DispatchQueue(label: "raw-socket.delegate.connect")
-        let probe = DelegateQueueProbe()
-        probe.install(on: delegateQueue)
-        let server = try ServerMock(transport: .tcp, isSecure: false)
-        defer { server.stop() }
-        let port = try await server.start()
-        let socket = try RawSocket(makeConfiguration(port: port), delegateQueue: delegateQueue)
-        defer { socket.cancel(nil) }
-
-        let check = try await withAsyncTimeout(.seconds(3)) { () async throws -> CallbackCheck in
-            await withCheckedContinuation { continuation in
-                socket.connect { result in
-                    continuation.resume(returning: CallbackCheck(
-                        isOnDelegateQueue: probe.isCurrentQueue,
-                        isExpectedResult: result.isSuccess
-                    ))
-                }
-            }
-        }
-
-        #expect(check.isOnDelegateQueue)
-        #expect(check.isExpectedResult)
-    }
-
-    @Test(.tags(.RawSocket.rawSocketDelegateQueue))
     func sendMessageCallbackRunsOnDelegateQueue() async throws {
         let delegateQueue = DispatchQueue(label: "raw-socket.delegate.send-message")
         let probe = DelegateQueueProbe()

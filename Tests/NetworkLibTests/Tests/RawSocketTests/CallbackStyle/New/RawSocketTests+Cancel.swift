@@ -38,10 +38,10 @@ struct RawSocketCancelTests {
         try #require(ReferencesCounter.shared.count(of: address) == 1)
         let _: Void = try await withCheckedThrowingContinuation { continuation in
             box.get()?.connect { _ in
+                box.get()?.cancel {
+                    continuation.resume()
+                }
                 box.set(nil)
-            }
-            box.get()?.cancel {
-                continuation.resume()
             }
         }
         try #require(ReferencesCounter.shared.count(of: address) == 0)
