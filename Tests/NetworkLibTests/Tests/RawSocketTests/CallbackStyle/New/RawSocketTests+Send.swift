@@ -287,11 +287,17 @@ struct RawSocketSendTests {
         let underlyingConnection = NWConnectionMock()
         var tempSocket: RawSocket? = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil,
                                                    timeout: timeout, maxDataBlock: 256, transport: transport)
+        let address = ReferencesCounter.shared.address(of: tempSocket)
         let box = _SocketBox()
         box.set(tempSocket)
         tempSocket = nil
         defer { box.get()?.cancel(nil) }
+        try #require(ReferencesCounter.shared.count(of: address) == 1)
         let _: Void = try await withCheckedThrowingContinuation { continuation in
+            box.get()?.onInternalStateChange = { _, newState in
+                guard newState == .connecting else { return }
+                box.set(nil)
+            }
             box.get()?.connect { _ in
             }
             box.get()?.send(dataToSend) { error in
@@ -301,7 +307,7 @@ struct RawSocketSendTests {
                     continuation.resume()
                 }
             }
-            box.set(nil)
         }
+        try #require(ReferencesCounter.shared.count(of: address) == 1)
     }
 }
