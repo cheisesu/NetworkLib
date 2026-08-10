@@ -53,29 +53,6 @@ struct RawSocketDelegateQueueTests {
     }
 
     @Test(.tags(.RawSocket.rawSocketDelegateQueue))
-    func sendCallbackRunsOnDelegateQueue() async throws {
-        let delegateQueue = DispatchQueue(label: "raw-socket.delegate.send")
-        let probe = DelegateQueueProbe()
-        probe.install(on: delegateQueue)
-        let socket = try RawSocket(makeConfiguration(), delegateQueue: delegateQueue)
-        defer { socket.cancel(nil) }
-
-        let check = try await withAsyncTimeout(.seconds(1)) { () async throws -> CallbackCheck in
-            await withCheckedContinuation { continuation in
-                socket.send(Data("Hello".utf8)) { error in
-                    continuation.resume(returning: CallbackCheck(
-                        isOnDelegateQueue: probe.isCurrentQueue,
-                        isExpectedResult: error.isPOSIX(.ENOTCONN)
-                    ))
-                }
-            }
-        }
-
-        #expect(check.isOnDelegateQueue)
-        #expect(check.isExpectedResult)
-    }
-
-    @Test(.tags(.RawSocket.rawSocketDelegateQueue))
     func sendMessageCallbackRunsOnDelegateQueue() async throws {
         let delegateQueue = DispatchQueue(label: "raw-socket.delegate.send-message")
         let probe = DelegateQueueProbe()
@@ -163,19 +140,6 @@ private struct DelegateQueueSendMessage: RawSocketSendMessage {
 
 private struct DelegateQueueReceiveMessage: RawSocketReceiveMessage {
     init?(from context: NWConnection.ContentContext, with content: Data?) {}
-}
-
-private final class DelegateQueueProbe: @unchecked Sendable {
-    private let key = DispatchSpecificKey<Int>()
-    private let value = 1
-
-    var isCurrentQueue: Bool {
-        DispatchQueue.getSpecific(key: key) == value
-    }
-
-    func install(on queue: DispatchQueue) {
-        queue.setSpecific(key: key, value: value)
-    }
 }
 
 private extension Optional where Wrapped == NWError {

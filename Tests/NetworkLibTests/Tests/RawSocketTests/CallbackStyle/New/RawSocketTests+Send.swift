@@ -280,7 +280,7 @@ struct RawSocketSendTests {
 
     // MARK: REFERENCE CYCLES
 
-    @Test(.timeLimit(.minutes(1)), .tags(.RawSocket.send, .RawSocket.all),arguments: [RawSocketTransport.tcp, .udp])
+    @Test(.tags(.RawSocket.send, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
     func whenSourceReferencesAllNil_ConnectionKeepsSelf(_ transport: RawSocketTransport) async throws {
         let timeout: TimeInterval = 0
         let dataToSend = Data("Hello".utf8)
@@ -309,5 +309,28 @@ struct RawSocketSendTests {
             }
         }
         try #require(ReferencesCounter.shared.count(of: address) == 1)
+    }
+
+    // MARK: DELEGATE QUEUE
+    @Test(.tags(.RawSocket.rawSocketDelegateQueue, .RawSocket.all), arguments: [RawSocketTransport.tcp, .udp])
+    func connectCallbackRunsOnDelegateQueue(_ transport: RawSocketTransport) async throws {
+        let dataToSend = Data("Hello".utf8)
+        let delegateQueue = DispatchQueue(label: "raw-socket.delegate.\(#function)")
+        let probe = DelegateQueueProbe()
+        probe.install(on: delegateQueue)
+        let underlyingConnection = NWConnectionMock()
+        let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: delegateQueue, timeout: 0,
+                                   maxDataBlock: 256, transport: transport)
+        defer { socket.cancel(nil) }
+
+        let result = await withCheckedContinuation { continuation in
+            socket.connect { _ in
+                socket.send(dataToSend) { _ in
+                    continuation.resume(returning: probe.isCurrentQueue)
+                }
+            }
+        }
+
+        try #require(result)
     }
 }
