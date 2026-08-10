@@ -88,8 +88,15 @@ public class RawSocket: @unchecked Sendable {
         self.maxDataBlock = maxDataBlock
         self.transport = transport
 
+        ReferencesCounter.shared.increment(self)
+
         // - after init
         afterInitSetup()
+    }
+
+    deinit {
+        ReferencesCounter.shared.decrement(self)
+        printDebug("[socket] DEINIT")
     }
 
     // MARK: - PUBLIC METHODS
@@ -111,8 +118,8 @@ public class RawSocket: @unchecked Sendable {
     ///
     /// - Parameter block: A callback invoked when the connection succeeds or fails.
     public func connect(_ block: @escaping @Sendable (_ result: Result<ConnectionInfo, NWError>) -> Void) { // done
-        accessQueue.async {
-            self.connectUnsafe { result in
+        accessQueue.async { [weak self] in
+            self?.connectUnsafe { result in
                 block(result)
             }
         }
@@ -124,12 +131,12 @@ public class RawSocket: @unchecked Sendable {
     ///
     /// - Parameter handler: A closure called after the socket cancellation callbacks are drained.
     public func cancel(_ handler: (@Sendable () -> Void)?) { // done
-        accessQueue.async {
+        accessQueue.async { [weak self] in
             printDebug("[socket] queue async close")
             if let handler {
-                self.cancellingCallbacks.append(handler)
+                self?.cancellingCallbacks.append(handler)
             }
-            self.cancelUnsafe()
+            self?.cancelUnsafe()
         }
     }
 
@@ -151,18 +158,18 @@ public class RawSocket: @unchecked Sendable {
     ///   - completion: A closure invoked when the send is processed.
     public func send(_ data: Data, _ completion: (@Sendable (_ error: NWError?) -> Void)?) {
         let completion = delivered(completion)
-        accessQueue.async {
+        accessQueue.async { [weak self] in
             printDebug("[socket] send", data)
-            if let error = self.activeOperationCheckErrorUnsafe() {
+            if let error = self?.activeOperationCheckErrorUnsafe() {
                 completion?(error)
                 return
             }
-            self.timeoutEvent?.touch()
-            self.connection.send(content: data, completion: .contentProcessed({ error in
-                self.timeoutEvent?.detouch()
-                if let error = self.pendingError {
+            self?.timeoutEvent?.touch()
+            self?.connection.send(content: data, completion: .contentProcessed({ [weak self] error in
+                self?.timeoutEvent?.detouch()
+                if let error = self?.pendingError {
                     completion?(error)
-                } else if let error = self.operationCancelError {
+                } else if let error = self?.operationCancelError {
                     completion?(error)
                 } else if let error {
                     completion?(error)
@@ -327,7 +334,7 @@ extension RawSocket {
     }
 
     private func connectUnsafe(_ block: @escaping @Sendable (Result<ConnectionInfo, NWError>) -> Void) { // done
-        printDebug("[socket] queue async connect with timeout")
+        printDebug("[socket] connect unsafe")
         guard internalState < .closed else { return callbackDelivery.call(.failure(.posix(.ECANCELED)), block) }
         guard internalState < .cancelling else { return callbackDelivery.call(.failure(.posix(.ECANCELED)), block) }
         guard internalState < .connected else { return callbackDelivery.call(.failure(.posix(.EISCONN)), block) }
@@ -336,8 +343,8 @@ extension RawSocket {
         timeoutEvent?.touch()
         connectingCallback = block
         internalState = .connecting
-        connection.stateUpdateHandler = { state in
-            self.stateUpdateHandler(state)
+        connection.stateUpdateHandler = { [weak self] state in
+            self?.stateUpdateHandler(state)
         }
         selfKeeper = self
         connection.start(queue: accessQueue)
