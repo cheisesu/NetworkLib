@@ -35,24 +35,6 @@ struct RawSocketDelegateQueueTests {
     }
 
     @Test(.tags(.RawSocket.rawSocketDelegateQueue))
-    func cancelCallbackRunsOnDelegateQueue() async throws {
-        let delegateQueue = DispatchQueue(label: "raw-socket.delegate.cancel")
-        let probe = DelegateQueueProbe()
-        probe.install(on: delegateQueue)
-        let socket = try RawSocket(makeConfiguration(), delegateQueue: delegateQueue)
-
-        let isOnDelegateQueue = try await withAsyncTimeout(.seconds(1)) { () async throws -> Bool in
-            await withCheckedContinuation { continuation in
-                socket.cancel {
-                    continuation.resume(returning: probe.isCurrentQueue)
-                }
-            }
-        }
-
-        #expect(isOnDelegateQueue)
-    }
-
-    @Test(.tags(.RawSocket.rawSocketDelegateQueue))
     func sendMessageCallbackRunsOnDelegateQueue() async throws {
         let delegateQueue = DispatchQueue(label: "raw-socket.delegate.send-message")
         let probe = DelegateQueueProbe()

@@ -8,100 +8,85 @@ extension Tag.RawSocket {
 }
 
 struct RawSocketCancelTests {
+    @Test(.tags(.RawSocket.cancel, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
+    func callbackCalledOnDelegateQueue(_ transport: RawSocketTransport) async throws {
+        let delegateQueue = DispatchQueue(label: "raw-socket.delegate.cancel")
+        let probe = DelegateQueueProbe()
+        probe.install(on: delegateQueue)
+        let underlyingConnection = NWConnectionMock()
+        let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: delegateQueue, timeout: 0,
+                                   maxDataBlock: 256, transport: transport)
+        let result = await withCheckedContinuation { continuation in
+            socket.cancel {
+                continuation.resume(returning: probe.isCurrentQueue)
+            }
+        }
+
+        try #require(result)
+    }
+
     struct OneCallback {
-        @Test(.tags(.RawSocket.cancel, .RawSocket.all), arguments: [
-            (RawSocketTransport.tcp),
-            (RawSocketTransport.udp),
-        ])
+        @Test(.tags(.RawSocket.cancel, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
         func whenNotConnected_CallbackCalled(_ transport: RawSocketTransport) async throws {
-            let config = RawSocketConfiguration("127.0.0.1", 65535, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: 0)
-            let socket = try RawSocket(config)
-            try await withAsyncTimeoutForceThrowingContinuation(.seconds(1),
-                                                                forceTimeout: .milliseconds(1500)) { continuation, cancel in
+            let underlyingConnection = NWConnectionMock()
+            let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: 0,
+                                       maxDataBlock: 256, transport: transport)
+
+            // if it doesn't call callback it will not call continuation
+            await withCheckedContinuation { continuation in
                 socket.cancel {
-                    cancel()
                     continuation.resume()
                 }
             }
         }
 
-        @Test(.tags(.RawSocket.cancel, .RawSocket.all), arguments: [
-            (RawSocketTransport.tcp),
-            (RawSocketTransport.udp),
-        ])
+        @Test(.tags(.RawSocket.cancel, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
         func whenConnecting_CallbackCalled(_ transport: RawSocketTransport) async throws {
-            let server = try ServerMock(transport: transport, isSecure: true)
-            defer { server.stop() }
-            let port = try await server.start()
-            let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: 0)
-            let socket = try RawSocket(config)
+            let underlyingConnection = NWConnectionMock()
+            let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: 0,
+                                       maxDataBlock: 256, transport: transport)
             defer { socket.cancel(nil) }
-            try await withAsyncTimeoutForceThrowingContinuation(.seconds(1),
-                                                                forceTimeout: .milliseconds(1500)) { continuation, cancel in
+            await withCheckedContinuation { continuation in
                 socket.onInternalStateChange = { _, newState in
                     guard newState == .connecting else { return }
                     socket.cancel {
-                        cancel()
                         continuation.resume()
                     }
                 }
                 socket.connect { _ in }
-            } onCancel: {
-                socket.cancel(nil)
             }
         }
 
-        @Test(.tags(.RawSocket.cancel, .RawSocket.all), arguments: [
-            (RawSocketTransport.tcp),
-            (RawSocketTransport.udp),
-        ])
+        @Test(.tags(.RawSocket.cancel, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
         func whenConnected_CallbackCalled(_ transport: RawSocketTransport) async throws {
-            let server = try ServerMock(transport: transport, isSecure: true)
-            defer { server.stop() }
-            let port = try await server.start()
-            let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: 0)
-            let socket = try RawSocket(config)
+            let underlyingConnection = NWConnectionMock()
+            let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: 0,
+                                       maxDataBlock: 256, transport: transport)
             defer { socket.cancel(nil) }
-            try await withAsyncTimeoutForceThrowingContinuation(.seconds(1),
-                                                                forceTimeout: .milliseconds(1500)) { continuation, cancel in
+            try await withCheckedThrowingContinuation { continuation in
                 socket.connect { result in
                     switch result {
                     case .success:
                         socket.cancel {
-                            cancel()
                             continuation.resume()
                         }
                     case let .failure(error):
-                        cancel()
                         continuation.resume(throwing: error)
                     }
                 }
-            } onCancel: {
-                socket.cancel(nil)
             }
         }
 
-        @Test(.tags(.RawSocket.cancel, .RawSocket.all), arguments: [
-            (RawSocketTransport.tcp),
-            (RawSocketTransport.udp),
-        ])
+        @Test(.tags(.RawSocket.cancel, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
         func whenCancelling_CallbackCalled(_ transport: RawSocketTransport) async throws {
-            let server = try ServerMock(transport: transport, isSecure: true)
-            defer { server.stop() }
-            let port = try await server.start()
-            let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: 0)
-            let socket = try RawSocket(config)
+            let underlyingConnection = NWConnectionMock()
+            let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: 0,
+                                       maxDataBlock: 256, transport: transport)
             defer { socket.cancel(nil) }
-            try await withAsyncTimeoutForceThrowingContinuation(.seconds(1),
-                                                                forceTimeout: .milliseconds(1500)) { continuation, cancel in
+            try await withCheckedThrowingContinuation { continuation in
                 socket.onInternalStateChange = { _, newState in
                     guard newState == .cancelling else { return }
                     socket.cancel {
-                        cancel()
                         continuation.resume()
                     }
                 }
@@ -110,135 +95,93 @@ struct RawSocketCancelTests {
                         let _ = try result.get()
                         socket.cancel(nil)
                     } catch {
-                        cancel()
                         continuation.resume(throwing: error)
                     }
                 }
-            } onCancel: {
-                socket.cancel(nil)
             }
         }
 
-        @Test(.tags(.RawSocket.cancel, .RawSocket.all), arguments: [
-            (RawSocketTransport.tcp),
-            (RawSocketTransport.udp),
-        ])
+        @Test(.tags(.RawSocket.cancel, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
         func whenCancelled_CallbackCalled(_ transport: RawSocketTransport) async throws {
-            let config = RawSocketConfiguration("127.0.0.1", 65535, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: 0)
-            let socket = try RawSocket(config)
-            try await withAsyncTimeoutForceThrowingContinuation(.seconds(1),
-                                                                forceTimeout: .milliseconds(1500)) { continuation, cancel in
+            let underlyingConnection = NWConnectionMock()
+            let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: 0,
+                                       maxDataBlock: 256, transport: transport)
+            defer { socket.cancel(nil) }
+            try await withCheckedThrowingContinuation { continuation in
                 socket.cancel {
                     socket.cancel {
-                        cancel()
                         continuation.resume()
                     }
                 }
-            } onCancel: {
-                socket.cancel(nil)
             }
         }
     }
 
     struct WithoutThenWithCallback {
-        @Test(.tags(.RawSocket.cancel, .RawSocket.all), arguments: [
-            (RawSocketTransport.tcp),
-            (RawSocketTransport.udp),
-        ])
+        @Test(.tags(.RawSocket.cancel, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
         func whenNotConnected_CallbackCalled(_ transport: RawSocketTransport) async throws {
-            let config = RawSocketConfiguration("127.0.0.1", 65535, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: 0)
-            let socket = try RawSocket(config)
-            try await withAsyncTimeoutForceThrowingContinuation(.seconds(1),
-                                                                forceTimeout: .milliseconds(1500)) { continuation, cancel in
+            let underlyingConnection = NWConnectionMock()
+            let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: 0,
+                                       maxDataBlock: 256, transport: transport)
+            defer { socket.cancel(nil) }
+            try await withCheckedThrowingContinuation { continuation in
                 socket.cancel(nil)
                 socket.cancel {
-                    cancel()
                     continuation.resume()
                 }
             }
         }
 
-        @Test(.tags(.RawSocket.cancel, .RawSocket.all), arguments: [
-            (RawSocketTransport.tcp),
-            (RawSocketTransport.udp),
-        ])
+        @Test(.tags(.RawSocket.cancel, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
         func whenConnecting_CallbackCalled(_ transport: RawSocketTransport) async throws {
-            let server = try ServerMock(transport: transport, isSecure: true)
-            defer { server.stop() }
-            let port = try await server.start()
-            let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: 0)
-            let socket = try RawSocket(config)
+            let underlyingConnection = NWConnectionMock()
+            let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: 0,
+                                       maxDataBlock: 256, transport: transport)
             defer { socket.cancel(nil) }
-            try await withAsyncTimeoutForceThrowingContinuation(.seconds(1),
-                                                                forceTimeout: .milliseconds(1500)) { continuation, cancel in
+            try await withCheckedThrowingContinuation { continuation in
                 socket.onInternalStateChange = { _, newState in
                     guard newState == .connecting else { return }
                     socket.cancel(nil)
                     socket.cancel {
-                        cancel()
                         continuation.resume()
                     }
                 }
                 socket.connect { _ in }
-            } onCancel: {
-                socket.cancel(nil)
             }
         }
 
-        @Test(.tags(.RawSocket.cancel, .RawSocket.all), arguments: [
-            (RawSocketTransport.tcp),
-            (RawSocketTransport.udp),
-        ])
+        @Test(.tags(.RawSocket.cancel, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
         func whenConnected_CallbackCalled(_ transport: RawSocketTransport) async throws {
-            let server = try ServerMock(transport: transport, isSecure: true)
-            defer { server.stop() }
-            let port = try await server.start()
-            let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: 0)
-            let socket = try RawSocket(config)
+            let underlyingConnection = NWConnectionMock()
+            let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: 0,
+                                       maxDataBlock: 256, transport: transport)
             defer { socket.cancel(nil) }
-            try await withAsyncTimeoutForceThrowingContinuation(.seconds(1),
-                                                                forceTimeout: .milliseconds(1500)) { continuation, cancel in
+            try await withCheckedThrowingContinuation { continuation in
                 socket.connect { result in
                     switch result {
                     case .success:
                         socket.cancel(nil)
                         socket.cancel {
-                            cancel()
                             continuation.resume()
                         }
                     case let .failure(error):
-                        cancel()
                         continuation.resume(throwing: error)
                     }
                 }
-            } onCancel: {
-                socket.cancel(nil)
             }
         }
 
-        @Test(.tags(.RawSocket.cancel, .RawSocket.all), arguments: [
-            (RawSocketTransport.tcp),
-            (RawSocketTransport.udp),
-        ])
+        @Test(.tags(.RawSocket.cancel, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
         func whenCancelling_CallbackCalled(_ transport: RawSocketTransport) async throws {
-            let server = try ServerMock(transport: transport, isSecure: true)
-            defer { server.stop() }
-            let port = try await server.start()
-            let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: 0)
-            let socket = try RawSocket(config)
+            let underlyingConnection = NWConnectionMock()
+            let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: 0,
+                                       maxDataBlock: 256, transport: transport)
             defer { socket.cancel(nil) }
-            try await withAsyncTimeoutForceThrowingContinuation(.seconds(1),
-                                                                forceTimeout: .milliseconds(1500)) { continuation, cancel in
+            try await withCheckedThrowingContinuation { continuation in
                 socket.onInternalStateChange = { _, newState in
                     guard newState == .cancelling else { return }
                     socket.cancel(nil)
                     socket.cancel {
-                        cancel()
                         continuation.resume()
                     }
                 }
@@ -247,135 +190,93 @@ struct RawSocketCancelTests {
                         let _ = try result.get()
                         socket.cancel(nil)
                     } catch {
-                        cancel()
                         continuation.resume(throwing: error)
                     }
                 }
-            } onCancel: {
-                socket.cancel(nil)
             }
         }
 
-        @Test(.tags(.RawSocket.cancel, .RawSocket.all), arguments: [
-            (RawSocketTransport.tcp),
-            (RawSocketTransport.udp),
-        ])
+        @Test(.tags(.RawSocket.cancel, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
         func whenCancelled_CallbackCalled(_ transport: RawSocketTransport) async throws {
-            let config = RawSocketConfiguration("127.0.0.1", 65535, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: 0)
-            let socket = try RawSocket(config)
-            try await withAsyncTimeoutForceThrowingContinuation(.seconds(1),
-                                                                forceTimeout: .milliseconds(1500)) { continuation, cancel in
+            let underlyingConnection = NWConnectionMock()
+            let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: 0,
+                                       maxDataBlock: 256, transport: transport)
+            defer { socket.cancel(nil) }
+            try await withCheckedThrowingContinuation { continuation in
                 socket.cancel {
                     socket.cancel(nil)
                     socket.cancel {
-                        cancel()
                         continuation.resume()
                     }
                 }
-            } onCancel: {
-                socket.cancel(nil)
             }
         }
     }
 
     struct WithThenWithoutCallback {
-        @Test(.tags(.RawSocket.cancel, .RawSocket.all), arguments: [
-            (RawSocketTransport.tcp),
-            (RawSocketTransport.udp),
-        ])
+        @Test(.tags(.RawSocket.cancel, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
         func whenNotConnected_CallbackCalled(_ transport: RawSocketTransport) async throws {
-            let config = RawSocketConfiguration("127.0.0.1", 65535, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: 0)
-            let socket = try RawSocket(config)
-            try await withAsyncTimeoutForceThrowingContinuation(.seconds(1),
-                                                                forceTimeout: .milliseconds(1500)) { continuation, cancel in
+            let underlyingConnection = NWConnectionMock()
+            let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: 0,
+                                       maxDataBlock: 256, transport: transport)
+            defer { socket.cancel(nil) }
+            try await withCheckedThrowingContinuation { continuation in
                 socket.cancel {
-                    cancel()
                     continuation.resume()
                 }
                 socket.cancel(nil)
             }
         }
 
-        @Test(.tags(.RawSocket.cancel, .RawSocket.all), arguments: [
-            (RawSocketTransport.tcp),
-            (RawSocketTransport.udp),
-        ])
+        @Test(.tags(.RawSocket.cancel, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
         func whenConnecting_CallbackCalled(_ transport: RawSocketTransport) async throws {
-            let server = try ServerMock(transport: transport, isSecure: true)
-            defer { server.stop() }
-            let port = try await server.start()
-            let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: 0)
-            let socket = try RawSocket(config)
+            let underlyingConnection = NWConnectionMock()
+            let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: 0,
+                                       maxDataBlock: 256, transport: transport)
             defer { socket.cancel(nil) }
-            try await withAsyncTimeoutForceThrowingContinuation(.seconds(1),
-                                                                forceTimeout: .milliseconds(1500)) { continuation, cancel in
+            try await withCheckedThrowingContinuation { continuation in
                 socket.onInternalStateChange = { _, newState in
                     guard newState == .connecting else { return }
                     socket.cancel {
-                        cancel()
                         continuation.resume()
                     }
                     socket.cancel(nil)
                 }
                 socket.connect { _ in }
-            } onCancel: {
-                socket.cancel(nil)
             }
         }
 
-        @Test(.tags(.RawSocket.cancel, .RawSocket.all), arguments: [
-            (RawSocketTransport.tcp),
-            (RawSocketTransport.udp),
-        ])
+        @Test(.tags(.RawSocket.cancel, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
         func whenConnected_CallbackCalled(_ transport: RawSocketTransport) async throws {
-            let server = try ServerMock(transport: transport, isSecure: true)
-            defer { server.stop() }
-            let port = try await server.start()
-            let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: 0)
-            let socket = try RawSocket(config)
+            let underlyingConnection = NWConnectionMock()
+            let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: 0,
+                                       maxDataBlock: 256, transport: transport)
             defer { socket.cancel(nil) }
-            try await withAsyncTimeoutForceThrowingContinuation(.seconds(1),
-                                                                forceTimeout: .milliseconds(1500)) { continuation, cancel in
+            try await withCheckedThrowingContinuation { continuation in
                 socket.connect { result in
                     switch result {
                     case .success:
                         socket.cancel {
-                            cancel()
                             continuation.resume()
                         }
                         socket.cancel(nil)
                     case let .failure(error):
-                        cancel()
                         continuation.resume(throwing: error)
                     }
                 }
-            } onCancel: {
-                socket.cancel(nil)
             }
         }
 
-        @Test(.tags(.RawSocket.cancel, .RawSocket.all), arguments: [
-            (RawSocketTransport.tcp),
-            (RawSocketTransport.udp),
-        ])
+        @Test(.tags(.RawSocket.cancel, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
         func whenCancelling_CallbackCalled(_ transport: RawSocketTransport) async throws {
-            let server = try ServerMock(transport: transport, isSecure: true)
-            defer { server.stop() }
-            let port = try await server.start()
-            let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: 0)
-            let socket = try RawSocket(config)
+            let underlyingConnection = NWConnectionMock()
+            let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: 0,
+                                       maxDataBlock: 256, transport: transport)
             defer { socket.cancel(nil) }
-            try await withAsyncTimeoutForceThrowingContinuation(.seconds(1),
-                                                                forceTimeout: .milliseconds(1500)) { continuation, cancel in
+            try await withCheckedThrowingContinuation { continuation in
                 socket.onInternalStateChange = { _, newState in
                     guard newState == .cancelling else { return }
                     socket.cancel {
-                        cancel()
                         continuation.resume()
                     }
                     socket.cancel(nil)
@@ -385,50 +286,35 @@ struct RawSocketCancelTests {
                         let _ = try result.get()
                         socket.cancel(nil)
                     } catch {
-                        cancel()
                         continuation.resume(throwing: error)
                     }
                 }
-            } onCancel: {
-                socket.cancel(nil)
             }
         }
 
-        @Test(.tags(.RawSocket.cancel, .RawSocket.all), arguments: [
-            (RawSocketTransport.tcp),
-            (RawSocketTransport.udp),
-        ])
+        @Test(.tags(.RawSocket.cancel, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
         func whenCancelled_CallbackCalled(_ transport: RawSocketTransport) async throws {
-            let config = RawSocketConfiguration("127.0.0.1", 65535, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: 0)
-            let socket = try RawSocket(config)
-            try await withAsyncTimeoutForceThrowingContinuation(.seconds(1),
-                                                                forceTimeout: .milliseconds(1500)) { continuation, cancel in
+            let underlyingConnection = NWConnectionMock()
+            let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: 0,
+                                       maxDataBlock: 256, transport: transport)
+            defer { socket.cancel(nil) }
+            try await withCheckedThrowingContinuation { continuation in
                 socket.cancel {
                     socket.cancel {
-                        cancel()
                         continuation.resume()
                     }
                     socket.cancel(nil)
                 }
-            } onCancel: {
-                socket.cancel(nil)
             }
         }
     }
 
     struct MultipleCallbacks {
-        @Test(.tags(.RawSocket.cancel, .RawSocket.all), arguments: [
-            (RawSocketTransport.tcp),
-            (RawSocketTransport.udp),
-        ])
+        @Test(.tags(.RawSocket.cancel, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
         func whenNotConnected_CallbackCalled(_ transport: RawSocketTransport) async throws {
-            let server = try ServerMock(transport: transport, isSecure: true)
-            defer { server.stop() }
-            let port = try await server.start()
-            let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: 0)
-            let socket = try RawSocket(config)
+            let underlyingConnection = NWConnectionMock()
+            let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: 0,
+                                       maxDataBlock: 256, transport: transport)
             defer { socket.cancel(nil) }
             let (stream, continuation) = AsyncThrowingStream<Int, Error>.makeStream()
             socket.cancel {
@@ -444,17 +330,11 @@ struct RawSocketCancelTests {
             try #require(result == [1, 2])
         }
 
-        @Test(.tags(.RawSocket.cancel, .RawSocket.all), arguments: [
-            (RawSocketTransport.tcp),
-            (RawSocketTransport.udp),
-        ])
+        @Test(.tags(.RawSocket.cancel, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
         func whenConnecting_CallbackCalled(_ transport: RawSocketTransport) async throws {
-            let server = try ServerMock(transport: transport, isSecure: true)
-            defer { server.stop() }
-            let port = try await server.start()
-            let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: 0)
-            let socket = try RawSocket(config)
+            let underlyingConnection = NWConnectionMock()
+            let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: 0,
+                                       maxDataBlock: 256, transport: transport)
             defer { socket.cancel(nil) }
             let (stream, continuation) = AsyncThrowingStream<Int, Error>.makeStream()
             socket.onInternalStateChange = { _, newState in
@@ -474,17 +354,11 @@ struct RawSocketCancelTests {
             try #require(result == [1, 2])
         }
 
-        @Test(.tags(.RawSocket.cancel, .RawSocket.all), arguments: [
-            (RawSocketTransport.tcp),
-            (RawSocketTransport.udp),
-        ])
+        @Test(.tags(.RawSocket.cancel, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
         func whenCancelling_CallbackCalled(_ transport: RawSocketTransport) async throws {
-            let server = try ServerMock(transport: transport, isSecure: true)
-            defer { server.stop() }
-            let port = try await server.start()
-            let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: 0)
-            let socket = try RawSocket(config)
+            let underlyingConnection = NWConnectionMock()
+            let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: 0,
+                                       maxDataBlock: 256, transport: transport)
             defer { socket.cancel(nil) }
             let (stream, continuation) = AsyncThrowingStream<Int, Error>.makeStream()
             socket.onInternalStateChange = { _, newState in
@@ -511,17 +385,11 @@ struct RawSocketCancelTests {
             try #require(result == [1, 2, 3])
         }
 
-        @Test(.tags(.RawSocket.cancel, .RawSocket.all), arguments: [
-            (RawSocketTransport.tcp),
-            (RawSocketTransport.udp),
-        ])
+        @Test(.tags(.RawSocket.cancel, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
         func whenConnected_CallbackCalled(_ transport: RawSocketTransport) async throws {
-            let server = try ServerMock(transport: transport, isSecure: true)
-            defer { server.stop() }
-            let port = try await server.start()
-            let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: 0)
-            let socket = try RawSocket(config)
+            let underlyingConnection = NWConnectionMock()
+            let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: 0,
+                                       maxDataBlock: 256, transport: transport)
             defer { socket.cancel(nil) }
             let (stream, continuation) = AsyncThrowingStream<Int, Error>.makeStream()
             socket.connect { result in
@@ -544,17 +412,11 @@ struct RawSocketCancelTests {
             try #require(result == [1, 2])
         }
 
-        @Test(.tags(.RawSocket.cancel, .RawSocket.all), arguments: [
-            (RawSocketTransport.tcp),
-            (RawSocketTransport.udp),
-        ])
+        @Test(.tags(.RawSocket.cancel, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
         func whenCancelled_CallbackCalled(_ transport: RawSocketTransport) async throws {
-            let server = try ServerMock(transport: transport, isSecure: true)
-            defer { server.stop() }
-            let port = try await server.start()
-            let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                                maxDataBlock: 256, timeout: 0)
-            let socket = try RawSocket(config)
+            let underlyingConnection = NWConnectionMock()
+            let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: 0,
+                                       maxDataBlock: 256, transport: transport)
             defer { socket.cancel(nil) }
             let (stream, continuation) = AsyncThrowingStream<Int, Error>.makeStream()
             socket.connect { result in
