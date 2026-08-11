@@ -11,47 +11,236 @@ extension Tag {
 }
 
 struct RawSocketConnectTests {
-    @Test(.tags(.RawSocket.connect, .RawSocket.all), arguments: [
-        (RawSocketTransport.tcp, TimeInterval(0), nil as String?),
-        (RawSocketTransport.tcp, TimeInterval(0), "localhost"),
-        (RawSocketTransport.tcp, TimeInterval(1), nil as String?),
-        (RawSocketTransport.tcp, TimeInterval(1), "localhost"),
-        (RawSocketTransport.udp, TimeInterval(0), nil as String?),
-        (RawSocketTransport.udp, TimeInterval(0), "localhost"),
-        (RawSocketTransport.udp, TimeInterval(1), nil as String?),
-        (RawSocketTransport.udp, TimeInterval(1), "localhost"),
-    ])
-    func connectSuccess(_ transport: RawSocketTransport, _ timeout: TimeInterval, _ sni: String?) async throws {
-        let isSecure = sni != nil
-        let server = try ServerMock(transport: transport, isSecure: isSecure)
-        defer { server.stop() }
-        let port = try await server.start()
-        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: isSecure, sni: sni, transport: transport,
-                                            maxDataBlock: 256, timeout: timeout)
-        let socket = try RawSocket(config)
+    // MARK: TIMEOUT ERRORS
+
+    @Test(.tags(.RawSocket.connect, .RawSocket.all), .timeLimit(.minutes(1)))
+    func timeoutNonZero_UnableToConnect_ThrowsTimeoutError() async throws {
+        let transport = RawSocketTransport.tcp
+        let timeout: TimeInterval = 0.5
+        let underlyingConnection = NWConnectionMock(overridedState: .preparing)
+        let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: timeout,
+                                   maxDataBlock: 256, transport: transport)
         defer { socket.cancel(nil) }
-
-        let info = try await socket.testableConnect(.seconds(1), forceTimeout: .milliseconds(1500))
-
-        try #require(info.transport == transport)
-        try #require(info.interface?.name == "lo0")
-        try #require(info.remoteEndpoint == .hostPort(host: "127.0.0.1", port: port))
-        switch info.localEndpoint {
-        case let .hostPort(host, _): try #require(host.asString == "127.0.0.1")
-        default: Issue.record("Unexpected local endpoint")
+        do {
+            _ = try await withCheckedThrowingContinuation { continuation in
+                socket.connect { result in
+                    continuation.resume(with: result)
+                }
+            }
+            Issue.record("Unexpected entrance")
+        } catch NWError.posix(.ETIMEDOUT) {
         }
     }
 
+    @Test(.tags(.RawSocket.connect, .RawSocket.all), .timeLimit(.minutes(1)))
+    func timeoutZero_UnableToConnect_CallbackNotCalled() async throws {
+        let transport = RawSocketTransport.tcp
+        let timeout: TimeInterval = 0
+        let underlyingConnection = NWConnectionMock(overridedState: .preparing)
+        let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: timeout,
+                                   maxDataBlock: 256, transport: transport)
+        defer { socket.cancel(nil) }
+        do {
+            _ = try await withAsyncTimeoutCancelationContinuation(.milliseconds(500), block: { continuation in
+                socket.connect { result in
+                    continuation.resume(with: result)
+                }
+            }, onCancel: {
+                socket.cancel(nil)
+            })
+            Issue.record("Unexpected entrance")
+        } catch is AsyncTimeoutError {
+        }
+    }
+
+    // MARK: SUCCESS ON STATES
+
+    @Test(.tags(.RawSocket.connect, .RawSocket.all), .timeLimit(.minutes(1)))
+    func whenNotConnected_CallbackSuccess() async throws {
+        let transport = RawSocketTransport.tcp
+        let timeout: TimeInterval = 0
+        let underlyingConnection = NWConnectionMock()
+        let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: timeout,
+                                   maxDataBlock: 256, transport: transport)
+        defer { socket.cancel(nil) }
+        let info = try await withCheckedThrowingContinuation { continuation in
+            socket.connect { result in
+                continuation.resume(with: result)
+            }
+        }
+        try #require(info == underlyingConnection.connectionInfo(with: transport))
+    }
+
+    // MARK: ERRORS ON STATES
+
+    @Test(.tags(.RawSocket.connect, .RawSocket.all), .timeLimit(.minutes(1)))
+    func whenConnecting_ThrowsAlreadyError() async throws {
+        let transport = RawSocketTransport.tcp
+        let timeout: TimeInterval = 0
+        let underlyingConnection = NWConnectionMock()
+        let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: timeout,
+                                   maxDataBlock: 256, transport: transport)
+        defer { socket.cancel(nil) }
+        do {
+            _ = try await withCheckedThrowingContinuation { continuation in
+                socket.onInternalStateChange = { _, newState in
+                    guard newState == .connecting else { return }
+                    socket.connect { result in
+                        continuation.resume(with: result)
+                    }
+                }
+                socket.connect { _ in }
+            }
+            Issue.record("Unexpected entrance")
+        } catch NWError.posix(.EALREADY) {
+        }
+    }
+
+    @Test(.tags(.RawSocket.connect, .RawSocket.all), .timeLimit(.minutes(1)))
+    func whenConnected_ThrowsConnectedError() async throws {
+        let transport = RawSocketTransport.tcp
+        let timeout: TimeInterval = 0
+        let underlyingConnection = NWConnectionMock()
+        let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: timeout,
+                                   maxDataBlock: 256, transport: transport)
+        defer { socket.cancel(nil) }
+        do {
+            _ = try await withCheckedThrowingContinuation { continuation in
+                socket.connect { _ in
+                    socket.connect { result in
+                        continuation.resume(with: result)
+                    }
+                }
+            }
+            Issue.record("Unexpected entrance")
+        } catch NWError.posix(.EISCONN) {
+        }
+    }
+
+    @Test(.tags(.RawSocket.connect, .RawSocket.all), .timeLimit(.minutes(1)))
+    func whenCancelling_ThrowsCanceledError() async throws {
+        let transport = RawSocketTransport.tcp
+        let timeout: TimeInterval = 0
+        let underlyingConnection = NWConnectionMock()
+        let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: timeout,
+                                   maxDataBlock: 256, transport: transport)
+        defer { socket.cancel(nil) }
+        do {
+            _ = try await withCheckedThrowingContinuation { continuation in
+                socket.onInternalStateChange = { _, newState in
+                    guard newState == .cancelling else { return }
+                    socket.connect { result in
+                        continuation.resume(with: result)
+                    }
+                }
+                socket.connect { _ in
+                    socket.cancel(nil)
+                }
+            }
+            Issue.record("Unexpected entrance")
+        } catch NWError.posix(.ECANCELED) {
+        }
+    }
+
+    @Test(.tags(.RawSocket.connect, .RawSocket.all), .timeLimit(.minutes(1)))
+    func whenClosed_ThrowsCanceledError() async throws {
+        let transport = RawSocketTransport.tcp
+        let timeout: TimeInterval = 0
+        let underlyingConnection = NWConnectionMock()
+        let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: timeout,
+                                   maxDataBlock: 256, transport: transport)
+        defer { socket.cancel(nil) }
+        do {
+            _ = try await withCheckedThrowingContinuation { continuation in
+                socket.connect { _ in
+                    socket.cancel {
+                        socket.connect { result in
+                            continuation.resume(with: result)
+                        }
+                    }
+                }
+            }
+            Issue.record("Unexpected entrance")
+        } catch NWError.posix(.ECANCELED) {
+        }
+    }
+
+    // MARK: ENDPOINT ERRORS
+
+    @Test(.tags(.RawSocket.connect, .RawSocket.all), .timeLimit(.minutes(1)))
+    func whenAddressIsNotAvailable_FailsWithError() async throws {
+        let config = RawSocketConfiguration("127-0-0-1", 65535, isSecure: false, sni: nil, transport: .tcp,
+                                            maxDataBlock: 256, timeout: 0)
+        let socket = try RawSocket(config)
+        defer { socket.cancel(nil) }
+
+        do {
+            try await socket.testableConnect(.seconds(1), forceTimeout: .milliseconds(1500))
+            Issue.record("Unexpected entrance")
+        } catch NWError.dns(-65554) {
+        }
+    }
+
+    @Test(.tags(.RawSocket.connect, .RawSocket.all), .timeLimit(.minutes(1)))
+    func whenIpIsWrong_FailsWithError() async throws {
+        let config = RawSocketConfiguration("127.0.0.256", 65535, isSecure: false, sni: nil, transport: .tcp,
+                                            maxDataBlock: 256, timeout: 0)
+        let socket = try RawSocket(config)
+        defer { socket.cancel(nil) }
+
+        do {
+            try await socket.testableConnect(.seconds(1), forceTimeout: .milliseconds(1500))
+            Issue.record("Unexpected entrance")
+        } catch NWError.dns(-65554) {
+        }
+    }
+
+    // MARK: ERRORS BY SERVER BEHAVIOUR
+
+    @Test(.tags(.RawSocket.connect, .RawSocket.all), .timeLimit(.minutes(1)))
+    func connectionGoesToFailedState_ThrowsErrorFromTheState() async throws {
+        let transport = RawSocketTransport.tcp
+        let timeout: TimeInterval = 0
+        let expectedError = NWError.posix(.ECONNREFUSED)
+        let underlyingConnection = NWConnectionMock(overridedState: .failed(expectedError))
+        let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: timeout,
+                                   maxDataBlock: 256, transport: transport)
+        defer { socket.cancel(nil) }
+        do {
+            _ = try await withCheckedThrowingContinuation { continuation in
+                socket.connect { result in
+                    continuation.resume(with: result)
+                }
+            }
+        } catch let error where error == expectedError {
+        }
+    }
+
+    @Test(.tags(.RawSocket.connect, .RawSocket.all), .timeLimit(.minutes(1)))
+    func whenServerNoExists_FailsWithRefusedError() async throws {
+        let config = RawSocketConfiguration("127.0.0.1", 65535, isSecure: true, sni: "localhost", transport: .tcp,
+                                            maxDataBlock: 256, timeout: 0)
+        let socket = try RawSocket(config)
+        defer { socket.cancel(nil) }
+
+        do {
+            try await socket.testableConnect(.seconds(1), forceTimeout: .milliseconds(1500))
+            Issue.record("Unexpected entrance")
+        } catch NWError.posix(.ECONNREFUSED) {
+        }
+    }
+
+    // MARK: CALLBACK CALLS
+
     @available(swift, introduced: 6.2)
-    @Test(.tags(.RawSocket.connect, .RawSocket.all))
-    func connectThenCancel_ConnectCallback_CalledOnlyOnce() async throws {
+    @Test(.tags(.RawSocket.connect, .RawSocket.all), .timeLimit(.minutes(1)))
+    func connectCallbackCalledOnlyOnce() async throws {
         try await #require(processExitsWith: .success) {
-            let server = try ServerMock(transport: .tcp, isSecure: false)
-            defer { server.stop() }
-            let port = try await server.start()
-            let config = RawSocketConfiguration("127.0.0.1", port, isSecure: false, sni: nil, transport: .tcp,
-                                                maxDataBlock: 256, timeout: 0)
-            let socket = try RawSocket(config)
+            let transport = RawSocketTransport.tcp
+            let timeout: TimeInterval = 0
+            let underlyingConnection = NWConnectionMock()
+            let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: timeout,
+                                       maxDataBlock: 256, transport: transport)
             defer { socket.cancel(nil) }
 
             _ = try await withAsyncTimeoutCancelationContinuation(.seconds(2)) { continuation in
@@ -68,484 +257,45 @@ struct RawSocketConnectTests {
         }
     }
 
-    @Test(.tags(.RawSocket.connect, .RawSocket.all))
-    func whenServerSecureAndSocketInsecure_Success() async throws {
-        let server = try ServerMock(transport: .tcp, isSecure: true)
-        defer { server.stop() }
-        let port = try await server.start()
-        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: false, sni: nil, transport: .tcp,
-                                            maxDataBlock: 256, timeout: 0.2)
-        let socket = try RawSocket(config)
-        defer { socket.cancel(nil) }
+    // MARK: REFERENCE STORING
 
-        let info = try await socket.testableConnect(.seconds(1), forceTimeout: .milliseconds(1500))
-
-        try #require(info.transport == .tcp)
-        try #require(info.interface?.name == "lo0")
-        try #require(info.remoteEndpoint == .hostPort(host: "127.0.0.1", port: port))
-    }
-
-    // MARK: ERRORS TIMEOUTS
-
-    @Test(.tags(.RawSocket.connect, .RawSocket.all), arguments: [
-        (RawSocketTransport.tcp, nil as String?),
-        (RawSocketTransport.tcp, "localhost"),
-        (RawSocketTransport.udp, "localhost"),
-    ])
-    func zeroTimeout_UnableToConnect_NotFails(_ transport: RawSocketTransport, _ sni: String?) async throws {
-        let isSecure = sni != nil
-        let config = RawSocketConfiguration("127.0.0.10", 65535, isSecure: isSecure, sni: sni, transport: transport,
-                                            maxDataBlock: 256, timeout: 0)
-        let socket = try RawSocket(config)
-        defer { socket.cancel(nil) }
-
-        do {
-            try await socket.testableConnect(.seconds(1), forceTimeout: .milliseconds(1500))
-            Issue.record("Unexpected entrance")
-        } catch is AsyncTimeoutError {
-        }
-    }
-
-    @Test(.tags(.RawSocket.connect, .RawSocket.all), arguments: [
-        (RawSocketTransport.tcp, nil as String?),
-        (RawSocketTransport.tcp, "localhost"),
-        (RawSocketTransport.udp, "localhost"),
-    ])
-    func nonZeroTimeout_UnableToConnect_FailsWithTimeoutError(_ transport: RawSocketTransport, _ sni: String?) async throws {
-        let isSecure = sni != nil
-        let config = RawSocketConfiguration("127.0.0.10", 65535, isSecure: isSecure, sni: sni, transport: transport,
-                                            maxDataBlock: 256, timeout: 0.5)
-        let socket = try RawSocket(config)
-        defer { socket.cancel(nil) }
-
-        do {
-            try await socket.testableConnect(.seconds(1), forceTimeout: .milliseconds(1500))
-            Issue.record("Unexpected entrance")
-        } catch NWError.posix(.ETIMEDOUT) {
-        }
-    }
-
-    @Test(.tags(.RawSocket.connect, .RawSocket.all), arguments: [
-        (RawSocketTransport.tcp, "localhost"),
-        (RawSocketTransport.udp, "localhost"),
-    ])
-    func zeroTimeout_whenServerInsecureAndSocketSecure_CallbackNotCalled(_ transport: RawSocketTransport, _ sni: String) async throws {
-        let server = try ServerMock(transport: transport, isSecure: false)
-        defer { server.stop() }
-        let port = try await server.start()
-        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: sni, transport: transport,
-                                            maxDataBlock: 256, timeout: 0)
-        let socket = try RawSocket(config)
-        defer { socket.cancel(nil) }
-
-        do {
-            try await socket.testableConnect(.seconds(1), forceTimeout: .milliseconds(1500))
-            Issue.record("Unexpected entrance")
-        } catch is AsyncTimeoutError {
-        }
-    }
-
-    @Test(.tags(.RawSocket.connect, .RawSocket.all), arguments: [
-        (RawSocketTransport.tcp, "localhost"),
-        (RawSocketTransport.udp, "localhost"),
-    ])
-    func nonZeroTimeout_whenServerInsecureAndSocketSecure_FailsWithTimeoutError(_ transport: RawSocketTransport, _ sni: String) async throws {
-        let server = try ServerMock(transport: transport, isSecure: false)
-        defer { server.stop() }
-        let port = try await server.start()
-        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: sni, transport: transport,
-                                            maxDataBlock: 256, timeout: 0.5)
-        let socket = try RawSocket(config)
-        defer { socket.cancel(nil) }
-
-        do {
-            try await socket.testableConnect(.seconds(1), forceTimeout: .milliseconds(1500))
-            Issue.record("Unexpected entrance")
-        } catch NWError.posix(.ETIMEDOUT) {
-        }
-    }
-
-    // MARK: ERRORS ON DIFFERENT STATES
-
-    @Test(.tags(.RawSocket.connect, .RawSocket.all), arguments: [
-        (RawSocketTransport.tcp, nil as String?),
-        (RawSocketTransport.tcp, "localhost"),
-        (RawSocketTransport.udp, nil as String?),
-        (RawSocketTransport.udp, "localhost"),
-    ])
-    func whenConnecting_FailsWithAlreadyConnectingError(_ transport: RawSocketTransport, _ sni: String?) async throws {
-        let isSecure = sni != nil
-        let server = try ServerMock(transport: transport, isSecure: isSecure)
-        defer { server.stop() }
-        let port = try await server.start()
-        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: isSecure, sni: sni, transport: transport,
-                                            maxDataBlock: 256, timeout: 0)
-        let socket = try RawSocket(config)
-        defer { socket.cancel(nil) }
-
-        do {
-            try await withAsyncTimeoutCancelationContinuation(.seconds(1)) { continuation in
-                socket.connect { _ in
-                }
-                socket.connect { result in
-                    continuation.resume(with: result)
-                }
-            } onCancel: {
-                socket.cancel(nil)
-            }
-            Issue.record("Unexpected entrance")
-        } catch NWError.posix(.EALREADY) {
-        }
-    }
-
-    @Test(.tags(.RawSocket.connect, .RawSocket.all), arguments: [
-        (RawSocketTransport.tcp, nil as String?),
-        (RawSocketTransport.tcp, "localhost"),
-        (RawSocketTransport.udp, nil as String?),
-        (RawSocketTransport.udp, "localhost"),
-    ])
-    func whenConnected_FailsWithConnectedError(_ transport: RawSocketTransport, _ sni: String?) async throws {
-        let isSecure = sni != nil
-        let server = try ServerMock(transport: transport, isSecure: isSecure)
-        defer { server.stop() }
-        let port = try await server.start()
-        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: isSecure, sni: sni, transport: transport,
-                                            maxDataBlock: 256, timeout: 0)
-        let socket = try RawSocket(config)
-        defer { socket.cancel(nil) }
-
-        do {
-            try await withAsyncTimeoutCancelationContinuation(.seconds(1)) { continuation in
-                socket.connect { _ in
-                    socket.connect { result in
-                        continuation.resume(with: result)
-                    }
-                }
-            } onCancel: {
-                socket.cancel(nil)
-            }
-            Issue.record("Unexpected entrance")
-        } catch NWError.posix(.EISCONN) {
-        }
-    }
-
-    @Test(.tags(.RawSocket.connect, .RawSocket.all), arguments: [
-        (RawSocketTransport.tcp, nil as String?),
-        (RawSocketTransport.tcp, "localhost"),
-        (RawSocketTransport.udp, nil as String?),
-        (RawSocketTransport.udp, "localhost"),
-    ])
-    func whenCancelling_FailsWithCancelledError(_ transport: RawSocketTransport, _ sni: String?) async throws {
-        let isSecure = sni != nil
-        let server = try ServerMock(transport: transport, isSecure: isSecure)
-        defer { server.stop() }
-        let port = try await server.start()
-        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: isSecure, sni: sni, transport: transport,
-                                            maxDataBlock: 256, timeout: 0)
-        let socket = try RawSocket(config)
-        defer { socket.cancel(nil) }
-
-        do {
-            try await withAsyncTimeoutCancelationContinuation(.seconds(1)) { continuation in
-                socket.connect { _ in
-                    socket.cancel(nil)
-                    socket.connect { result in
-                        continuation.resume(with: result)
-                    }
-                }
-            } onCancel: {
-                socket.cancel(nil)
-            }
-            Issue.record("Unexpected entrance")
-        } catch NWError.posix(.ECANCELED) {
-        }
-    }
-
-    @Test(.tags(.RawSocket.connect, .RawSocket.all), arguments: [
-        (RawSocketTransport.tcp, nil as String?),
-        (RawSocketTransport.tcp, "localhost"),
-        (RawSocketTransport.udp, nil as String?),
-        (RawSocketTransport.udp, "localhost"),
-    ])
-    func whenCancelling_NotProducesNewConnect(_ transport: RawSocketTransport, _ sni: String?) async throws {
-        let isSecure = sni != nil
-        let server = try ServerMock(transport: transport, isSecure: isSecure)
-        defer { server.stop() }
-        let port = try await server.start()
-        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: isSecure, sni: sni, transport: transport,
-                                            maxDataBlock: 256, timeout: 0)
-        let socket = try RawSocket(config)
-        defer { socket.cancel(nil) }
-
-        do {
-            try await withAsyncTimeoutCancelationContinuation(.seconds(1)) { continuation in
-                socket.connect { _ in
-                    socket.cancel(nil)
-                    socket.connect { result in
-                        continuation.resume(with: result)
-                    }
-                }
-            } onCancel: {
-                socket.cancel(nil)
-            }
-            Issue.record("Unexpected entrance")
-        } catch NWError.posix(.ECANCELED) {
-        }
-    }
-
-    @Test(.tags(.RawSocket.connect, .RawSocket.all), arguments: [
-        (RawSocketTransport.tcp, nil as String?),
-        (RawSocketTransport.tcp, "localhost"),
-        (RawSocketTransport.udp, nil as String?),
-        (RawSocketTransport.udp, "localhost"),
-    ])
-    func whenCancelled_FailsWithCancelledError(_ transport: RawSocketTransport, _ sni: String?) async throws {
-        let isSecure = sni != nil
-        let server = try ServerMock(transport: transport, isSecure: isSecure)
-        defer { server.stop() }
-        let port = try await server.start()
-        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: isSecure, sni: sni, transport: transport,
-                                            maxDataBlock: 256, timeout: 0)
-        let socket = try RawSocket(config)
-        defer { socket.cancel(nil) }
-
-        do {
-            try await withAsyncTimeoutCancelationContinuation(.seconds(1)) { continuation in
-                socket.cancel {
-                    socket.connect { result in
-                        continuation.resume(with: result)
-                    }
-                }
-            } onCancel: {
-                socket.cancel(nil)
-            }
-            Issue.record("Unexpected entrance")
-        } catch NWError.posix(.ECANCELED) {
-        }
-    }
-
-    @Test(.tags(.RawSocket.connect, .RawSocket.all), arguments: [
-        (RawSocketTransport.tcp, nil as String?),
-        (RawSocketTransport.tcp, "localhost"),
-        (RawSocketTransport.udp, nil as String?),
-        (RawSocketTransport.udp, "localhost"),
-    ])
-    func whenCancelledAfterConnect_FailsWithCancelledError(_ transport: RawSocketTransport, _ sni: String?) async throws {
-        let isSecure = sni != nil
-        let server = try ServerMock(transport: transport, isSecure: isSecure)
-        defer { server.stop() }
-        let port = try await server.start()
-        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: isSecure, sni: sni, transport: transport,
-                                            maxDataBlock: 256, timeout: 0)
-        let socket = try RawSocket(config)
-        defer { socket.cancel(nil) }
-
-        do {
-            try await withAsyncTimeoutCancelationContinuation(.seconds(1)) { continuation in
-                socket.connect { _ in
-                    socket.cancel {
-                        socket.connect { result in
-                            continuation.resume(with: result)
-                        }
-                    }
-                }
-            } onCancel: {
-                socket.cancel(nil)
-            }
-            Issue.record("Unexpected entrance")
-        } catch NWError.posix(.ECANCELED) {
-        }
-    }
-
-    @Test(.tags(.RawSocket.connect, .RawSocket.all), arguments: [
-        (RawSocketTransport.tcp, nil as String?),
-        (RawSocketTransport.tcp, "localhost"),
-        (RawSocketTransport.udp, nil as String?),
-        (RawSocketTransport.udp, "localhost"),
-    ])
-    func whenCancelledBeforeConnect_ConnectInsideCancelCallback_FailsWithCancelledError(_ transport: RawSocketTransport, _ sni: String?) async throws {
-        let isSecure = sni != nil
-        let server = try ServerMock(transport: transport, isSecure: isSecure)
-        defer { server.stop() }
-        let port = try await server.start()
-        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: isSecure, sni: sni, transport: transport,
-                                            maxDataBlock: 256, timeout: 0)
-        let socket = try RawSocket(config)
-        defer { socket.cancel(nil) }
-
-        do {
-            try await withAsyncTimeoutCancelationContinuation(.seconds(1)) { continuation in
-                socket.cancel {
-                    socket.connect { result in
-                        continuation.resume(with: result)
-                    }
-                }
-            } onCancel: {
-                socket.cancel(nil)
-            }
-            Issue.record("Unexpected entrance")
-        } catch NWError.posix(.ECANCELED) {
-        }
-    }
-
-    @Test(.tags(.RawSocket.connect, .RawSocket.all), arguments: [
-        (RawSocketTransport.tcp, nil as String?),
-        (RawSocketTransport.tcp, "localhost"),
-        (RawSocketTransport.udp, nil as String?),
-        (RawSocketTransport.udp, "localhost"),
-    ])
-    func whenCancelledBeforeConnect_FailsWithCancelledError(_ transport: RawSocketTransport, _ sni: String?) async throws {
-        let isSecure = sni != nil
-        let server = try ServerMock(transport: transport, isSecure: isSecure)
-        defer { server.stop() }
-        let port = try await server.start()
-        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: isSecure, sni: sni, transport: transport,
-                                            maxDataBlock: 256, timeout: 0)
-        let socket = try RawSocket(config)
-        defer { socket.cancel(nil) }
-
-        do {
-            try await withAsyncTimeoutCancelationContinuation(.seconds(1)) { continuation in
-                socket.cancel(nil)
-                socket.connect { result in
-                    continuation.resume(with: result)
-                }
-            } onCancel: {
-                socket.cancel(nil)
-            }
-            Issue.record("Unexpected entrance")
-        } catch NWError.posix(.ECANCELED) {
-        }
-    }
-
-    // MARK: ENDPOINT ERRORS
-
-    @Test(.tags(.RawSocket.connect, .RawSocket.all))
-    func whenAddressIsNotAvailable_FailsWithError() async throws {
-        let config = RawSocketConfiguration("127-0-0-1", 65535, isSecure: false, sni: nil, transport: .tcp,
-                                            maxDataBlock: 256, timeout: 0)
-        let socket = try RawSocket(config)
-        defer { socket.cancel(nil) }
-
-        do {
-            try await socket.testableConnect(.seconds(1), forceTimeout: .milliseconds(1500))
-            Issue.record("Unexpected entrance")
-        } catch NWError.dns(-65554) {
-        }
-    }
-
-    @Test(.tags(.RawSocket.connect, .RawSocket.all))
-    func whenIpIsWrong_FailsWithError() async throws {
-        let config = RawSocketConfiguration("127.0.0.256", 65535, isSecure: false, sni: nil, transport: .tcp,
-                                            maxDataBlock: 256, timeout: 0)
-        let socket = try RawSocket(config)
-        defer { socket.cancel(nil) }
-
-        do {
-            try await socket.testableConnect(.seconds(1), forceTimeout: .milliseconds(1500))
-            Issue.record("Unexpected entrance")
-        } catch NWError.dns(-65554) {
-        }
-    }
-
-    // MARK: ERRORS BY SERVER BEHAVIOUR
-
-    @Test(.tags(.RawSocket.connect, .RawSocket.all), arguments: [
-        (RawSocketTransport.tcp, "localhost"),
-    ])
-    func whenServerNotAcceptsConnection_FailsWithResetError(_ transport: RawSocketTransport, _ sni: String?) async throws {
-        let isSecure = sni != nil
-        let server = try ServerMock(transport: .tcp, isSecure: isSecure, flow: .cancel)
-        defer { server.stop() }
-        let port = try await server.start()
-        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: isSecure, sni: sni, transport: transport,
-                                            maxDataBlock: 256, timeout: 0)
-        let socket = try RawSocket(config)
-        defer { socket.cancel(nil) }
-
-        do {
-            try await socket.testableConnect(.seconds(1), forceTimeout: .milliseconds(1500))
-            Issue.record("Unexpected entrance")
-        } catch NWError.posix(.ECONNRESET) {
-        }
-    }
-
-    @Test(.tags(.RawSocket.connect, .RawSocket.all))
-    func whenServerNoExists_FailsWithRefusedError() async throws {
-        let config = RawSocketConfiguration("127.0.0.1", 65535, isSecure: true, sni: "localhost", transport: .tcp,
-                                            maxDataBlock: 256, timeout: 0)
-        let socket = try RawSocket(config)
-        defer { socket.cancel(nil) }
-
-        do {
-            try await socket.testableConnect(.seconds(1), forceTimeout: .milliseconds(1500))
-            Issue.record("Unexpected entrance")
-        } catch NWError.posix(.ECONNREFUSED) {
-        }
-    }
-
-    @Test(.tags(.RawSocket.connect, .RawSocket.all))
-    func differentTransports_FailsWithRefusedError() async throws {
-        let server = try ServerMock(transport: .udp, isSecure: true)
-        defer { server.stop() }
-        let port = try await server.start()
-        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: .tcp,
-                                            maxDataBlock: 256, timeout: 0)
-        let socket = try RawSocket(config)
-        defer { socket.cancel(nil) }
-
-        do {
-            try await socket.testableConnect(.seconds(1), forceTimeout: .milliseconds(1500))
-            Issue.record("Unexpected entrance")
-        } catch NWError.posix(.ECONNREFUSED) {
-        }
-    }
-
-    // MARK: ON LEAKS
-
-    @Test(.tags(.RawSocket.connect, .RawSocket.all))
-    func nillifyVariableAfterConnectStart_CallbackSuccess() async throws {
-        struct _CallbackWasNotCalledError: Error {}
-        let server = try ServerMock(transport: .tcp, isSecure: true)
-        defer { server.stop() }
-        let port = try await server.start()
-        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: .tcp,
-                                            maxDataBlock: 256, timeout: 0)
+    @Test(.tags(.RawSocket.connect, .RawSocket.all), .timeLimit(.minutes(1)))
+    func afterConnect_ReferenceStored() async throws {
+        let transport = RawSocketTransport.tcp
+        let timeout: TimeInterval = 0
+        let underlyingConnection = NWConnectionMock()
+        var tempSocket: RawSocket? = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil,
+                                                   timeout: timeout, maxDataBlock: 256, transport: transport)
+        let address = ReferencesCounter.shared.address(of: tempSocket)
         let box = _SocketBox()
-        try box.set(RawSocket(config))
+        box.set(tempSocket)
+        tempSocket = nil
         defer { box.get()?.cancel(nil) }
-
-        box.get()?.onInternalStateChange = { _, newState in
-            guard newState == .connecting else { return }
-            box.set(nil)
-        }
-        let connectTask = Task {
-            try await withAsyncTimeoutForceThrowingContinuation(.seconds(1),
-                                                                forceTimeout: .milliseconds(1500)) { continuation, cancel in
-                box.get()?.connect { result in
-                    cancel()
-                    continuation.resume(with: result)
-                }
-            } onCancel: {
-                box.get()?.cancel(nil)
+        try #require(ReferencesCounter.shared.count(of: address) == 1)
+        _ = try await withCheckedThrowingContinuation { continuation in
+            box.get()?.onInternalStateChange = { _, newState in
+                guard newState == .connecting else { return }
+                box.set(nil)
+            }
+            box.get()?.connect { result in
+                continuation.resume(with: result)
             }
         }
-        _ = try await connectTask.value
+        try #require(ReferencesCounter.shared.count(of: address) == 1)
     }
 
-    // MARK: CALLBACKS CALLED ON PROVIDED DELEGATE QUEUE
+    // MARK: DELEGATE QUEUE
 
-    @Test(.tags(.RawSocket.connect, .RawSocket.all))
-    func callbacksOnProvidedDelegateQueue() async throws {
-        let server = try ServerMock(transport: .tcp, isSecure: false)
-        defer { server.stop() }
-        let port = try await server.start()
-        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: false, sni: nil, transport: .tcp,
-                                            maxDataBlock: 256, timeout: 0)
+    @Test(.tags(.RawSocket.connect, .RawSocket.all), .timeLimit(.minutes(1)))
+    func callbackCalledOnProvidedQueue() async throws {
         let delegateQueue = DispatchQueue(label: "delegate." + #function)
         let key = DispatchSpecificKey<Int>()
         delegateQueue.setSpecific(key: key, value: -12)
-        let socket = try RawSocket(config, delegateQueue: delegateQueue)
+        let transport = RawSocketTransport.tcp
+        let timeout: TimeInterval = 0
+        let underlyingConnection = NWConnectionMock()
+        let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: delegateQueue, timeout: timeout,
+                                   maxDataBlock: 256, transport: transport)
         defer { socket.cancel(nil) }
 
         let result = try await withAsyncTimeoutCancelationContinuation(.seconds(2)) { continuation in
