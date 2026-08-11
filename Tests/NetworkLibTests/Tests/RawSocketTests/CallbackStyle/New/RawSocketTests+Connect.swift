@@ -212,6 +212,7 @@ struct RawSocketConnectTests {
                     continuation.resume(with: result)
                 }
             }
+            Issue.record("Unexpected entrance")
         } catch let error where error == expectedError {
         }
     }
