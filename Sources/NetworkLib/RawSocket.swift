@@ -231,17 +231,17 @@ public class RawSocket: @unchecked Sendable {
     /// - Parameter completion: A callback invoked with the next raw data block or receive error.
     public func receiveNext(_ completion: @escaping @Sendable (_ result: Result<Data?, NWError>) -> Void) {
         let completion = delivered(completion)
-        accessQueue.async {
+        accessQueue.async { [weak self, maxDataBlock] in
             printDebug("[socket] receive next")
 
-            if let error = self.activeOperationCheckErrorUnsafe() {
+            if let error = self?.activeOperationCheckErrorUnsafe() {
                 return completion(.failure(error))
             }
 
-            self.timeoutEvent?.touch()
-            self.connection.receive(minimumIncompleteLength: 1,
-                                    maximumLength: self.maxDataBlock) { content, _, isComplete, error in
-                self.receiveNextHandler(content, isComplete, error, completion: completion)
+            self?.timeoutEvent?.touch()
+            self?.connection.receive(minimumIncompleteLength: 1,
+                                    maximumLength: maxDataBlock) { [weak self] content, _, isComplete, error in
+                self?.receiveNextHandler(content, isComplete, error, completion: completion)
             }
         }
     }
