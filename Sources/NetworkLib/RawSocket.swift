@@ -92,11 +92,12 @@ public class RawSocket: @unchecked Sendable {
 
         // - after init
         afterInitSetup()
+        printDebug("[socket] DEINIT", Unmanaged.passUnretained(self).toOpaque())
     }
 
     deinit {
         ReferencesCounter.shared.decrement(self)
-        printDebug("[socket] DEINIT")
+        printDebug("[socket] DEINIT", Unmanaged.passUnretained(self).toOpaque())
     }
 
     // MARK: - PUBLIC METHODS
