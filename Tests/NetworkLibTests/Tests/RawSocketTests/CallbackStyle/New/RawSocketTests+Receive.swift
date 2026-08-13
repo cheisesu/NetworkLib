@@ -165,6 +165,28 @@ struct RawSocketReceiveTests {
         }
     }
 
+    @Test(.tags(.RawSocket.all, .RawSocket.receive), .timeLimit(.minutes(1)))
+    func closeDuringReceive_ThrowsCancelledError() async throws {
+        let transport = RawSocketTransport.tcp
+        let timeout: TimeInterval = 0
+        let underlyingConnection = NWConnectionMock(mode: [.methodReceive, .dontCallCallback])
+        let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: timeout,
+                                   maxDataBlock: 256, transport: transport)
+        defer { socket.cancel(nil) }
+        do {
+            _ = try await withCheckedThrowingContinuation { continuation in
+                socket.connect { _ in
+                    socket.receiveNext { result in
+                        continuation.resume(with: result)
+                    }
+                    socket.cancel(nil)
+                }
+            }
+            Issue.record("Unexpected entrance")
+        } catch NWError.posix(.ECANCELED) {
+        }
+    }
+
     // MARK: ERROR BY SERVER SIDE
 
     @Test(.tags(.RawSocket.all, .RawSocket.receive), .timeLimit(.minutes(1)))
