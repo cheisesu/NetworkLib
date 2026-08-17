@@ -3,11 +3,7 @@ import Testing
 import Network
 @testable import NetworkLib
 
-extension Tag.RawSocket {
-    @Tag static var receiveMessage: Tag
-}
-
-struct RawSocketReceiveMessageTests {
+struct _RawSocketReceiveMessageTests {
     private struct _ReceiveMessage: RawSocketReceiveMessage {
         let data: Data?
         init?(from context: NWConnection.ContentContext, with content: Data?) {

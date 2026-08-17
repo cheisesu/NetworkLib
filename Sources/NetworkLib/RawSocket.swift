@@ -137,7 +137,7 @@ public class RawSocket: @unchecked Sendable {
             if let handler {
                 self?.cancellingCallbacks.append(handler)
             }
-            self?.cancelUnsafe()
+            self?.cancelUnsafe(manually: true)
         }
     }
 
@@ -254,7 +254,7 @@ public class RawSocket: @unchecked Sendable {
         if let content {
             completion(.success(content))
         } else if let error {
-            cancelUnsafe()
+            cancelUnsafe(manually: false)
             completion(.failure(error))
         } else if isComplete {
             if let error = pendingError {
@@ -293,32 +293,41 @@ public class RawSocket: @unchecked Sendable {
 
             self?.timeoutEvent?.touch()
             self?.connection.receiveMessage { [weak self] content, contentContext, isComplete, error in
-                self?.timeoutEvent?.detouch()
-
-                if let error {
-                    self?.cancelUnsafe()
-                    completion(.failure(error))
-                } else if let error = self?.pendingError {
-                    completion(.failure(error))
-                } else if let contentContext {
-                    if !isComplete {
-                        return completion(.failure(.posix(.EIO)))
-                    }
-
-                    if let message = M.init(from: contentContext, with: content) {
-                        completion(.success(message))
-                    } else if contentContext.isFinal, self?.internalState == .closed || self?.internalState == .cancelling {
-                        completion(.failure(.posix(.ECANCELED)))
-                    } else {
-                        completion(.failure(.posix(.EBADMSG)))
-                    }
-                } else if isComplete {
-                    completion(.failure(.posix(.EIO)))
-                } else {
-                    assertionFailure("Unexpected receive state: content=nil, contentContext=nil, isComplete=false, error=nil")
-                    completion(.failure(.posix(.EIO)))
-                }
+                self?.receiveNextMessageHandler(content, contentContext, isComplete, error, completion)
             }
+        }
+    }
+
+    private func receiveNextMessageHandler<M: RawSocketReceiveMessage>(
+        _ content: Data?, _ contentContext: NWConnection.ContentContext?,
+        _ isComplete: Bool, _ error: NWError?,
+        _ completion: @escaping @Sendable (_ result: Result<M, NWError>) -> Void
+    ) {
+        timeoutEvent?.detouch()
+
+        if let error {
+            cancelUnsafe(manually: false)
+            completion(.failure(error))
+        } else if let error = pendingError {
+            completion(.failure(error))
+        } else if let error = operationCancelError {
+            completion(.failure(error))
+        } else if let contentContext {
+            if !isComplete {
+                return completion(.failure(.posix(.EIO)))
+            }
+            if let message = M.init(from: contentContext, with: content) {
+                completion(.success(message))
+            } else if contentContext.isFinal {
+                completion(.failure(.posix(.EBADMSG)))
+            } else {
+                completion(.failure(.posix(.EBADMSG)))
+            }
+        } else if isComplete {
+            completion(.failure(.posix(.EIO)))
+        } else {
+            assertionFailure("Unexpected receive state: content=nil, contentContext=nil, isComplete=false, error=nil")
+            completion(.failure(.posix(.EIO)))
         }
     }
 }
@@ -330,7 +339,7 @@ extension RawSocket {
         timeoutEvent?.setHandler { [weak self] _ in
             printDebug("[socket] timeout event handler")
             self?.pendingError = .posix(.ETIMEDOUT)
-            self?.cancelUnsafe()
+            self?.cancelUnsafe(manually: false)
         }
     }
 
@@ -351,7 +360,7 @@ extension RawSocket {
         connection.start(queue: accessQueue)
     }
 
-    private func cancelUnsafe() { // done
+    private func cancelUnsafe(manually: Bool) { // done
         printDebug("[socket] cancel unsafe")
         timeoutEvent?.cancel()
         if internalState == .initial { // cause state update may not be called
@@ -369,7 +378,9 @@ extension RawSocket {
             return
         }
         internalState = .cancelling
-        operationCancelError = .posix(.ECANCELED)
+        if manually {
+            operationCancelError = .posix(.ECANCELED)
+        }
         connection.cancel()
     }
 
@@ -381,7 +392,7 @@ extension RawSocket {
             // TODO: check and reorder to remove timeoutevent cancel from here
             timeoutEvent?.cancel()
             notifyConnectingComplete(.failure(error))
-            cancelUnsafe()
+            cancelUnsafe(manually: false)
         case .preparing: break
         case .ready:
             timeoutEvent?.detouch()
@@ -392,7 +403,7 @@ extension RawSocket {
             // TODO: check and reorder to remove timeoutevent cancel from here
             timeoutEvent?.cancel()
             notifyConnectingComplete(.failure(error))
-            cancelUnsafe()
+            cancelUnsafe(manually: false)
         case .cancelled:
             // TODO: check and reorder to remove timeoutevent cancel from here
             timeoutEvent?.cancel()
