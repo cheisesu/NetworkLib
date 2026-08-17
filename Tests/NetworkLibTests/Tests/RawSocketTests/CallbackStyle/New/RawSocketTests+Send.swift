@@ -11,7 +11,7 @@ struct RawSocketSendTests {
     @Test(.tags(.RawSocket.send, .RawSocket.all), arguments: [RawSocketTransport.tcp, .udp], [Data("Hello".utf8)])
     func underlyingConnection_MethodSendCalled(_ transport: RawSocketTransport, _ dataToSend: Data) async throws {
         let timeout: TimeInterval = 0
-        let underlyingConnection = NWConnectionMock(overridedState: .preparing)
+        let underlyingConnection = NWConnectionMock(overridedStates: [.preparing])
         let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: timeout,
                                    maxDataBlock: 256, transport: transport)
         defer { socket.cancel(nil) }
@@ -34,7 +34,7 @@ struct RawSocketSendTests {
     func whenConnecting_CallbackSuccess(_ transport: RawSocketTransport) async throws {
         let timeout: TimeInterval = 0
         let dataToSend = Data("Hello".utf8)
-        let underlyingConnection = NWConnectionMock(overridedState: .preparing)
+        let underlyingConnection = NWConnectionMock(overridedStates: [.preparing])
         let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: timeout,
                                    maxDataBlock: 256, transport: transport)
         defer { socket.cancel(nil) }

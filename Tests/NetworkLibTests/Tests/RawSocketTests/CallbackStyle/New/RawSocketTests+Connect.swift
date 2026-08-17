@@ -17,7 +17,7 @@ struct RawSocketConnectTests {
     func timeoutNonZero_UnableToConnect_ThrowsTimeoutError() async throws {
         let transport = RawSocketTransport.tcp
         let timeout: TimeInterval = 0.5
-        let underlyingConnection = NWConnectionMock(overridedState: .preparing)
+        let underlyingConnection = NWConnectionMock(overridedStates: [.preparing])
         let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: timeout,
                                    maxDataBlock: 256, transport: transport)
         defer { socket.cancel(nil) }
@@ -36,7 +36,7 @@ struct RawSocketConnectTests {
     func timeoutZero_UnableToConnect_CallbackNotCalled() async throws {
         let transport = RawSocketTransport.tcp
         let timeout: TimeInterval = 0
-        let underlyingConnection = NWConnectionMock(overridedState: .preparing)
+        let underlyingConnection = NWConnectionMock(overridedStates: [.preparing])
         let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: timeout,
                                    maxDataBlock: 256, transport: transport)
         defer { socket.cancel(nil) }
@@ -202,7 +202,7 @@ struct RawSocketConnectTests {
         let transport = RawSocketTransport.tcp
         let timeout: TimeInterval = 0
         let expectedError = NWError.posix(.ECONNREFUSED)
-        let underlyingConnection = NWConnectionMock(overridedState: .failed(expectedError))
+        let underlyingConnection = NWConnectionMock(overridedStates: [.failed(expectedError)])
         let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: timeout,
                                    maxDataBlock: 256, transport: transport)
         defer { socket.cancel(nil) }

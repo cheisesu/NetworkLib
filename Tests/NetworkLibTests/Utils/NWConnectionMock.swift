@@ -23,11 +23,13 @@ final class NWConnectionMock: @unchecked Sendable, UnderlyingConnection {
     private var _stateUpdateHandler: (@Sendable (NWConnection.State) -> Void)?
     private var eventsQueue: DispatchQueue?
     private var _pendingCallbacks: [@Sendable () -> Void]
-    private let overridedState: NWConnection.State?
+    private let overridedStates: [NWConnection.State]
     private let overridedSendError: NWError?
     private let overridedReceiveError: NWError?
     private let mode: Mode
     private let dataForReceive: Data?
+    private let overridedReceiveContext: NWConnection.ContentContext?
+    private let overridedReceiveComplete: Bool
 
     private(set) var state: NWConnection.State {
         get { lock.withLock { _state } }
@@ -48,13 +50,15 @@ final class NWConnectionMock: @unchecked Sendable, UnderlyingConnection {
     }
     var sendDataFull: Data { lock.withLock { Data(_sentDataPortions.joined()) } }
 
-    init(overridedState: NWConnection.State? = nil, overridedSendError: NWError? = nil, mode: Mode = [],
-         dataForReceive: Data? = nil, overridedReceiveError: NWError? = nil) {
+    init(overridedStates: [NWConnection.State] = [], overridedSendError: NWError? = nil, mode: Mode = [],
+         dataForReceive: Data? = nil, overridedReceiveError: NWError? = nil,
+         overridedReceiveContext: NWConnection.ContentContext? = nil, overridedReceiveComplete: Bool = true)
+    {
         lock = NSLock()
         _sentDataPortions = []
         _state = .setup
         _pendingCallbacks = []
-        self.overridedState = overridedState
+        self.overridedStates = overridedStates
         self.overridedSendError = overridedSendError
         self.mode = mode
         mockRemoteEndpoint = .hostPort(host: "127.0.0.1", port: 65535)
@@ -62,6 +66,8 @@ final class NWConnectionMock: @unchecked Sendable, UnderlyingConnection {
         mockInterface = nil
         self.dataForReceive = dataForReceive
         self.overridedReceiveError = overridedReceiveError
+        self.overridedReceiveContext = overridedReceiveContext
+        self.overridedReceiveComplete = overridedReceiveComplete
     }
 
     func connectionInfo(with transport: RawSocketTransport) -> ConnectionInfo {
@@ -75,11 +81,13 @@ final class NWConnectionMock: @unchecked Sendable, UnderlyingConnection {
 
     func start(queue: DispatchQueue) {
         lock.withLock { eventsQueue = queue }
-        if let overridedState {
-            state = overridedState
-        } else {
+        if overridedStates.isEmpty {
             state = .preparing
             state = .ready
+        } else {
+            for overridedState in overridedStates {
+                state = overridedState
+            }
         }
     }
 
@@ -114,6 +122,19 @@ final class NWConnectionMock: @unchecked Sendable, UnderlyingConnection {
     }
 
     func receiveMessage(completion: @escaping @Sendable (Data?, NWConnection.ContentContext?, Bool, NWError?) -> Void) {
+        if mode.contains(.methodReceive) {
+            if mode.contains(.dontCallCallback) {
+                lock.withLock {
+                    _pendingCallbacks.append {
+                        completion(nil, nil, true, self.overridedReceiveError)
+                    }
+                }
+            } else {
+                completion(dataForReceive, overridedReceiveContext, overridedReceiveComplete, overridedReceiveError)
+            }
+        } else {
+            completion(dataForReceive, overridedReceiveContext, overridedReceiveComplete, overridedReceiveError)
+        }
     }
 
     func send(
