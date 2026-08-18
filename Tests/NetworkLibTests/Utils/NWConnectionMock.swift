@@ -50,6 +50,17 @@ final class NWConnectionMock: @unchecked Sendable, UnderlyingConnection {
     }
     var sendDataFull: Data { lock.withLock { Data(_sentDataPortions.joined()) } }
 
+    private var _sendContext: NWConnection.ContentContext = .defaultMessage
+    private(set) var sendContext: NWConnection.ContentContext {
+        get { lock.withLock { _sendContext } }
+        set { lock.withLock { _sendContext = newValue } }
+    }
+    private var _sendIsComplete: Bool = false
+    private(set) var sendIsComplete: Bool {
+        get { lock.withLock { _sendIsComplete } }
+        set { lock.withLock { _sendIsComplete = newValue } }
+    }
+
     init(overridedStates: [NWConnection.State] = [], overridedSendError: NWError? = nil, mode: Mode = [],
          dataForReceive: Data? = nil, overridedReceiveError: NWError? = nil,
          overridedReceiveContext: NWConnection.ContentContext? = nil, overridedReceiveComplete: Bool = true)
@@ -143,9 +154,14 @@ final class NWConnectionMock: @unchecked Sendable, UnderlyingConnection {
         isComplete: Bool,
         completion: NWConnection.SendCompletion
     ) {
-        if let content {
-            lock.withLock { _sentDataPortions.append(content) }
+        lock.withLock {
+            if let content {
+                _sentDataPortions.append(content)
+            }
+            _sendContext = contentContext
+            _sendIsComplete = isComplete
         }
+
         switch completion {
         case let .contentProcessed(callback):
             if mode.contains(.methodSend) {
