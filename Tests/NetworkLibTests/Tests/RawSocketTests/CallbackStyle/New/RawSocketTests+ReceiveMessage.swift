@@ -334,7 +334,7 @@ struct RawSocketReceiveMessageTests {
 
     // MARK: REFERNENCE COUNTING
 
-    @Test(.tags(.RawSocket.send, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
+    @Test(.tags(.RawSocket.receiveMessage, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
     func whenSourceReferencesAllNil_ConnectionKeepsSelf(_ transport: RawSocketTransport) async throws {
         let timeout: TimeInterval = 0
         let underlyingConnection = NWConnectionMock()
