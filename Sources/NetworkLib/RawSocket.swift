@@ -200,17 +200,21 @@ public class RawSocket: @unchecked Sendable {
             self?.timeoutEvent?.touch()
             self?.connection.send(content: message.content, contentContext: message.context, isComplete: true,
                             completion: .contentProcessed({ [weak self] error in
-                self?.timeoutEvent?.detouch()
-                if let error = self?.pendingError {
-                    completion?(error)
-                } else if let error = self?.operationCancelError {
-                    completion?(error)
-                } else if let error {
-                    completion?(error)
-                } else {
-                    completion?(nil)
-                }
+                self?.sendMessageHandler(error, completion)
             }))
+        }
+    }
+
+    private func sendMessageHandler(_ error: NWError?, _ completion: (@Sendable (_ error: NWError?) -> Void)?) {
+        timeoutEvent?.detouch()
+        if let error = pendingError {
+            completion?(error)
+        } else if let error = operationCancelError {
+            completion?(error)
+        } else if let error {
+            completion?(error)
+        } else {
+            completion?(nil)
         }
     }
 
