@@ -175,7 +175,11 @@ struct RawSocketConnectTests {
         defer { socket.cancel(nil) }
 
         do {
-            try await socket.testableConnect(.seconds(1), forceTimeout: .milliseconds(1500))
+            _ = try await withCheckedThrowingContinuation { continuation in
+                socket.connect { result in
+                    continuation.resume(with: result)
+                }
+            }
             Issue.record("Unexpected entrance")
         } catch NWError.dns(-65554) {
         }
@@ -189,7 +193,11 @@ struct RawSocketConnectTests {
         defer { socket.cancel(nil) }
 
         do {
-            try await socket.testableConnect(.seconds(1), forceTimeout: .milliseconds(1500))
+            _ = try await withCheckedThrowingContinuation { continuation in
+                socket.connect { result in
+                    continuation.resume(with: result)
+                }
+            }
             Issue.record("Unexpected entrance")
         } catch NWError.dns(-65554) {
         }
@@ -225,7 +233,11 @@ struct RawSocketConnectTests {
         defer { socket.cancel(nil) }
 
         do {
-            try await socket.testableConnect(.seconds(1), forceTimeout: .milliseconds(1500))
+            _ = try await withCheckedThrowingContinuation { continuation in
+                socket.connect { result in
+                    continuation.resume(with: result)
+                }
+            }
             Issue.record("Unexpected entrance")
         } catch NWError.posix(.ECONNREFUSED) {
         }
@@ -233,7 +245,10 @@ struct RawSocketConnectTests {
 
     // MARK: CALLBACK CALLS
 
+#if os(macOS)
     @available(swift, introduced: 6.2)
+    @available(iOS, unavailable)
+    @available(tvOS, unavailable)
     @Test(.tags(.RawSocket.connect, .RawSocket.all), .timeLimit(.minutes(1)))
     func connectCallbackCalledOnlyOnce() async throws {
         try await #require(processExitsWith: .success) {
@@ -257,6 +272,7 @@ struct RawSocketConnectTests {
             try? await Task.sleep(for: .milliseconds(100))
         }
     }
+#endif
 
     // MARK: REFERENCE STORING
 
