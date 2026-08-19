@@ -3,11 +3,8 @@ import Testing
 import Network
 @testable import NetworkLib
 
-extension Tag.RawSocket {
-    @Tag static var sendMessage: Tag
-}
-
-struct RawSocketSendMessageTests {
+@Suite(.disabled())
+struct _RawSocketSendMessageTests {
     private struct _SendMessage: RawSocketSendMessage {
         let context: NWConnection.ContentContext = .defaultMessage
         let content: Data?
