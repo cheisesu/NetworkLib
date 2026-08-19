@@ -17,14 +17,8 @@ extension RawSocket {
     /// - Returns: Information about the established connection.
     @discardableResult
     public func connect() async throws(NWError) -> ConnectionInfo {
-        try await withTaskCancellationHandler { () async throws(NWError) in
-            try await withCheckedThrowingContinuation { continuation in
-                connect { result in
-                    continuation.resume(with: result)
-                }
-            }
-        } onCancel: { [weak self] in
-            self?.cancel(nil)
+        try await withSocketCancellation { done in
+            connect(done)
         }
     }
 
@@ -40,14 +34,8 @@ extension RawSocket {
     ///
     /// - Parameter data: The bytes to send.
     public func send(_ data: Data) async throws(NWError) {
-        try await withTaskCancellationHandler { () async throws(NWError) in
-            try await withCheckedThrowingContinuation { continuation in
-                send(data) { result in
-                    continuation.resume(with: result)
-                }
-            }
-        } onCancel: { [weak self] in
-            self?.cancel(nil)
+        try await withSocketCancellation { done in
+            send(data, done)
         }
     }
 
@@ -57,14 +45,8 @@ extension RawSocket {
     ///
     /// - Parameter message: The typed message that supplies content and context.
     public func sendMessage<M: RawSocketSendMessage>(_ message: M) async throws(NWError) {
-        try await withTaskCancellationHandler { () async throws(NWError) in
-            try await withCheckedThrowingContinuation { continuation in
-                sendMessage(message) { result in
-                    continuation.resume(with: result)
-                }
-            }
-        } onCancel: { [weak self] in
-            self?.cancel(nil)
+        try await withSocketCancellation { done in
+            sendMessage(message, done)
         }
     }
 
@@ -82,14 +64,8 @@ extension RawSocket {
     ///
     /// - Returns: The next data block, or `nil` when the connection completes cleanly with no more data.
     public func receiveNext() async throws(NWError) -> Data? {
-        try await withTaskCancellationHandler { () async throws(NWError) -> Data? in
-            try await withCheckedThrowingContinuation { continuation in
-                receiveNext { result in
-                    continuation.resume(with: result)
-                }
-            }
-        } onCancel: { [weak self] in
-            self?.cancel(nil)
+        try await withSocketCancellation { done in
+            receiveNext(done)
         }
     }
 
@@ -100,14 +76,8 @@ extension RawSocket {
     /// - Parameter type: The typed message to decode. The default is inferred from the return type.
     /// - Returns: The decoded message.
     public func receiveNextMessage<M: RawSocketReceiveMessage>(of type: M.Type = M.self) async throws(NWError) -> M {
-        try await withTaskCancellationHandler { () async throws(NWError) -> M in
-            try await withCheckedThrowingContinuation { continuation in
-                receiveNextMessage(of: M.self) { result in
-                    continuation.resume(with: result)
-                }
-            }
-        } onCancel: { [weak self] in
-            self?.cancel(nil)
+        try await withSocketCancellation { done in
+            receiveNextMessage(of: M.self, done)
         }
     }
 
@@ -117,6 +87,23 @@ extension RawSocket {
             cancel {
                 continuation.resume()
             }
+        }
+    }
+}
+
+@available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
+private extension RawSocket {
+    func withSocketCancellation<T: Sendable>(
+        _ operation: (@escaping @Sendable (_ done: Result<T, NWError>) -> Void) -> Void
+    ) async throws(NWError) -> T {
+        try await withTaskCancellationHandler { () async throws(NWError) -> T in
+            try await withCheckedThrowingContinuation { continuation in
+                operation { result in
+                    continuation.resume(with: result)
+                }
+            }
+        } onCancel: { [weak self] in
+            self?.cancel(nil)
         }
     }
 }
