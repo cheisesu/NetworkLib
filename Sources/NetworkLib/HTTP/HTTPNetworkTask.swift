@@ -262,12 +262,11 @@ extension HTTPNetworkTask {
         if urlRequest.value(forHTTPHeaderField: .host) == nil {
             urlRequest.setValue(urlRequest.url?.wrappedHost, forHTTPHeaderField: .host)
         }
-        rawSocket.sendMessage(HTTPSendMessage(urlRequest)) { [weak self, urlRequest] error in
-            printDebug("[http] sent", error, "request", urlRequest)
-            if let error {
-                self?.finishAndNotifyUnsafe(rawSocket, urlRequest, with: error, phase: .sending)
-            } else {
-                self?.successSendHTTPUnsafe(rawSocket, urlRequest)
+        rawSocket.sendMessage(HTTPSendMessage(urlRequest)) { [weak self, urlRequest] result in
+            printDebug("[http] sent", result, "request", urlRequest)
+            switch result {
+            case .success: self?.successSendHTTPUnsafe(rawSocket, urlRequest)
+            case let .failure(error): self?.finishAndNotifyUnsafe(rawSocket, urlRequest, with: error, phase: .sending)
             }
         }
     }

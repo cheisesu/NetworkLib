@@ -40,13 +40,9 @@ extension RawSocket {
     /// - Parameter data: The bytes to send.
     public func send(_ data: Data) async throws {
         try await withTaskCancellationHandler {
-            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-                send(data) { error in
-                    if let error {
-                        continuation.resume(throwing: error)
-                    } else {
-                        continuation.resume()
-                    }
+            try await withCheckedThrowingContinuation { continuation in
+                send(data) { result in
+                    continuation.resume(with: result)
                 }
             }
         } onCancel: { [weak self] in
@@ -61,13 +57,9 @@ extension RawSocket {
     /// - Parameter message: The typed message that supplies content and context.
     public func sendMessage<M: RawSocketSendMessage>(_ message: M) async throws {
         try await withTaskCancellationHandler {
-            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-                sendMessage(message) { error in
-                    if let error {
-                        continuation.resume(throwing: error)
-                    } else {
-                        continuation.resume()
-                    }
+            try await withCheckedThrowingContinuation { continuation in
+                sendMessage(message) { result in
+                    continuation.resume(with: result)
                 }
             }
         } onCancel: { [weak self] in

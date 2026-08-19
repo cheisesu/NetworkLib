@@ -90,12 +90,8 @@ struct RawSocketSendMessageTests {
         defer { socket.cancel(nil) }
         do {
             let _: Void = try await withCheckedThrowingContinuation { continuation in
-                socket.sendMessage(message) { error in
-                    if let error {
-                        continuation.resume(throwing: error)
-                    } else {
-                        continuation.resume()
-                    }
+                socket.sendMessage(message) { result in
+                    continuation.resume(with: result)
                 }
             }
             Issue.record("Unexpected entrance")
@@ -117,12 +113,8 @@ struct RawSocketSendMessageTests {
             let _: Void = try await withCheckedThrowingContinuation { continuation in
                 socket.onInternalStateChange = { _, newState in
                     guard newState == .cancelling else { return }
-                    socket.sendMessage(message) { error in
-                        if let error {
-                            continuation.resume(throwing: error)
-                        } else {
-                            continuation.resume()
-                        }
+                    socket.sendMessage(message) { result in
+                        continuation.resume(with: result)
                     }
                 }
                 socket.connect { _ in
@@ -148,12 +140,8 @@ struct RawSocketSendMessageTests {
             let _: Void = try await withCheckedThrowingContinuation { continuation in
                 socket.connect { _ in
                     socket.cancel {
-                        socket.sendMessage(message) { error in
-                            if let error {
-                                continuation.resume(throwing: error)
-                            } else {
-                                continuation.resume()
-                            }
+                        socket.sendMessage(message) { result in
+                            continuation.resume(with: result)
                         }
                     }
                 }
@@ -176,12 +164,8 @@ struct RawSocketSendMessageTests {
         do {
             let _: Void = try await withCheckedThrowingContinuation { continuation in
                 socket.connect { _ in
-                    socket.sendMessage(message) { error in
-                        if let error {
-                            continuation.resume(throwing: error)
-                        } else {
-                            continuation.resume()
-                        }
+                    socket.sendMessage(message) { result in
+                        continuation.resume(with: result)
                     }
                     socket.cancel(nil)
                 }
@@ -205,12 +189,8 @@ struct RawSocketSendMessageTests {
             let _: Void = try await withCheckedThrowingContinuation { continuation in
                 socket.onInternalStateChange = { _, newState in
                     guard newState == .cancelling else { return }
-                    socket.sendMessage(message) { error in
-                        if let error {
-                            continuation.resume(throwing: error)
-                        } else {
-                            continuation.resume()
-                        }
+                    socket.sendMessage(message) { result in
+                        continuation.resume(with: result)
                     }
                 }
                 socket.connect { _ in
@@ -235,12 +215,8 @@ struct RawSocketSendMessageTests {
             let _: Void = try await withCheckedThrowingContinuation { continuation in
                 socket.onInternalStateChange = { _, newState in
                     guard newState == .cancelling else { return }
-                    socket.sendMessage(message) { error in
-                        if let error {
-                            continuation.resume(throwing: error)
-                        } else {
-                            continuation.resume()
-                        }
+                    socket.sendMessage(message) { result in
+                        continuation.resume(with: result)
                     }
                 }
                 socket.connect { _ in
@@ -266,12 +242,8 @@ struct RawSocketSendMessageTests {
         do {
             let _: Void = try await withAsyncTimeoutCancelationContinuation(.milliseconds(500)) { continuation in
                 socket.connect { _ in
-                    socket.sendMessage(message) { error in
-                        if let error {
-                            continuation.resume(throwing: error)
-                        } else {
-                            continuation.resume()
-                        }
+                    socket.sendMessage(message) { result in
+                        continuation.resume(with: result)
                     }
                 }
             } onCancel: {
@@ -295,12 +267,8 @@ struct RawSocketSendMessageTests {
         do {
             let _: Void = try await withCheckedThrowingContinuation { continuation in
                 socket.connect { _ in
-                    socket.sendMessage(message) { error in
-                        if let error {
-                            continuation.resume(throwing: error)
-                        } else {
-                            continuation.resume()
-                        }
+                    socket.sendMessage(message) { result in
+                        continuation.resume(with: result)
                     }
                 }
             }
@@ -325,17 +293,13 @@ struct RawSocketSendMessageTests {
         do {
             let _: Void = try await withCheckedThrowingContinuation { continuation in
                 socket.connect { _ in
-                    socket.sendMessage(message) { error in
-                        if let error {
-                            continuation.resume(throwing: error)
-                        } else {
-                            continuation.resume()
-                        }
+                    socket.sendMessage(message) { result in
+                        continuation.resume(with: result)
                     }
                 }
             }
             Issue.record("Unexpected entrance")
-        } catch let error as NWError where error == expectedError {
+        } catch where error == expectedError {
         }
     }
 

@@ -157,25 +157,25 @@ public class RawSocket: @unchecked Sendable {
     /// - Parameters:
     ///   - data: The bytes to send.
     ///   - completion: A closure invoked when the send is processed.
-    public func send(_ data: Data, _ completion: (@Sendable (_ error: NWError?) -> Void)?) {
+    public func send(_ data: Data, _ completion: (@Sendable (_ result: Result<Void, NWError>) -> Void)?) {
         let completion = delivered(completion)
         accessQueue.async { [weak self] in
             printDebug("[socket] send", data)
             if let error = self?.activeOperationCheckErrorUnsafe() {
-                completion?(error)
+                completion?(.failure(error))
                 return
             }
             self?.timeoutEvent?.touch()
             self?.connection.send(content: data, completion: .contentProcessed({ [weak self] error in
                 self?.timeoutEvent?.detouch()
                 if let error = self?.pendingError {
-                    completion?(error)
+                    completion?(.failure(error))
                 } else if let error = self?.operationCancelError {
-                    completion?(error)
+                    completion?(.failure(error))
                 } else if let error {
-                    completion?(error)
+                    completion?(.failure(error))
                 } else {
-                    completion?(nil)
+                    completion?(.success(()))
                 }
             }))
         }
@@ -189,12 +189,14 @@ public class RawSocket: @unchecked Sendable {
     /// - Parameters:
     ///   - message: The typed message that supplies content and context.
     ///   - completion: A closure invoked when the send is processed.
-    public func sendMessage<M: RawSocketSendMessage>(_ message: M, _ completion: (@Sendable (_ error: NWError?) -> Void)?) {
+    public func sendMessage<M: RawSocketSendMessage>(_ message: M,
+                                                     _ completion: (@Sendable (_ result: Result<Void, NWError>) -> Void)?)
+    {
         let completion = delivered(completion)
         accessQueue.async { [weak self] in
             printDebug("[socket] send", message)
             if let error = self?.activeOperationCheckErrorUnsafe() {
-                completion?(error)
+                completion?(.failure(error))
                 return
             }
             self?.timeoutEvent?.touch()
@@ -205,16 +207,16 @@ public class RawSocket: @unchecked Sendable {
         }
     }
 
-    private func sendMessageHandler(_ error: NWError?, _ completion: (@Sendable (_ error: NWError?) -> Void)?) {
+    private func sendMessageHandler(_ error: NWError?, _ completion: (@Sendable (_ result: Result<Void, NWError>) -> Void)?) {
         timeoutEvent?.detouch()
         if let error = pendingError {
-            completion?(error)
+            completion?(.failure(error))
         } else if let error = operationCancelError {
-            completion?(error)
+            completion?(.failure(error))
         } else if let error {
-            completion?(error)
+            completion?(.failure(error))
         } else {
-            completion?(nil)
+            completion?(.success(()))
         }
     }
 

@@ -17,12 +17,8 @@ struct RawSocketSendTests {
         defer { socket.cancel(nil) }
         socket.connect { _ in }
         let _: Void = try await withCheckedThrowingContinuation { continuation in
-            socket.send(dataToSend) { error in
-                if let error {
-                    continuation.resume(throwing: error)
-                } else {
-                    continuation.resume()
-                }
+            socket.send(dataToSend) { result in
+                continuation.resume(with: result)
             }
         }
         try #require(underlyingConnection.sendDataPortions.count == 1)
@@ -40,12 +36,8 @@ struct RawSocketSendTests {
         defer { socket.cancel(nil) }
         socket.connect { _ in }
         let _: Void = try await withCheckedThrowingContinuation { continuation in
-            socket.send(dataToSend) { error in
-                if let error {
-                    continuation.resume(throwing: error)
-                } else {
-                    continuation.resume()
-                }
+            socket.send(dataToSend) { result in
+                continuation.resume(with: result)
             }
         }
         try #require(underlyingConnection.sendDataFull == dataToSend)
@@ -61,12 +53,8 @@ struct RawSocketSendTests {
         defer { socket.cancel(nil) }
         socket.connect { _ in }
         let _: Void = try await withCheckedThrowingContinuation { continuation in
-            socket.send(dataToSend) { error in
-                if let error {
-                    continuation.resume(throwing: error)
-                } else {
-                    continuation.resume()
-                }
+            socket.send(dataToSend) { result in
+                continuation.resume(with: result)
             }
         }
         try #require(underlyingConnection.sendDataFull == dataToSend)
@@ -94,12 +82,8 @@ struct RawSocketSendTests {
         defer { socket.cancel(nil) }
         do {
             let _: Void = try await withCheckedThrowingContinuation { continuation in
-                socket.send(dataToSend) { error in
-                    if let error {
-                        continuation.resume(throwing: error)
-                    } else {
-                        continuation.resume()
-                    }
+                socket.send(dataToSend) { result in
+                    continuation.resume(with: result)
                 }
             }
             Issue.record("Unexpected entrance")
@@ -120,12 +104,8 @@ struct RawSocketSendTests {
                 socket.onInternalStateChange = { _, newState in
                     guard newState == .cancelling else { return }
                     
-                    socket.send(dataToSend) { error in
-                        if let error {
-                            continuation.resume(throwing: error)
-                        } else {
-                            continuation.resume()
-                        }
+                    socket.send(dataToSend) { result in
+                        continuation.resume(with: result)
                     }
                 }
                 socket.connect { _ in
@@ -148,12 +128,8 @@ struct RawSocketSendTests {
         do {
             let _: Void = try await withCheckedThrowingContinuation { continuation in
                 socket.cancel {
-                    socket.send(dataToSend) { error in
-                        if let error {
-                            continuation.resume(throwing: error)
-                        } else {
-                            continuation.resume()
-                        }
+                    socket.send(dataToSend) { result in
+                        continuation.resume(with: result)
                     }
                 }
             }
@@ -173,12 +149,8 @@ struct RawSocketSendTests {
         do {
             let _: Void = try await withCheckedThrowingContinuation { continuation in
                 socket.connect { _ in
-                    socket.send(dataToSend) { error in
-                        if let error {
-                            continuation.resume(throwing: error)
-                        } else {
-                            continuation.resume()
-                        }
+                    socket.send(dataToSend) { result in
+                        continuation.resume(with: result)
                     }
                     socket.cancel(nil)
                 }
@@ -199,21 +171,13 @@ struct RawSocketSendTests {
         do {
             let _: Void = try await withCheckedThrowingContinuation { continuation in
                 socket.connect { _ in
-                    socket.send(dataToSend) { error in
-                        if let error {
-                            switch error {
-                            case NWError.posix(.ETIMEDOUT):
-                                socket.send(dataToSend) { error in
-                                    if let error {
-                                        continuation.resume(throwing: error)
-                                    } else {
-                                        continuation.resume()
-                                    }
-                                }
-                            default: continuation.resume(throwing: error)
+                    socket.send(dataToSend) { result in
+                        switch result {
+                        case let .failure(error) where error == .posix(.ETIMEDOUT):
+                            socket.send(dataToSend) { result in
+                                continuation.resume(with: result)
                             }
-                        } else {
-                            continuation.resume()
+                        default: continuation.resume(with: result)
                         }
                     }
                 }
@@ -236,12 +200,8 @@ struct RawSocketSendTests {
         do {
             let _: Void = try await withCheckedThrowingContinuation { continuation in
                 socket.connect { _ in
-                    socket.send(dataToSend) { error in
-                        if let error {
-                            continuation.resume(throwing: error)
-                        } else {
-                            continuation.resume()
-                        }
+                    socket.send(dataToSend) { result in
+                        continuation.resume(with: result)
                     }
                 }
             }
@@ -263,18 +223,13 @@ struct RawSocketSendTests {
         do {
             let _: Void = try await withCheckedThrowingContinuation { continuation in
                 socket.connect { _ in
-                    socket.send(dataToSend) { error in
-                        if let error {
-                            continuation.resume(throwing: error)
-                        } else {
-                            continuation.resume()
-                        }
+                    socket.send(dataToSend) { result in
+                        continuation.resume(with: result)
                     }
                 }
             }
             Issue.record("Unexpected entrance")
-        } catch let error as NWError {
-            try #require(error == expectedError)
+        } catch where error == expectedError {
         }
     }
 
@@ -300,12 +255,8 @@ struct RawSocketSendTests {
             }
             box.get()?.connect { _ in
             }
-            box.get()?.send(dataToSend) { error in
-                if let error {
-                    continuation.resume(throwing: error)
-                } else {
-                    continuation.resume()
-                }
+            box.get()?.send(dataToSend) { result in
+                continuation.resume(with: result)
             }
         }
         try #require(ReferencesCounter.shared.count(of: address) == 1)
