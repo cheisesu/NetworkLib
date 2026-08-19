@@ -468,13 +468,6 @@ extension RawSocket {
 
 @available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
 private extension RawSocket {
-    func delivered(_ callback: (@Sendable () -> Void)?) -> (@Sendable () -> Void)? {
-        guard let callback else { return nil }
-        return { [callbackDelivery, callback] in
-            callbackDelivery.call(callback)
-        }
-    }
-
     func delivered<Value: Sendable>(
         _ callback: @Sendable @escaping (_ value: Value) -> Void
     ) -> @Sendable (_ value: Value) -> Void {
