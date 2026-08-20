@@ -96,14 +96,15 @@ private extension RawSocket {
     func withSocketCancellation<T: Sendable>(
         _ operation: (@escaping @Sendable (_ done: Result<T, NWError>) -> Void) -> Void
     ) async throws(NWError) -> T {
-        try await withTaskCancellationHandler { () async throws(NWError) -> T in
-            try await withCheckedThrowingContinuation { continuation in
+        let result = await withTaskCancellationHandler {
+            await withCheckedContinuation { continuation in
                 operation { result in
-                    continuation.resume(with: result)
+                    continuation.resume(returning: result)
                 }
             }
         } onCancel: { [weak self] in
             self?.cancel(nil)
         }
+        return try result.get()
     }
 }
