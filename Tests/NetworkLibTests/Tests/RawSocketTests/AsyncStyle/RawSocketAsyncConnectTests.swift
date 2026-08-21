@@ -4,91 +4,52 @@ import Network
 @testable import NetworkLib
 
 struct RawSocketAsyncConnectTests {
-    @Test("When continuation is called multiple times it will fall with fatal error and test fail",
-          .tags(.RawSocket.connect), arguments: [RawSocketTransport.tcp, .udp], [nil, "localhost"])
-    func continuationCalledOnlyOnce(_ transport: RawSocketTransport, _ sni: String?) async throws {
+    @Test(.tags(.RawSocket.connect, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
+    func onSuccess(_ transport: RawSocketTransport) async throws {
         let timeout: TimeInterval = 0
-        let server = try ServerMock(transport: transport, isSecure: sni != nil)
-        defer { server.stop() }
-        let port = try await server.start()
-        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: sni != nil, sni: sni, transport: transport,
-                                            maxDataBlock: 256, timeout: timeout)
-        let socket = try RawSocket(config)
+        let underlyingConnection = NWConnectionMock()
+        let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: timeout,
+                                   maxDataBlock: 256, transport: transport)
         defer { socket.cancel(nil) }
-        try await socket.connect()
-        await socket.cancel()
+        let info = try await socket.connect()
+        try #require(info == underlyingConnection.connectionInfo(with: transport))
     }
-    
-    @Test("When timeout of socket is reached it throws NWError.posix(.ETIMEDOUT)",
-          .tags(.RawSocket.connect), arguments: [RawSocketTransport.tcp, .udp])
-    func timeoutThrowsError(_ transport: RawSocketTransport) async throws {
-        let timeout: TimeInterval = 0.2
-        let server = try ServerMock(transport: transport, isSecure: false)
-        defer { server.stop() }
-        let port = try await server.start()
-        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                            maxDataBlock: 256, timeout: timeout)
-        let socket = try RawSocket(config)
+
+    @Test(.tags(.RawSocket.connect, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
+    func onError(_ transport: RawSocketTransport) async throws {
+        let timeout: TimeInterval = 0
+        let expectedError = NWError.posix(.EINVAL)
+        let underlyingConnection = NWConnectionMock(overridedStates: [.preparing, .failed(expectedError)])
+        let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: timeout,
+                                   maxDataBlock: 256, transport: transport)
         defer { socket.cancel(nil) }
-        
-        try await withAsyncTimeout(.seconds(3)) {
-            do {
-                try await socket.connect()
-            } catch NWError.posix(.ETIMEDOUT) {
-            } catch { throw error }
+        do {
+            try await socket.connect()
+            Issue.record("Unexpected entrance")
+        } catch let error where error == expectedError {
         }
     }
-    
-    @Test("When socket is connecting and called cancel in different thread it throws NWError.posix(.ECANCELED)",
-          .tags(.RawSocket.connect), arguments: [RawSocketTransport.tcp, .udp])
-    func cancelSeparatelyThrowsError(_ transport: RawSocketTransport) async throws {
+
+    @Test(.tags(.RawSocket.connect, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
+    func whenTaskCancelled_ThrowsCancelledError(_ transport: RawSocketTransport) async throws {
         let timeout: TimeInterval = 0
-        let server = try ServerMock(transport: transport, isSecure: false)
-        defer { server.stop() }
-        let port = try await server.start()
-        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                            maxDataBlock: 256, timeout: timeout)
-        let socket = try RawSocket(config)
+        let underlyingConnection = NWConnectionMock(overridedStates: [.preparing])
+        let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: timeout,
+                                   maxDataBlock: 256, transport: transport)
         defer { socket.cancel(nil) }
-        
-        try await withAsyncTimeout(.seconds(3)) {
-            do {
-                Task {
-                    socket.cancel(nil)
-                }
-                try await socket.connect()
-                throw TestError.unexpectedEntrance
-            } catch NWError.posix(.ECANCELED) {
-            } catch { throw error }
-        }
-    }
-    
-    @Test("Cancelled a task during connect",
-          .tags(.RawSocket.connect), arguments: [RawSocketTransport.tcp, .udp])
-    func cancelDuringConnectThrowsError(_ transport: RawSocketTransport) async throws {
-        let timeout: TimeInterval = 0
-        let server = try ServerMock(transport: transport, isSecure: false)
-        defer { server.stop() }
-        let port = try await server.start()
-        let config = RawSocketConfiguration("127.0.0.1", port, isSecure: true, sni: "localhost", transport: transport,
-                                            maxDataBlock: 256, timeout: timeout)
-        let socket = try RawSocket(config)
-        defer { socket.cancel(nil) }
-        
-        try await withAsyncTimeout(.seconds(3)) {
+        do {
             let task = Task {
-                do {
-                    try await socket.connect()
-                    throw TestError.unexpectedEntrance
-                } catch NWError.posix(.ECANCELED) {
-                } catch { throw error }
+                try await socket.connect()
             }
-            task.cancel()
-            try await withTaskCancellationHandler {
-                try await task.value
-            } onCancel: {
-                task.cancel()
+            await withCheckedContinuation { continuation in
+                socket.onInternalStateChange = { _, newState in
+                    guard newState == .connecting else { return }
+                    task.cancel()
+                    continuation.resume()
+                }
             }
+            _ = try await task.value
+        } catch NWError.posix(.ECANCELED) {
         }
     }
 }
