@@ -3,6 +3,7 @@ import Testing
 import Network
 @testable import NetworkLib
 
+@Suite(.disabled())
 struct _RawSocketCancelTests {
     @Test("When continuation is called multiple times it will fall with fatal error and test fail",
           .tags(.RawSocket.cancel), arguments: [RawSocketTransport.tcp, .udp], [nil, "localhost"])

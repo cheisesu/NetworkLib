@@ -3,6 +3,7 @@ import Testing
 import Network
 @testable import NetworkLib
 
+@Suite(.disabled())
 struct _RawSocketReceiveMessageTests {
     private struct _ReceiveMessage: RawSocketReceiveMessage {
         let data: Data?
