@@ -121,7 +121,7 @@ public final class HTTPNetworkTask: @unchecked Sendable {
     /// }
     /// ```
     ///
-    /// - Parameter callback: Optional one-shot callback that receives the request actually scheduled for execution
+    /// - Parameter onScheduled: Optional one-shot callback that receives the request actually scheduled for execution
     /// or a scheduling `URLError`.
     public func start(onScheduled callback: (@Sendable (_ startResult: Result<URLRequest, Error>) -> Void)? = nil) {
         accessQueue.async { [weak self] in
@@ -145,9 +145,11 @@ public final class HTTPNetworkTask: @unchecked Sendable {
 
     /// Performs the request asynchronously and returns the complete response and body data.
     ///
-    /// Cancelling the surrounding task cancels the underlying socket. The method throws `URLError` values for validation,
-    /// socket, parser, and URL failures produced while executing the request. The error's `errorUserInfo` may include
-    /// Foundation URL Loading System keys, `NSUnderlyingErrorKey`, and ``HTTPTaskErrorInfoKey`` values.
+    /// If the surrounding task is cancelled while the request is running, the underlying socket is cancelled.
+    ///
+    /// The method throws `URLError` values for validation, socket, parser, and URL failures produced while executing the request.
+    /// The error's `errorUserInfo` may include Foundation URL Loading System keys, `NSUnderlyingErrorKey`, and
+    /// ``HTTPTaskErrorInfoKey`` values.
     ///
     /// - Returns: The final HTTP response and accumulated body bytes.
     /// - Throws: A `URLError` describing the failure.
@@ -260,12 +262,11 @@ extension HTTPNetworkTask {
         if urlRequest.value(forHTTPHeaderField: .host) == nil {
             urlRequest.setValue(urlRequest.url?.wrappedHost, forHTTPHeaderField: .host)
         }
-        rawSocket.sendMessage(HTTPSendMessage(urlRequest)) { [weak self, urlRequest] error in
-            printDebug("[http] sent", error, "request", urlRequest)
-            if let error {
-                self?.finishAndNotifyUnsafe(rawSocket, urlRequest, with: error, phase: .sending)
-            } else {
-                self?.successSendHTTPUnsafe(rawSocket, urlRequest)
+        rawSocket.sendMessage(HTTPSendMessage(urlRequest)) { [weak self, urlRequest] result in
+            printDebug("[http] sent", result, "request", urlRequest)
+            switch result {
+            case .success: self?.successSendHTTPUnsafe(rawSocket, urlRequest)
+            case let .failure(error): self?.finishAndNotifyUnsafe(rawSocket, urlRequest, with: error, phase: .sending)
             }
         }
     }

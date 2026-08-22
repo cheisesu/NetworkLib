@@ -14,6 +14,10 @@ jobs:
         os: [macos-latest]
         swift: ["6"]
     steps:
+      - name: Install SwiftLint
+        run: |
+          brew install swiftlint
+          echo "SWIFTLINT_PATH=$(which swiftlint)" >> "$GITHUB_ENV"
       - name: Setup Swift
         uses: swift-actions/setup-swift@v2
         with:
@@ -24,13 +28,9 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@v6
       - name: Build
-        run: swift build
-      - name: Run SwiftLint
         run: |
-          swift package plugin --allow-writing-to-package-directory swiftlint --config .swiftlint.yml
-      - name: Run SwiftLint for documentation
-        run: |
-          swift package plugin --allow-writing-to-package-directory swiftlint --config .swiftlint.docs.yml
+          set -o pipefail
+          swift build --very-verbose 2>&1
       # - name: Test
       #   run: swift test --enable-code-coverage --skip-build --parallel
       - name: List files in the repository

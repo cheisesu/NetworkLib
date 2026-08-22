@@ -20,6 +20,7 @@ private func loadIdentityFromP12() throws -> SecIdentity {
     return identity as! SecIdentity
 }
 
+@available(*, unavailable)
 final class ServerMock: @unchecked Sendable {
     enum Flow: Sendable {
         case none
@@ -31,14 +32,14 @@ final class ServerMock: @unchecked Sendable {
     private let listener: NWListener
     private let queue: DispatchQueue
     private let flow: Flow
-    private var connections: [UUID: NWConnection]
+    private var connection: NWConnection?
+    private var waitConnectionContinuation: CheckedContinuation<(), Never>?
 
     init(transport: RawSocketTransport, isSecure: Bool, flow: Flow = .none) throws {
         let secIdentity = try loadIdentityFromP12()
         let queue = DispatchQueue(label: "com.network.lib.server-mock")
         self.queue = queue
         self.flow = flow
-        connections = [:]
         let tls: NWProtocolTLS.Options? = {
             guard isSecure else { return nil }
             let tls = NWProtocolTLS.Options()
@@ -68,6 +69,7 @@ final class ServerMock: @unchecked Sendable {
         }()
         listener = try NWListener(using: params, on: .any)
         listener.newConnectionHandler = { [weak self] newConnection in
+            guard self?.connection == nil else { fatalError("More than one connection is not supported") }
             self?.handleNewConnection(newConnection)
         }
     }
@@ -94,30 +96,55 @@ final class ServerMock: @unchecked Sendable {
     func stop() {
         listener.cancel()
         queue.async { [weak self] in
-            let connections = self?.connections ?? [:]
-            for (_, conn) in connections {
-                conn.cancel()
-            }
+            self?.connection?.cancel()
         }
     }
 
     func forceStop() {
         listener.cancel()
         queue.async { [weak self] in
-            let connections = self?.connections ?? [:]
-            for (_, conn) in connections {
-                conn.forceCancel()
+            self?.connection?.forceCancel()
+        }
+    }
+
+    func waitForConnectionAppeared() async {
+        await withCheckedContinuation { continuation in
+            queue.async {
+                if self.connection != nil {
+                    return continuation.resume()
+                }
+                self.waitConnectionContinuation = continuation
+            }
+        }
+    }
+
+    func sendToConnection(data: Data) async throws {
+        return try await withCheckedThrowingContinuation { continuation in
+            queue.async {
+                guard let connection = self.connection else {
+                    return continuation.resume(throwing: NWError.posix(.ENOTCONN))
+                }
+                connection.send(content: data, completion: .contentProcessed({ error in
+                    if let error {
+                        continuation.resume(throwing: error)
+                    } else {
+                        continuation.resume()
+                    }
+                }))
             }
         }
     }
 
     private func handleNewConnection(_ newConnection: NWConnection) {
         if flow == .cancel {
-            newConnection.cancel()
+            newConnection.forceCancel()
             return
         }
-        let id = UUID()
-        connections[id] = newConnection
+        printDebug("[server_connection] handle new connection", newConnection)
+        connection = newConnection
+        let continuation = waitConnectionContinuation
+        waitConnectionContinuation = nil
+        continuation?.resume()
         newConnection.stateUpdateHandler = { [flow, weak self] state in
             printDebug("[server_connection] new state", state)
             switch state {
@@ -132,7 +159,7 @@ final class ServerMock: @unchecked Sendable {
                 }
             case .cancelled:
                 self?.queue.async { [weak self] in
-                    self?.connections[id] = nil
+                    self?.connection = nil
                 }
             default: break
             }

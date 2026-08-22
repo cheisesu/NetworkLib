@@ -1,78 +1,52 @@
 import Foundation
 import Network
 
-/// Information reported when a ``RawSocket`` successfully establishes a connection.
-@available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
-public struct ConnectionInfo: Sendable, Equatable {
-    /// The transport protocol used by the connection.
-    public let transport: RawSocketTransport
-
-    /// The remote endpoint that the socket was configured to connect to.
-    public let remoteEndpoint: NWEndpoint
-
-    /// The local endpoint selected by the system, when it is available from the current network path.
-    public let localEndpoint: NWEndpoint?
-
-    /// The network interface selected by the system, when it is available from the current network path.
-    public let interface: NWInterface?
-}
-
-/// A typed outbound message that can be sent through a ``RawSocket`` message send operation.
-@available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
-public protocol RawSocketSendMessage: Sendable {
-    /// The Network framework content context that carries protocol metadata for the message.
-    var context: NWConnection.ContentContext { get }
-
-    /// The optional payload bytes to send with the context.
-    var content: Data? { get }
-}
-
-/// A typed inbound message that can be decoded from a Network framework content context and payload.
-@available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
-public protocol RawSocketReceiveMessage: Sendable {
-    /// Creates a typed message from received protocol metadata and optional payload bytes.
-    ///
-    /// Return `nil` when the context or payload does not describe a valid message of this type.
-    ///
-    /// - Parameters:
-    ///   - context: The received Network framework content context.
-    ///   - content: The optional payload bytes delivered with the context.
-    init?(from context: NWConnection.ContentContext, with content: Data?)
-}
-
-/// A lightweight wrapper around `NWConnection` that exposes callback and async socket operations.
+/// A lightweight socket wrapper that exposes callback and async operations over a Network framework connection.
+///
+/// `RawSocket` serializes access to the underlying connection, reports failures as `NWError`, and keeps itself alive while the
+/// connection is active.
 ///
 /// For example, connect and receive data asynchronously:
 ///
 /// ```swift
 /// let socket = try RawSocket(configuration)
-/// try await socket.connect()
+/// let info = try await socket.connect()
 /// let data = try await socket.receiveNext()
+/// print(info.remoteEndpoint, data?.count ?? 0)
 /// await socket.cancel()
 /// ```
 @available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
 public class RawSocket: @unchecked Sendable {
-    private enum _InternalState: Sendable, Equatable {
-        case none
+    enum _InternalState: Int, Sendable, Equatable, Comparable {
+        case initial
         case connecting
         case connected
         case cancelling
         case closed
+
+        static func < (lhs: borrowing RawSocket._InternalState, rhs: borrowing RawSocket._InternalState) -> Bool {
+            lhs.rawValue < rhs.rawValue
+        }
     }
 
-    private let connection: NWConnection
+    var onInternalStateChange: (@Sendable (_ oldState: _InternalState, _ newState: _InternalState) -> Void)?
+
+    private let connection: UnderlyingConnection
     private let accessQueue: DispatchQueue
     private let maxDataBlock: Int
     private let accessKey: DispatchSpecificKey<ObjectIdentifier>
     private let transport: RawSocketTransport
     private let callbackDelivery: CallbackDelivery
+    private var selfKeeper: RawSocket?
     private var internalState: _InternalState {
         didSet {
-            printDebug("[socket] internal state changed", internalState)
+            printDebug("[socket] internal state changed", oldValue, "->" , internalState)
+            onInternalStateChange?(oldValue, internalState)
         }
     }
     private let timeoutEvent: TimeoutRecursiveEvent?
-    private var cancellingError: NWError?
+    private var pendingError: NWError?
+    private var operationCancelError: NWError?
     private var connectingCallback: (@Sendable (Result<ConnectionInfo, NWError>) -> Void)?
     private var cancellingCallbacks: [(@Sendable () -> Void)]
 
@@ -86,48 +60,48 @@ public class RawSocket: @unchecked Sendable {
     /// - Parameters:
     ///   - configuration: The destination, transport, security, proxy, and timeout settings.
     ///   - delegateQueue: Optional queue used to deliver callback-based API completions.
-    /// - Throws: An `NWError` if the underlying `NWConnection` cannot be created from the configuration.
+    /// - Throws: An `NWError` if the underlying Network framework connection cannot be created from the configuration.
     public convenience init(_ configuration: RawSocketConfiguration, delegateQueue: DispatchQueue? = nil) throws(NWError) {
         try self.init(configuration, accessQueue: nil, delegateQueue: delegateQueue)
     }
 
-    init(_ configuration: RawSocketConfiguration, accessQueue: DispatchQueue?, delegateQueue: DispatchQueue?) throws(NWError) {
-        internalState = .none
+    convenience init(_ configuration: RawSocketConfiguration, accessQueue: DispatchQueue?,
+                     delegateQueue: DispatchQueue?) throws(NWError)
+    {
+        try self.init(
+            configuration.makeNWConnection(),
+            accessQueue: accessQueue,
+            delegateQueue: delegateQueue,
+            timeout: configuration.timeout,
+            maxDataBlock: configuration.maxDataBlock,
+            transport: configuration.transport
+        )
+    }
+
+    init(_ connection: UnderlyingConnection, accessQueue: DispatchQueue?, delegateQueue: DispatchQueue?,
+         timeout: TimeInterval, maxDataBlock: Int, transport: RawSocketTransport) throws(NWError)
+    {
+        self.connection = connection
+        internalState = .initial
         self.accessQueue = accessQueue ?? .RawSocket.access
         accessKey = DispatchSpecificKey()
         self.accessQueue.setSpecific(key: accessKey, value: ObjectIdentifier(self.accessQueue))
         callbackDelivery = CallbackDelivery(queue: delegateQueue ?? .RawSocket.delegate)
         cancellingCallbacks = []
-        timeoutEvent = TimeoutRecursiveEvent(timeout: configuration.timeout, on: self.accessQueue)
-        maxDataBlock = configuration.maxDataBlock
-        transport = configuration.transport
-        connection = try configuration.makeNWConnection()
-        connection.stateUpdateHandler = { [weak self] state in
-            self?.stateUpdateHandler(state)
-        }
+        timeoutEvent = TimeoutRecursiveEvent(timeout: timeout, on: self.accessQueue)
+        self.maxDataBlock = maxDataBlock
+        self.transport = transport
+
+        ReferencesCounter.shared.increment(self)
 
         // - after init
-        timeoutEvent?.setHandler { [weak self] _ in
-            printDebug("[socket] timeout event handler")
-            self?.cancellingError = .posix(.ETIMEDOUT)
-            self?.cancelUnsafe()
-        }
+        afterInitSetup()
+        printDebug("[socket] DEINIT", Unmanaged.passUnretained(self).toOpaque())
     }
 
     deinit {
-        printDebug("[socket] deinit")
-        if DispatchQueue.getSpecific(key: accessKey) == ObjectIdentifier(accessQueue) {
-            cancelUnsafe()
-            finishConnectionUnsafe(code: .ECANCELED)
-            callAllCancelsUnsafe()
-        } else {
-            accessQueue.sync {
-                printDebug("[socket] queue sync on deinit")
-                cancelUnsafe()
-                finishConnectionUnsafe(code: .ECANCELED)
-                callAllCancelsUnsafe()
-            }
-        }
+        ReferencesCounter.shared.decrement(self)
+        printDebug("[socket] DEINIT", Unmanaged.passUnretained(self).toOpaque())
     }
 
     // MARK: - PUBLIC METHODS
@@ -148,15 +122,9 @@ public class RawSocket: @unchecked Sendable {
     /// ```
     ///
     /// - Parameter block: A callback invoked when the connection succeeds or fails.
-    public func connect(_ block: @escaping @Sendable (_ result: Result<ConnectionInfo, NWError>) -> Void) {
+    public func connect(_ block: @escaping @Sendable (_ result: Result<ConnectionInfo, NWError>) -> Void) { // done
         accessQueue.async { [weak self] in
-            printDebug("[socket] queue async connect with timeout")
-            guard let self else {
-                block(.failure(.posix(.ECANCELED)))
-                return
-            }
-            self.connectUnsafeNoTimer { [weak self] result in
-                self?.timeoutEvent?.detouch()
+            self?.connectUnsafe { result in
                 block(result)
             }
         }
@@ -167,82 +135,95 @@ public class RawSocket: @unchecked Sendable {
     /// Calling this method is idempotent. Pending operations complete with the cancellation error when possible.
     ///
     /// - Parameter handler: A closure called after the socket cancellation callbacks are drained.
-    public func cancel(_ handler: (@Sendable () -> Void)?) {
+    public func cancel(_ handler: (@Sendable () -> Void)?) { // done
         accessQueue.async { [weak self] in
             printDebug("[socket] queue async close")
-            guard let self else {
-                handler?()
-                return
-            }
             if let handler {
-                cancellingCallbacks.append(handler)
+                self?.cancellingCallbacks.append(handler)
             }
-            self.cancelUnsafe()
+            self?.cancelUnsafe(manually: true)
         }
     }
 
     /// Sends raw bytes on the socket.
     ///
-    /// The socket must be connecting or connected. The completion receives `nil` on success or the `NWError` that prevented the
-    /// send from completing.
+    /// The socket must be connecting or connected. The completion receives `.success(())` when the bytes are processed, or
+    /// `.failure` with the `NWError` that prevented the send from completing.
     ///
     /// For example, send UTF-8 bytes:
     ///
     /// ```swift
-    /// socket.send(Data("ping".utf8)) { error in
-    ///     if let error { print(error) }
+    /// socket.send(Data("ping".utf8)) { result in
+    ///     if case .failure(let error) = result {
+    ///         print(error)
+    ///     }
     /// }
     /// ```
     ///
     /// - Parameters:
     ///   - data: The bytes to send.
-    ///   - completion: A closure invoked when the send is processed.
-    public func send(_ data: Data, _ completion: (@Sendable (_ error: NWError?) -> Void)?) {
+    ///   - completion: A closure invoked with the send result after the content is processed.
+    public func send(_ data: Data, _ completion: (@Sendable (_ result: Result<Void, NWError>) -> Void)?) {
         let completion = delivered(completion)
         accessQueue.async { [weak self] in
-            guard let self else {
-                completion?(.posix(.ECANCELED))
-                return
-            }
             printDebug("[socket] send", data)
-            if let error = activeOperationCheckErrorUnsafe() {
-                completion?(error)
+            if let error = self?.activeOperationCheckErrorUnsafe() {
+                completion?(.failure(error))
                 return
             }
-            timeoutEvent?.touch()
-            connection.send(content: data, completion: .contentProcessed({ [weak self] error in
+            self?.timeoutEvent?.touch()
+            self?.connection.send(content: data, completion: .contentProcessed({ [weak self] error in
                 self?.timeoutEvent?.detouch()
-                completion?(self?.cancellingError ?? error)
+                if let error = self?.pendingError {
+                    completion?(.failure(error))
+                } else if let error = self?.operationCancelError {
+                    completion?(.failure(error))
+                } else if let error {
+                    completion?(.failure(error))
+                } else {
+                    completion?(.success(()))
+                }
             }))
         }
     }
 
     /// Sends a typed message with protocol metadata.
     ///
-    /// Use this when an application protocol is installed in the `NWConnection` stack and data must be sent with a content
-    /// context, such as a custom `NWProtocolFramer.Message`.
+    /// Use this when an application protocol is installed in the connection stack and data must be sent with a content context,
+    /// such as a custom `NWProtocolFramer.Message`. The completion receives `.success(())` when the message is processed, or
+    /// `.failure` with the `NWError` that prevented the send from completing.
     ///
     /// - Parameters:
     ///   - message: The typed message that supplies content and context.
-    ///   - completion: A closure invoked when the send is processed.
-    public func sendMessage<M: RawSocketSendMessage>(_ message: M, _ completion: (@Sendable (_ error: NWError?) -> Void)?) {
+    ///   - completion: A closure invoked with the send result after the content is processed.
+    public func sendMessage<M: RawSocketSendMessage>(_ message: M,
+                                                     _ completion: (@Sendable (_ result: Result<Void, NWError>) -> Void)?)
+    {
         let completion = delivered(completion)
         accessQueue.async { [weak self] in
-            guard let self else {
-                completion?(.posix(.ECANCELED))
-                return
-            }
             printDebug("[socket] send", message)
-            if let error = activeOperationCheckErrorUnsafe() {
-                completion?(error)
+            if let error = self?.activeOperationCheckErrorUnsafe() {
+                completion?(.failure(error))
                 return
             }
-            timeoutEvent?.touch()
-            connection.send(content: message.content, contentContext: message.context, isComplete: true,
+            self?.timeoutEvent?.touch()
+            self?.connection.send(content: message.content, contentContext: message.context, isComplete: true,
                             completion: .contentProcessed({ [weak self] error in
-                self?.timeoutEvent?.detouch()
-                completion?(self?.cancellingError ?? error)
+                self?.sendMessageHandler(error, completion)
             }))
+        }
+    }
+
+    private func sendMessageHandler(_ error: NWError?, _ completion: (@Sendable (_ result: Result<Void, NWError>) -> Void)?) {
+        timeoutEvent?.detouch()
+        if let error = pendingError {
+            completion?(.failure(error))
+        } else if let error = operationCancelError {
+            completion?(.failure(error))
+        } else if let error {
+            completion?(.failure(error))
+        } else {
+            completion?(.success(()))
         }
     }
 
@@ -265,41 +246,47 @@ public class RawSocket: @unchecked Sendable {
     public func receiveNext(_ completion: @escaping @Sendable (_ result: Result<Data?, NWError>) -> Void) {
         let completion = delivered(completion)
         accessQueue.async { [weak self, maxDataBlock] in
-            guard let self else { return completion(.failure(.posix(.ECANCELED))) }
             printDebug("[socket] receive next")
 
-            if let error = activeOperationCheckErrorUnsafe() {
+            if let error = self?.activeOperationCheckErrorUnsafe() {
                 return completion(.failure(error))
             }
 
-            timeoutEvent?.touch()
-            connection.receive(minimumIncompleteLength: 1,
-                               maximumLength: maxDataBlock) { [weak self] content, _, isComplete, error in
-                guard let self else { return completion(.failure(.posix(.ECANCELED))) }
-                self.timeoutEvent?.detouch()
-                if let content {
-                    completion(.success(content))
-                } else if let error {
-                    self.cancelUnsafe()
-                    completion(.failure(error))
-                } else if isComplete {
-                    if let cancellingError = self.cancellingError {
-                        completion(.failure(cancellingError))
-                    } else {
-                        completion(.success(nil))
-                    }
-                } else {
-                    assertionFailure("Unexpected receive state: content=nil, isComplete=false, error=nil")
-                    completion(.failure(.posix(.EIO)))
-                }
+            self?.timeoutEvent?.touch()
+            self?.connection.receive(minimumIncompleteLength: 1,
+                                    maximumLength: maxDataBlock) { [weak self] content, _, isComplete, error in
+                self?.receiveNextHandler(content, isComplete, error, completion: completion)
             }
+        }
+    }
+
+    private func receiveNextHandler(_ content: Data?, _ isComplete: Bool, _ error: NWError?,
+                                    completion: @escaping @Sendable (_ result: Result<Data?, NWError>) -> Void)
+    {
+        timeoutEvent?.detouch()
+        if let content {
+            completion(.success(content))
+        } else if let error {
+            cancelUnsafe(manually: false)
+            completion(.failure(error))
+        } else if isComplete {
+            if let error = pendingError {
+                completion(.failure(error))
+            } else if let error = operationCancelError {
+                completion(.failure(error))
+            } else {
+                completion(.success(nil))
+            }
+        } else {
+            assertionFailure("Unexpected receive state: content=nil, isComplete=false, error=nil")
+            completion(.failure(.posix(.EIO)))
         }
     }
 
     /// Receives and decodes the next typed message.
     ///
     /// The socket receives a Network framework message and asks `M` to initialize itself from the delivered content context and
-    /// payload. If decoding fails, the completion receives `EBADMSG` unless the connection is already closing.
+    /// payload. If decoding fails, the completion receives `.failure(.posix(.EBADMSG))`.
     ///
     /// - Parameters:
     ///   - type: The typed message to decode. The default is inferred from the completion result type.
@@ -310,65 +297,90 @@ public class RawSocket: @unchecked Sendable {
     ) {
         let completion = delivered(completion)
         accessQueue.async { [weak self] in
-            guard let self else { return completion(.failure(.posix(.ECANCELED))) }
             printDebug("[socket] receive next message")
 
-            if let error = activeOperationCheckErrorUnsafe() {
+            if let error = self?.activeOperationCheckErrorUnsafe() {
                 completion(.failure(error))
                 return
             }
 
-            timeoutEvent?.touch()
-            connection.receiveMessage { [weak self] content, contentContext, isComplete, error in
-                guard let self else { return completion(.failure(.posix(.ECANCELED))) }
-                self.timeoutEvent?.detouch()
-
-                if let error = error ?? self.cancellingError {
-                    self.cancelUnsafe()
-                    completion(.failure(error))
-                } else if let contentContext {
-                    if !isComplete {
-                        return completion(.failure(.posix(.EIO)))
-                    }
-
-                    if let message = M.init(from: contentContext, with: content) {
-                        completion(.success(message))
-                    } else if contentContext.isFinal, internalState == .closed || internalState == .cancelling {
-                        completion(.failure(.posix(.ECANCELED)))
-                    } else {
-                        completion(.failure(.posix(.EBADMSG)))
-                    }
-                } else if isComplete {
-                    completion(.failure(.posix(.EIO)))
-                } else {
-                    assertionFailure("Unexpected receive state: content=nil, contentContext=nil, isComplete=false, error=nil")
-                    completion(.failure(.posix(.EIO)))
-                }
+            self?.timeoutEvent?.touch()
+            self?.connection.receiveMessage { [weak self] content, contentContext, isComplete, error in
+                self?.receiveNextMessageHandler(content, contentContext, isComplete, error, completion)
             }
         }
     }
 
-    // MARK: - PRIVATE METHODS
+    private func receiveNextMessageHandler<M: RawSocketReceiveMessage>(
+        _ content: Data?, _ contentContext: NWConnection.ContentContext?,
+        _ isComplete: Bool, _ error: NWError?,
+        _ completion: @escaping @Sendable (_ result: Result<M, NWError>) -> Void
+    ) {
+        timeoutEvent?.detouch()
 
-    private func connectUnsafeNoTimer(_ block: @escaping @Sendable (Result<ConnectionInfo, NWError>) -> Void) {
-        timeoutEvent?.touch()
-        if internalState == .closed || internalState == .cancelling {
-            return callbackDelivery.call(.failure(.posix(.ECANCELED)), block)
+        if let error {
+            cancelUnsafe(manually: false)
+            completion(.failure(error))
+        } else if let error = pendingError {
+            completion(.failure(error))
+        } else if let error = operationCancelError {
+            completion(.failure(error))
+        } else if let contentContext {
+            if !isComplete {
+                return completion(.failure(.posix(.EIO)))
+            }
+            if let message = M.init(from: contentContext, with: content) {
+                completion(.success(message))
+            } else if contentContext.isFinal {
+                completion(.failure(.posix(.EBADMSG)))
+            } else {
+                completion(.failure(.posix(.EBADMSG)))
+            }
+        } else if isComplete {
+            completion(.failure(.posix(.EIO)))
+        } else {
+            assertionFailure("Unexpected receive state: content=nil, contentContext=nil, isComplete=false, error=nil")
+            completion(.failure(.posix(.EIO)))
         }
-        if internalState == .connecting { return callbackDelivery.call(.failure(.posix(.EALREADY)), block) }
-        if internalState == .connected { return callbackDelivery.call(.failure(.posix(.EISCONN)), block) }
+    }
+}
+
+// MARK: - PRIVATE METHODS
+
+extension RawSocket {
+    private func afterInitSetup() {
+        timeoutEvent?.setHandler { [weak self] _ in
+            printDebug("[socket] timeout event handler")
+            self?.pendingError = .posix(.ETIMEDOUT)
+            self?.cancelUnsafe(manually: false)
+        }
+    }
+
+    private func connectUnsafe(_ block: @escaping @Sendable (Result<ConnectionInfo, NWError>) -> Void) { // done
+        printDebug("[socket] connect unsafe")
+        guard internalState < .closed else { return callbackDelivery.call(.failure(.posix(.ECANCELED)), block) }
+        guard internalState < .cancelling else { return callbackDelivery.call(.failure(.posix(.ECANCELED)), block) }
+        guard internalState < .connected else { return callbackDelivery.call(.failure(.posix(.EISCONN)), block) }
+        guard internalState < .connecting else { return callbackDelivery.call(.failure(.posix(.EALREADY)), block) }
+
+        timeoutEvent?.touch()
         connectingCallback = block
         internalState = .connecting
+        connection.stateUpdateHandler = { [weak self] state in
+            self?.stateUpdateHandler(state)
+        }
+        selfKeeper = self
         connection.start(queue: accessQueue)
     }
 
-    private func cancelUnsafe() {
+    private func cancelUnsafe(manually: Bool) { // done
         printDebug("[socket] cancel unsafe")
         timeoutEvent?.cancel()
-        if internalState == _InternalState.none { // cause state update may not be called
+        if internalState == .initial { // cause state update may not be called
             internalState = .closed
             connection.cancel()
             callAllCancelsUnsafe()
+            clearResourcesUnsafe()
             return
         }
         if [.closed].contains(internalState) {
@@ -379,6 +391,9 @@ public class RawSocket: @unchecked Sendable {
             return
         }
         internalState = .cancelling
+        if manually {
+            operationCancelError = .posix(.ECANCELED)
+        }
         connection.cancel()
     }
 
@@ -387,25 +402,32 @@ public class RawSocket: @unchecked Sendable {
         switch newState {
         case .setup: break
         case let .waiting(error):
+            // TODO: check and reorder to remove timeoutevent cancel from here
             timeoutEvent?.cancel()
-            finishConnectionUnsafe(.failure(error))
-            cancelUnsafe()
+            notifyConnectingComplete(.failure(error))
+            cancelUnsafe(manually: false)
         case .preparing: break
         case .ready:
+            timeoutEvent?.detouch()
             internalState = .connected
-            let info = ConnectionInfo(transport: transport, remoteEndpoint: connection.endpoint,
-                                      localEndpoint: connection.currentPath?.localEndpoint,
-                                      interface: connection.currentPath?.availableInterfaces.first)
-            finishConnectionUnsafe(.success(info))
+            let info = connection.connectionInfo(with: transport)
+            notifyConnectingComplete(.success(info))
         case let .failed(error):
+            // TODO: check and reorder to remove timeoutevent cancel from here
             timeoutEvent?.cancel()
-            finishConnectionUnsafe(.failure(error))
-            cancelUnsafe()
+            notifyConnectingComplete(.failure(error))
+            cancelUnsafe(manually: false)
         case .cancelled:
+            // TODO: check and reorder to remove timeoutevent cancel from here
             timeoutEvent?.cancel()
-            finishConnectionUnsafe(.failure(cancellingError ?? .posix(.ECANCELED)))
-            callAllCancelsUnsafe()
             internalState = .closed
+            if let pendingError {
+                notifyConnectingComplete(.failure(pendingError))
+            } else {
+                notifyConnectingComplete(.failure(.posix(.ECANCELED)))
+            }
+            callAllCancelsUnsafe()
+            clearResourcesUnsafe()
         @unknown default: break
         }
     }
@@ -418,11 +440,7 @@ public class RawSocket: @unchecked Sendable {
         }
     }
 
-    private func finishConnectionUnsafe(code: POSIXErrorCode) {
-        finishConnectionUnsafe(.failure(.posix(code)))
-    }
-
-    private func finishConnectionUnsafe(_ result: Result<ConnectionInfo, NWError>) {
+    private func notifyConnectingComplete(_ result: Result<ConnectionInfo, NWError>) {
         let callback = connectingCallback
         connectingCallback = nil
         if let callback {
@@ -431,25 +449,34 @@ public class RawSocket: @unchecked Sendable {
     }
 
     private func activeOperationCheckErrorUnsafe() -> NWError? {
-        if internalState == .none {
+        if internalState == .initial {
             return .posix(.ENOTCONN)
         }
         if ![.connected, .connecting].contains(internalState) {
-            return cancellingError ?? .posix(.ECANCELED)
+            if let pendingError {
+                return pendingError
+            } else if let operationCancelError {
+                return operationCancelError
+            } else {
+                return .posix(.ECANCELED)
+            }
+        }
+        if let operationCancelError {
+            assertionFailure("Investigate how it passed here.")
+            return operationCancelError
         }
         return nil
+    }
+
+    private func clearResourcesUnsafe() {
+        timeoutEvent?.cancel()
+        connection.stateUpdateHandler = nil
+        selfKeeper = nil
     }
 }
 
 @available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
 private extension RawSocket {
-    func delivered(_ callback: (@Sendable () -> Void)?) -> (@Sendable () -> Void)? {
-        guard let callback else { return nil }
-        return { [callbackDelivery, callback] in
-            callbackDelivery.call(callback)
-        }
-    }
-
     func delivered<Value: Sendable>(
         _ callback: @Sendable @escaping (_ value: Value) -> Void
     ) -> @Sendable (_ value: Value) -> Void {

@@ -3,14 +3,6 @@
 import PackageDescription
 import Foundation
 
-let isCI = ProcessInfo.processInfo.environment["CI"] == "true"
-
-let swiftLintPlugins: [Target.PluginUsage] = if isCI {
-    []
-} else {
-    [.plugin(name: "SwiftLintBuildToolPlugin", package: "SwiftLintPlugins")]
-}
-
 let package = Package(
     name: "NetworkLib",
     platforms: [
@@ -23,17 +15,16 @@ let package = Package(
             name: "NetworkLib",
             targets: ["NetworkLib"]
         ),
-    ],
-    dependencies: [
-        .package(url: "https://github.com/SimplyDanny/SwiftLintPlugins", from: "0.65.0")
+        .plugin(name: "nl-swiftlint-plugin", targets: ["nl-swiftlint-plugin"]),
     ],
     targets: [
+        .plugin(name: "nl-swiftlint-plugin", capability: .buildTool()),
         .target(
             name: "NetworkLib",
             swiftSettings: [
                 .unsafeFlags(["-warnings-as-errors"])
             ],
-            plugins: swiftLintPlugins
+            plugins: [.plugin(name: "nl-swiftlint-plugin")]
         ),
         .testTarget(
             name: "NetworkLibTests",

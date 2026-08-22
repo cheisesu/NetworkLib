@@ -168,19 +168,19 @@ public enum HTTPStatusCode: Int, Sendable, CaseIterable {
 }
 
 extension HTTPStatusCode {
-    /// The request was received, continuing process.
+    /// A Boolean value indicating whether the status code is in the `1xx` informational range.
     public var isInformational: Bool { Self.informationalCodes.contains(rawValue) }
 
-    /// The request was successfully received, understood, and accepted.
+    /// A Boolean value indicating whether the status code is in the `2xx` successful range.
     public var isSuccessful: Bool { Self.successfulCodes.contains(rawValue) }
 
-    /// Further action needs to be taken in order to complete the request.
+    /// A Boolean value indicating whether the status code is in the `3xx` redirection range.
     public var isRedirection: Bool { Self.redirectionCodes.contains(rawValue) }
 
-    /// The request contains bad syntax or cannot be fulfilled.
+    /// A Boolean value indicating whether the status code is in the `4xx` client-error range.
     public var isClientError: Bool { Self.clientErrorCodes.contains(rawValue) }
 
-    /// The server failed to fulfill an apparently valid request.
+    /// A Boolean value indicating whether the status code is in the `5xx` server-error range.
     public var isServerError: Bool { Self.servertErrorCodes.contains(rawValue) }
 }
 
