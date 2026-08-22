@@ -76,8 +76,6 @@ struct RawSocketSendMessageTests {
 
     // MARK: ERROR ON INTERNAL STATES
 
-//#error("Not implemented this section, others are done")
-
     @Test(arguments: [RawSocketTransport.tcp, .udp])
     func whenNotConnected_ThrowsNotConnectedError(_ transport: RawSocketTransport) async throws {
         let timeout: TimeInterval = 0

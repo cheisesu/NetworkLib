@@ -7,6 +7,7 @@ extension Tag.RawSocket {
     @Tag static var receiveMessage: Tag
 }
 
+@Suite(.tags(.RawSocket.receiveMessage, .RawSocket.all), .timeLimit(.minutes(1)))
 struct RawSocketReceiveMessageTests {
     // MARK: - ENTITIES
 
@@ -27,7 +28,7 @@ struct RawSocketReceiveMessageTests {
 
     // MARK: SUCCESS
 
-    @Test(.tags(.RawSocket.all, .RawSocket.receiveMessage), .timeLimit(.minutes(1)))
+    @Test
     func receivedData_Context_ConvertsMessageOk_CallbackReturnsConvertedMessage() async throws {
         let transport = RawSocketTransport.udp
         let timeout: TimeInterval = 0
@@ -53,7 +54,7 @@ struct RawSocketReceiveMessageTests {
 
     // MARK: ERRORS ON CONVERTING MESSAGE
 
-    @Test(.tags(.RawSocket.all, .RawSocket.receiveMessage), .timeLimit(.minutes(1)))
+    @Test
     func messageConvertsToNil_ThrowsBadMessageError() async throws {
         let transport = RawSocketTransport.udp
         let timeout: TimeInterval = 0
@@ -74,7 +75,7 @@ struct RawSocketReceiveMessageTests {
         }
     }
 
-    @Test(.tags(.RawSocket.all, .RawSocket.receiveMessage), .timeLimit(.minutes(1)))
+    @Test
     func messageConvertsToNil_FinalContext_ThrowsBadMessageError() async throws {
         let transport = RawSocketTransport.udp
         let timeout: TimeInterval = 0
@@ -97,7 +98,7 @@ struct RawSocketReceiveMessageTests {
 
     // MARK: ERROR ON INTERNAL STATES
 
-    @Test(.tags(.RawSocket.all, .RawSocket.receiveMessage), .timeLimit(.minutes(1)))
+    @Test
     func whenNotConnected_ThrowsCancelledError() async throws {
         let transport = RawSocketTransport.udp
         let timeout: TimeInterval = 0
@@ -116,7 +117,7 @@ struct RawSocketReceiveMessageTests {
         }
     }
 
-    @Test(.tags(.RawSocket.all, .RawSocket.receiveMessage), .timeLimit(.minutes(1)))
+    @Test
     func whenCancellingByTimeout_CallReceive_ThrowsCancelledError() async throws {
         let transport = RawSocketTransport.udp
         let timeout: TimeInterval = 0.5
@@ -140,7 +141,7 @@ struct RawSocketReceiveMessageTests {
         }
     }
 
-    @Test(.tags(.RawSocket.all, .RawSocket.receiveMessage), .timeLimit(.minutes(1)))
+    @Test
     func whenCancellingManually_ThrowsCancelledError() async throws {
         let transport = RawSocketTransport.udp
         let timeout: TimeInterval = 0
@@ -165,7 +166,7 @@ struct RawSocketReceiveMessageTests {
         }
     }
 
-    @Test(.tags(.RawSocket.all, .RawSocket.receiveMessage), .timeLimit(.minutes(1)))
+    @Test
     func whenCancelledByServerAfterConnect_ThrowsCancelledError() async throws {
         let transport = RawSocketTransport.udp
         let timeout: TimeInterval = 0
@@ -189,7 +190,7 @@ struct RawSocketReceiveMessageTests {
         }
     }
 
-    @Test(.tags(.RawSocket.all, .RawSocket.receiveMessage), .timeLimit(.minutes(1)))
+    @Test
     func whenCancelledDuringReceive_FinalContext_MessageConvertsToNil_ThrowsCancelledError() async throws {
         let transport = RawSocketTransport.udp
         let timeout: TimeInterval = 0
@@ -216,7 +217,7 @@ struct RawSocketReceiveMessageTests {
 
     // MARK: TIMEOUT ERRORS
 
-    @Test(.tags(.RawSocket.all, .RawSocket.receiveMessage), .timeLimit(.minutes(1)))
+    @Test
     func timeoutZero_AndReceiveCallbackNotCalled() async throws {
         let transport = RawSocketTransport.udp
         let timeout: TimeInterval = 0
@@ -242,7 +243,7 @@ struct RawSocketReceiveMessageTests {
         }
     }
 
-    @Test(.tags(.RawSocket.all, .RawSocket.receiveMessage), .timeLimit(.minutes(1)))
+    @Test
     func timeoutNotZero_ThrowsTimeoutError() async throws {
         let transport = RawSocketTransport.udp
         let timeout: TimeInterval = 0.5
@@ -268,7 +269,7 @@ struct RawSocketReceiveMessageTests {
 
     // MARK: ERRORS BY SERVER SIDE
 
-    @Test(.tags(.RawSocket.all, .RawSocket.receiveMessage), .timeLimit(.minutes(1)))
+    @Test
     func serverReturnsError_ThrowsTheError() async throws {
         let transport = RawSocketTransport.udp
         let timeout: TimeInterval = 0
@@ -290,7 +291,7 @@ struct RawSocketReceiveMessageTests {
         }
     }
 
-    @Test(.tags(.RawSocket.all, .RawSocket.receiveMessage), .timeLimit(.minutes(1)))
+    @Test
     func responseIsNotComplete_ThrowsInOutError() async throws {
         let transport = RawSocketTransport.udp
         let timeout: TimeInterval = 0
@@ -311,7 +312,7 @@ struct RawSocketReceiveMessageTests {
         }
     }
 
-    @Test(.tags(.RawSocket.all, .RawSocket.receiveMessage), .timeLimit(.minutes(1)))
+    @Test
     func noContextButIsComplete_ThrowsInOutError() async throws {
         let transport = RawSocketTransport.udp
         let timeout: TimeInterval = 0
@@ -359,7 +360,7 @@ struct RawSocketReceiveMessageTests {
 
     // MARK: DELEGATE QUEUE
 
-    @Test(.tags(.RawSocket.all, .RawSocket.receiveMessage), .timeLimit(.minutes(1)))
+    @Test
     func callbackCalledOnProvidedQueue() async throws {
         let delegateQueue = DispatchQueue(label: "raw-socket.delegate.receive-message")
         let probe = DelegateQueueProbe()

@@ -7,10 +7,11 @@ extension Tag.RawSocket {
     @Tag static var receive: Tag
 }
 
+@Suite(.tags(.RawSocket.receive, .RawSocket.all, ), .timeLimit(.minutes(1)))
 struct RawSocketReceiveTests {
     // MARK: TIMEOUT ERRORS
 
-    @Test(.tags(.RawSocket.all, .RawSocket.receive), .timeLimit(.minutes(1)))
+    @Test
     func timeoutNonZero_ThrowsTimeoutError() async throws {
         let transport = RawSocketTransport.tcp
         let timeout: TimeInterval = 0.5
@@ -31,7 +32,7 @@ struct RawSocketReceiveTests {
         }
     }
 
-    @Test(.tags(.RawSocket.all, .RawSocket.receive), .timeLimit(.minutes(1)))
+    @Test
     func timeoutZero_CallbackNotCalled() async throws {
         let transport = RawSocketTransport.tcp
         let timeout: TimeInterval = 0
@@ -56,7 +57,7 @@ struct RawSocketReceiveTests {
 
     // MARK: SUCCESS BY STATE
 
-    @Test(.tags(.RawSocket.all, .RawSocket.receive), .timeLimit(.minutes(1)))
+    @Test
     func whenConnecting_CallbackSuccess() async throws {
         let transport = RawSocketTransport.tcp
         let timeout: TimeInterval = 0
@@ -79,7 +80,7 @@ struct RawSocketReceiveTests {
         try #require(result == expectedData)
     }
 
-    @Test(.tags(.RawSocket.all, .RawSocket.receive), .timeLimit(.minutes(1)))
+    @Test
     func whenConnected_CallbackSuccess() async throws {
         let transport = RawSocketTransport.tcp
         let timeout: TimeInterval = 0
@@ -100,7 +101,7 @@ struct RawSocketReceiveTests {
 
     // MARK: ERROR BY STATE
 
-    @Test(.tags(.RawSocket.all, .RawSocket.receive), .timeLimit(.minutes(1)))
+    @Test
     func whenNotConnecthed_ThrowsNotConnectedError() async throws {
         let transport = RawSocketTransport.tcp
         let timeout: TimeInterval = 0
@@ -119,7 +120,7 @@ struct RawSocketReceiveTests {
         }
     }
 
-    @Test(.tags(.RawSocket.all, .RawSocket.receive), .timeLimit(.minutes(1)))
+    @Test
     func whenCancelling_ThrowsCancelledError() async throws {
         let transport = RawSocketTransport.tcp
         let timeout: TimeInterval = 0
@@ -144,7 +145,7 @@ struct RawSocketReceiveTests {
         }
     }
 
-    @Test(.tags(.RawSocket.all, .RawSocket.receive), .timeLimit(.minutes(1)))
+    @Test
     func whenCancelled_ThrowsCancelledError() async throws {
         let transport = RawSocketTransport.tcp
         let timeout: TimeInterval = 0
@@ -165,7 +166,7 @@ struct RawSocketReceiveTests {
         }
     }
 
-    @Test(.tags(.RawSocket.all, .RawSocket.receive), .timeLimit(.minutes(1)))
+    @Test
     func closeDuringReceive_ThrowsCancelledError() async throws {
         let transport = RawSocketTransport.tcp
         let timeout: TimeInterval = 0
@@ -189,7 +190,7 @@ struct RawSocketReceiveTests {
 
     // MARK: ERROR BY SERVER SIDE
 
-    @Test(.tags(.RawSocket.all, .RawSocket.receive), .timeLimit(.minutes(1)))
+    @Test
     func serverReturnsError_ThrowsRelatedError() async throws {
         let transport = RawSocketTransport.tcp
         let timeout: TimeInterval = 0
@@ -213,7 +214,7 @@ struct RawSocketReceiveTests {
 
     // MARK: REFERENCE SELF KEEPING
 
-    @Test(.tags(.RawSocket.all, .RawSocket.receive), .timeLimit(.minutes(1)))
+    @Test
     func whenSourceReferencesAllNil_ConnectionKeepsSelf() async throws {
         let transport = RawSocketTransport.tcp
         let timeout: TimeInterval = 0
@@ -239,7 +240,7 @@ struct RawSocketReceiveTests {
 
     // MARK: CALLBACK CALLED ON QUEUE
 
-    @Test(.tags(.RawSocket.all, .RawSocket.receive), .timeLimit(.minutes(1)))
+    @Test
     func callbackCalledOnDelegateQueue() async throws {
         let transport = RawSocketTransport.tcp
         let delegateQueue = DispatchQueue(label: "raw-socket.delegate.\(#function)")

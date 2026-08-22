@@ -7,8 +7,9 @@ extension Tag.RawSocket {
     @Tag static var send: Tag
 }
 
+@Suite(.tags(.RawSocket.send, .RawSocket.all), .timeLimit(.minutes(1)))
 struct RawSocketSendTests {
-    @Test(.tags(.RawSocket.send, .RawSocket.all), arguments: [RawSocketTransport.tcp, .udp], [Data("Hello".utf8)])
+    @Test(arguments: [RawSocketTransport.tcp, .udp], [Data("Hello".utf8)])
     func underlyingConnection_MethodSendCalled(_ transport: RawSocketTransport, _ dataToSend: Data) async throws {
         let timeout: TimeInterval = 0
         let underlyingConnection = NWConnectionMock(overridedStates: [.preparing])
@@ -26,7 +27,7 @@ struct RawSocketSendTests {
 
     // MARK: SUCCESS IN DIFFERENT STATES
 
-    @Test(.tags(.RawSocket.send, .RawSocket.all), arguments: [RawSocketTransport.tcp, .udp])
+    @Test(arguments: [RawSocketTransport.tcp, .udp])
     func whenConnecting_CallbackSuccess(_ transport: RawSocketTransport) async throws {
         let timeout: TimeInterval = 0
         let dataToSend = Data("Hello".utf8)
@@ -43,7 +44,7 @@ struct RawSocketSendTests {
         try #require(underlyingConnection.sendDataFull == dataToSend)
     }
 
-    @Test(.tags(.RawSocket.send, .RawSocket.all), arguments: [RawSocketTransport.tcp, .udp])
+    @Test(arguments: [RawSocketTransport.tcp, .udp])
     func whenConnected_CallbackSuccess(_ transport: RawSocketTransport) async throws {
         let timeout: TimeInterval = 0
         let dataToSend = Data("Hello".utf8)
@@ -63,16 +64,16 @@ struct RawSocketSendTests {
     // MARK: ERRORS IN DIFFERENT STATES
 
     @Test(.disabled("when state is connecting and operationCancellError not nil - probably not possible"),
-          .tags(.RawSocket.send, .RawSocket.all), arguments: [RawSocketTransport.tcp, .udp])
+          arguments: [RawSocketTransport.tcp, .udp])
     func whenConnecting_SentRightAfter_BeforeCancel_ReturnesCancelledError(_ transport: RawSocketTransport) async throws {
     }
 
     @Test(.disabled("when state is connected and operationCancellError not nil - probably not possible"),
-          .tags(.RawSocket.send, .RawSocket.all), arguments: [RawSocketTransport.tcp, .udp])
+          arguments: [RawSocketTransport.tcp, .udp])
     func whenConnected_SentRightAfter_BeforeCancel_ReturnesCancelledError(_ transport: RawSocketTransport) async throws {
     }
 
-    @Test(.tags(.RawSocket.send, .RawSocket.all), arguments: [RawSocketTransport.tcp, .udp])
+    @Test(arguments: [RawSocketTransport.tcp, .udp])
     func whenNotConnected_ReturnsNotConnectedError(_ transport: RawSocketTransport) async throws {
         let timeout: TimeInterval = 0
         let dataToSend = Data("Hello".utf8)
@@ -91,7 +92,7 @@ struct RawSocketSendTests {
         }
     }
 
-    @Test(.tags(.RawSocket.send, .RawSocket.all), arguments: [RawSocketTransport.tcp, .udp])
+    @Test(arguments: [RawSocketTransport.tcp, .udp])
     func whenCancelling_ReturnsCancelledError(_ transport: RawSocketTransport) async throws {
         let timeout: TimeInterval = 0
         let dataToSend = Data("Hello".utf8)
@@ -117,7 +118,7 @@ struct RawSocketSendTests {
         }
     }
 
-    @Test(.tags(.RawSocket.send, .RawSocket.all), arguments: [RawSocketTransport.tcp, .udp])
+    @Test(arguments: [RawSocketTransport.tcp, .udp])
     func whenClosed_ReturnsCancelledError(_ transport: RawSocketTransport) async throws {
         let timeout: TimeInterval = 0
         let dataToSend = Data("Hello".utf8)
@@ -138,7 +139,7 @@ struct RawSocketSendTests {
         }
     }
 
-    @Test(.tags(.RawSocket.send, .RawSocket.all), arguments: [RawSocketTransport.tcp, .udp])
+    @Test(arguments: [RawSocketTransport.tcp, .udp])
     func whenClosedDuringSend_ReturnsCancelledError(_ transport: RawSocketTransport) async throws {
         let timeout: TimeInterval = 0
         let dataToSend = Data("Hello".utf8)
@@ -160,7 +161,7 @@ struct RawSocketSendTests {
         }
     }
 
-    @Test(.tags(.RawSocket.send, .RawSocket.all), arguments: [RawSocketTransport.tcp, .udp])
+    @Test(arguments: [RawSocketTransport.tcp, .udp])
     func sendWhenTimeoutHappened_ReturnsTimeoutError(_ transport: RawSocketTransport) async throws {
         let timeout: TimeInterval = 0.5
         let dataToSend = Data("Hello".utf8)
@@ -189,7 +190,7 @@ struct RawSocketSendTests {
 
     // MARK: TIMEOUTS
 
-    @Test(.tags(.RawSocket.send, .RawSocket.all), arguments: [RawSocketTransport.tcp, .udp])
+    @Test(arguments: [RawSocketTransport.tcp, .udp])
     func timeoutNotZero_SendNotCompleted_ThrowsTimeoutError(_ transport: RawSocketTransport) async throws {
         let timeout: TimeInterval = 0.5
         let dataToSend = Data("Hello".utf8)
@@ -235,7 +236,7 @@ struct RawSocketSendTests {
 
     // MARK: REFERENCE CYCLES
 
-    @Test(.tags(.RawSocket.send, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
+    @Test(arguments: [RawSocketTransport.tcp, .udp])
     func whenSourceReferencesAllNil_ConnectionKeepsSelf(_ transport: RawSocketTransport) async throws {
         let timeout: TimeInterval = 0
         let dataToSend = Data("Hello".utf8)
@@ -264,7 +265,7 @@ struct RawSocketSendTests {
 
     // MARK: DELEGATE QUEUE
 
-    @Test(.tags(.RawSocket.send, .RawSocket.all), arguments: [RawSocketTransport.tcp, .udp])
+    @Test(arguments: [RawSocketTransport.tcp, .udp])
     func connectCallbackRunsOnDelegateQueue(_ transport: RawSocketTransport) async throws {
         let dataToSend = Data("Hello".utf8)
         let delegateQueue = DispatchQueue(label: "raw-socket.delegate.\(#function)")

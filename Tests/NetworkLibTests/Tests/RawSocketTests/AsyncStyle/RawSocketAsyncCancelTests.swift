@@ -3,8 +3,9 @@ import Testing
 import Network
 @testable import NetworkLib
 
+@Suite(.tags(.RawSocket.cancel, .RawSocket.all), .timeLimit(.minutes(1)))
 struct RawSocketAsyncCancelTests {
-    @Test(.tags(.RawSocket.cancel, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
+    @Test(arguments: [RawSocketTransport.tcp, .udp])
     func onSuccess(_ transport: RawSocketTransport) async throws {
         let timeout: TimeInterval = 0
         let underlyingConnection = NWConnectionMock()
@@ -19,7 +20,7 @@ struct RawSocketAsyncCancelTests {
         }
     }
 
-    @Test(.tags(.RawSocket.cancel, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
+    @Test(arguments: [RawSocketTransport.tcp, .udp])
     func multipleCancels_AllComplete(_ transport: RawSocketTransport) async throws {
         let timeout: TimeInterval = 0
         let underlyingConnection = NWConnectionMock()

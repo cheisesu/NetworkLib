@@ -7,8 +7,9 @@ extension Tag.RawSocket {
     @Tag static var cancel: Tag
 }
 
+@Suite(.tags(.RawSocket.cancel, .RawSocket.all), .timeLimit(.minutes(1)))
 struct RawSocketCancelTests {
-    @Test(.tags(.RawSocket.cancel, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
+    @Test(arguments: [RawSocketTransport.tcp, .udp])
     func callbackCalledOnDelegateQueue(_ transport: RawSocketTransport) async throws {
         let delegateQueue = DispatchQueue(label: "raw-socket.delegate.cancel")
         let probe = DelegateQueueProbe()
@@ -25,7 +26,7 @@ struct RawSocketCancelTests {
         try #require(result)
     }
 
-    @Test(.tags(.RawSocket.cancel, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
+    @Test(arguments: [RawSocketTransport.tcp, .udp])
     func whenCancelled_AndSourceReferencesAllNil_NoReferences(_ transport: RawSocketTransport) async throws {
         let underlyingConnection = NWConnectionMock()
         var tempSocket: RawSocket? = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil,
@@ -48,7 +49,7 @@ struct RawSocketCancelTests {
     }
 
     struct OneCallback {
-        @Test(.tags(.RawSocket.cancel, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
+        @Test(arguments: [RawSocketTransport.tcp, .udp])
         func whenNotConnected_CallbackCalled(_ transport: RawSocketTransport) async throws {
             let underlyingConnection = NWConnectionMock()
             let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: 0,
@@ -62,7 +63,7 @@ struct RawSocketCancelTests {
             }
         }
 
-        @Test(.tags(.RawSocket.cancel, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
+        @Test(arguments: [RawSocketTransport.tcp, .udp])
         func whenConnecting_CallbackCalled(_ transport: RawSocketTransport) async throws {
             let underlyingConnection = NWConnectionMock()
             let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: 0,
@@ -79,7 +80,7 @@ struct RawSocketCancelTests {
             }
         }
 
-        @Test(.tags(.RawSocket.cancel, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
+        @Test(arguments: [RawSocketTransport.tcp, .udp])
         func whenConnected_CallbackCalled(_ transport: RawSocketTransport) async throws {
             let underlyingConnection = NWConnectionMock()
             let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: 0,
@@ -99,7 +100,7 @@ struct RawSocketCancelTests {
             }
         }
 
-        @Test(.tags(.RawSocket.cancel, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
+        @Test(arguments: [RawSocketTransport.tcp, .udp])
         func whenCancelling_CallbackCalled(_ transport: RawSocketTransport) async throws {
             let underlyingConnection = NWConnectionMock()
             let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: 0,
@@ -123,7 +124,7 @@ struct RawSocketCancelTests {
             }
         }
 
-        @Test(.tags(.RawSocket.cancel, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
+        @Test(arguments: [RawSocketTransport.tcp, .udp])
         func whenCancelled_CallbackCalled(_ transport: RawSocketTransport) async throws {
             let underlyingConnection = NWConnectionMock()
             let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: 0,
@@ -140,7 +141,7 @@ struct RawSocketCancelTests {
     }
 
     struct WithoutThenWithCallback {
-        @Test(.tags(.RawSocket.cancel, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
+        @Test(arguments: [RawSocketTransport.tcp, .udp])
         func whenNotConnected_CallbackCalled(_ transport: RawSocketTransport) async throws {
             let underlyingConnection = NWConnectionMock()
             let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: 0,
@@ -154,7 +155,7 @@ struct RawSocketCancelTests {
             }
         }
 
-        @Test(.tags(.RawSocket.cancel, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
+        @Test(arguments: [RawSocketTransport.tcp, .udp])
         func whenConnecting_CallbackCalled(_ transport: RawSocketTransport) async throws {
             let underlyingConnection = NWConnectionMock()
             let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: 0,
@@ -172,7 +173,7 @@ struct RawSocketCancelTests {
             }
         }
 
-        @Test(.tags(.RawSocket.cancel, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
+        @Test(arguments: [RawSocketTransport.tcp, .udp])
         func whenConnected_CallbackCalled(_ transport: RawSocketTransport) async throws {
             let underlyingConnection = NWConnectionMock()
             let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: 0,
@@ -193,7 +194,7 @@ struct RawSocketCancelTests {
             }
         }
 
-        @Test(.tags(.RawSocket.cancel, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
+        @Test(arguments: [RawSocketTransport.tcp, .udp])
         func whenCancelling_CallbackCalled(_ transport: RawSocketTransport) async throws {
             let underlyingConnection = NWConnectionMock()
             let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: 0,
@@ -218,7 +219,7 @@ struct RawSocketCancelTests {
             }
         }
 
-        @Test(.tags(.RawSocket.cancel, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
+        @Test(arguments: [RawSocketTransport.tcp, .udp])
         func whenCancelled_CallbackCalled(_ transport: RawSocketTransport) async throws {
             let underlyingConnection = NWConnectionMock()
             let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: 0,
@@ -236,7 +237,7 @@ struct RawSocketCancelTests {
     }
 
     struct WithThenWithoutCallback {
-        @Test(.tags(.RawSocket.cancel, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
+        @Test(arguments: [RawSocketTransport.tcp, .udp])
         func whenNotConnected_CallbackCalled(_ transport: RawSocketTransport) async throws {
             let underlyingConnection = NWConnectionMock()
             let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: 0,
@@ -250,7 +251,7 @@ struct RawSocketCancelTests {
             }
         }
 
-        @Test(.tags(.RawSocket.cancel, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
+        @Test(arguments: [RawSocketTransport.tcp, .udp])
         func whenConnecting_CallbackCalled(_ transport: RawSocketTransport) async throws {
             let underlyingConnection = NWConnectionMock()
             let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: 0,
@@ -268,7 +269,7 @@ struct RawSocketCancelTests {
             }
         }
 
-        @Test(.tags(.RawSocket.cancel, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
+        @Test(arguments: [RawSocketTransport.tcp, .udp])
         func whenConnected_CallbackCalled(_ transport: RawSocketTransport) async throws {
             let underlyingConnection = NWConnectionMock()
             let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: 0,
@@ -289,7 +290,7 @@ struct RawSocketCancelTests {
             }
         }
 
-        @Test(.tags(.RawSocket.cancel, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
+        @Test(arguments: [RawSocketTransport.tcp, .udp])
         func whenCancelling_CallbackCalled(_ transport: RawSocketTransport) async throws {
             let underlyingConnection = NWConnectionMock()
             let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: 0,
@@ -314,7 +315,7 @@ struct RawSocketCancelTests {
             }
         }
 
-        @Test(.tags(.RawSocket.cancel, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
+        @Test(arguments: [RawSocketTransport.tcp, .udp])
         func whenCancelled_CallbackCalled(_ transport: RawSocketTransport) async throws {
             let underlyingConnection = NWConnectionMock()
             let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: 0,
@@ -332,7 +333,7 @@ struct RawSocketCancelTests {
     }
 
     struct MultipleCallbacks {
-        @Test(.tags(.RawSocket.cancel, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
+        @Test(arguments: [RawSocketTransport.tcp, .udp])
         func whenNotConnected_CallbackCalled(_ transport: RawSocketTransport) async throws {
             let underlyingConnection = NWConnectionMock()
             let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: 0,
@@ -352,7 +353,7 @@ struct RawSocketCancelTests {
             try #require(result == [1, 2])
         }
 
-        @Test(.tags(.RawSocket.cancel, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
+        @Test(arguments: [RawSocketTransport.tcp, .udp])
         func whenConnecting_CallbackCalled(_ transport: RawSocketTransport) async throws {
             let underlyingConnection = NWConnectionMock()
             let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: 0,
@@ -376,7 +377,7 @@ struct RawSocketCancelTests {
             try #require(result == [1, 2])
         }
 
-        @Test(.tags(.RawSocket.cancel, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
+        @Test(arguments: [RawSocketTransport.tcp, .udp])
         func whenCancelling_CallbackCalled(_ transport: RawSocketTransport) async throws {
             let underlyingConnection = NWConnectionMock()
             let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: 0,
@@ -407,7 +408,7 @@ struct RawSocketCancelTests {
             try #require(result == [1, 2, 3])
         }
 
-        @Test(.tags(.RawSocket.cancel, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
+        @Test(arguments: [RawSocketTransport.tcp, .udp])
         func whenConnected_CallbackCalled(_ transport: RawSocketTransport) async throws {
             let underlyingConnection = NWConnectionMock()
             let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: 0,
@@ -434,7 +435,7 @@ struct RawSocketCancelTests {
             try #require(result == [1, 2])
         }
 
-        @Test(.tags(.RawSocket.cancel, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
+        @Test(arguments: [RawSocketTransport.tcp, .udp])
         func whenCancelled_CallbackCalled(_ transport: RawSocketTransport) async throws {
             let underlyingConnection = NWConnectionMock()
             let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: 0,

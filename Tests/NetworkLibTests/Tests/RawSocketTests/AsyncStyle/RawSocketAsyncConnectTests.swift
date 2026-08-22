@@ -3,8 +3,9 @@ import Testing
 import Network
 @testable import NetworkLib
 
+@Suite(.tags(.RawSocket.connect, .RawSocket.all), .timeLimit(.minutes(1)))
 struct RawSocketAsyncConnectTests {
-    @Test(.tags(.RawSocket.connect, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
+    @Test(arguments: [RawSocketTransport.tcp, .udp])
     func onSuccess(_ transport: RawSocketTransport) async throws {
         let timeout: TimeInterval = 0
         let underlyingConnection = NWConnectionMock()
@@ -15,7 +16,7 @@ struct RawSocketAsyncConnectTests {
         try #require(info == underlyingConnection.connectionInfo(with: transport))
     }
 
-    @Test(.tags(.RawSocket.connect, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
+    @Test(arguments: [RawSocketTransport.tcp, .udp])
     func onError(_ transport: RawSocketTransport) async throws {
         let timeout: TimeInterval = 0
         let expectedError = NWError.posix(.EINVAL)
@@ -30,7 +31,7 @@ struct RawSocketAsyncConnectTests {
         }
     }
 
-    @Test(.tags(.RawSocket.connect, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
+    @Test(arguments: [RawSocketTransport.tcp, .udp])
     func whenTaskCancelled_ThrowsCancelledError(_ transport: RawSocketTransport) async throws {
         let timeout: TimeInterval = 0
         let underlyingConnection = NWConnectionMock(overridedStates: [.preparing])

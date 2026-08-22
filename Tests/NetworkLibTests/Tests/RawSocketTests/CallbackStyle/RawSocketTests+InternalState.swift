@@ -6,9 +6,9 @@ extension Tag.RawSocket {
     @Tag static var internalState: Tag
 }
 
+@Suite(.tags(.RawSocket.internalState, .RawSocket.all), .timeLimit(.minutes(1)))
 struct RawSocketInternalStateTests {
-    @Test(.timeLimit(.minutes(1)), .tags(.RawSocket.internalState, .RawSocket.all),
-          arguments: [RawSocketTransport.tcp, .udp])
+    @Test(arguments: [RawSocketTransport.tcp, .udp])
     func connectThenCancel_CorrectSequence(_ transport: RawSocketTransport) async throws {
         let underlyingConnection = NWConnectionMock()
         let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: 0,
@@ -35,7 +35,7 @@ struct RawSocketInternalStateTests {
     }
 
 
-    @Test(.timeLimit(.minutes(1)), .tags(.RawSocket.internalState, .RawSocket.all))
+    @Test
     func notDeinitsUntilClosed() async throws {
         let underlyingConnection = NWConnectionMock()
         var tempSocket: RawSocket? = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil,

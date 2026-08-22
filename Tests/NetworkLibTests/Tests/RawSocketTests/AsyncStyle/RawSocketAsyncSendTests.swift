@@ -3,8 +3,9 @@ import Testing
 import Network
 @testable import NetworkLib
 
+@Suite(.tags(.RawSocket.send, .RawSocket.all), .timeLimit(.minutes(1)))
 struct RawSocketAsyncSendTests {
-    @Test(.tags(.RawSocket.send, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
+    @Test(arguments: [RawSocketTransport.tcp, .udp])
     func onSuccess(_ transport: RawSocketTransport) async throws {
         let timeout: TimeInterval = 0
         let data = Data("hello".utf8)
@@ -17,7 +18,7 @@ struct RawSocketAsyncSendTests {
         try #require(underlyingConnection.sendDataFull == data)
     }
 
-    @Test(.tags(.RawSocket.send, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
+    @Test(arguments: [RawSocketTransport.tcp, .udp])
     func onError(_ transport: RawSocketTransport) async throws {
         let timeout: TimeInterval = 0
         let expectedError = NWError.posix(.EINVAL)
@@ -34,7 +35,7 @@ struct RawSocketAsyncSendTests {
         }
     }
 
-    @Test(.tags(.RawSocket.send, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
+    @Test(arguments: [RawSocketTransport.tcp, .udp])
     func whenTaskCancelled_ThrowsCancelledError(_ transport: RawSocketTransport) async throws {
         let timeout: TimeInterval = 0
         let data = Data("hello".utf8)

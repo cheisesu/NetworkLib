@@ -3,8 +3,9 @@ import Testing
 import Network
 @testable import NetworkLib
 
+@Suite(.tags(.RawSocket.receive, .RawSocket.all), .timeLimit(.minutes(1)))
 struct RawSocketAsyncReceiveTests {
-    @Test(.tags(.RawSocket.receive, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
+    @Test(arguments: [RawSocketTransport.tcp, .udp])
     func onSuccess(_ transport: RawSocketTransport) async throws {
         let timeout: TimeInterval = 0
         let expectedData = Data("hello".utf8)
@@ -17,7 +18,7 @@ struct RawSocketAsyncReceiveTests {
         try #require(data == expectedData)
     }
 
-    @Test(.tags(.RawSocket.receive, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
+    @Test(arguments: [RawSocketTransport.tcp, .udp])
     func onError(_ transport: RawSocketTransport) async throws {
         let timeout: TimeInterval = 0
         let expectedError = NWError.posix(.EINVAL)
@@ -33,7 +34,7 @@ struct RawSocketAsyncReceiveTests {
         }
     }
 
-    @Test(.tags(.RawSocket.receive, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
+    @Test(arguments: [RawSocketTransport.tcp, .udp])
     func whenTaskCancelled_ThrowsCancelledError(_ transport: RawSocketTransport) async throws {
         let timeout: TimeInterval = 0
         let underlyingConnection = NWConnectionMock(mode: [.methodReceive, .dontCallCallback])

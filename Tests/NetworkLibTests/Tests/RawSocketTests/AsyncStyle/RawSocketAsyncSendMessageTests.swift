@@ -3,6 +3,7 @@ import Testing
 import Network
 @testable import NetworkLib
 
+@Suite(.tags(.RawSocket.sendMessage, .RawSocket.all), .timeLimit(.minutes(1)))
 struct RawSocketAsyncSendMessageTests {
     private struct _SendMessage: RawSocketSendMessage {
         let context: NWConnection.ContentContext
@@ -14,7 +15,7 @@ struct RawSocketAsyncSendMessageTests {
         }
     }
 
-    @Test(.tags(.RawSocket.sendMessage, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
+    @Test(arguments: [RawSocketTransport.tcp, .udp])
     func onSuccess(_ transport: RawSocketTransport) async throws {
         let timeout: TimeInterval = 0
         let data = Data("Hello".utf8)
@@ -31,7 +32,7 @@ struct RawSocketAsyncSendMessageTests {
         try #require(underlyingConnection.sendContext.isFinal == context.isFinal)
     }
 
-    @Test(.tags(.RawSocket.sendMessage, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
+    @Test(arguments: [RawSocketTransport.tcp, .udp])
     func onError(_ transport: RawSocketTransport) async throws {
         let timeout: TimeInterval = 0
         let data = Data("Hello".utf8)
@@ -50,7 +51,7 @@ struct RawSocketAsyncSendMessageTests {
         }
     }
 
-    @Test(.tags(.RawSocket.sendMessage, .RawSocket.all), .timeLimit(.minutes(1)), arguments: [RawSocketTransport.tcp, .udp])
+    @Test(arguments: [RawSocketTransport.tcp, .udp])
     func whenTaskCancelled_ThrowsCancelledError(_ transport: RawSocketTransport) async throws {
         let timeout: TimeInterval = 0
         let data = Data("Hello".utf8)

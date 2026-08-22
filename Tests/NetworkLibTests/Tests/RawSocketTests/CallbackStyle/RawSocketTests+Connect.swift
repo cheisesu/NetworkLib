@@ -10,10 +10,11 @@ extension Tag {
     }
 }
 
+@Suite(.tags(.RawSocket.connect, .RawSocket.all), .timeLimit(.minutes(1)))
 struct RawSocketConnectTests {
     // MARK: TIMEOUT ERRORS
 
-    @Test(.tags(.RawSocket.connect, .RawSocket.all), .timeLimit(.minutes(1)))
+    @Test
     func timeoutNonZero_UnableToConnect_ThrowsTimeoutError() async throws {
         let transport = RawSocketTransport.tcp
         let timeout: TimeInterval = 0.5
@@ -32,7 +33,7 @@ struct RawSocketConnectTests {
         }
     }
 
-    @Test(.tags(.RawSocket.connect, .RawSocket.all), .timeLimit(.minutes(1)))
+    @Test
     func timeoutZero_UnableToConnect_CallbackNotCalled() async throws {
         let transport = RawSocketTransport.tcp
         let timeout: TimeInterval = 0
@@ -55,7 +56,7 @@ struct RawSocketConnectTests {
 
     // MARK: SUCCESS ON STATES
 
-    @Test(.tags(.RawSocket.connect, .RawSocket.all), .timeLimit(.minutes(1)))
+    @Test
     func whenNotConnected_CallbackSuccess() async throws {
         let transport = RawSocketTransport.tcp
         let timeout: TimeInterval = 0
@@ -73,7 +74,7 @@ struct RawSocketConnectTests {
 
     // MARK: ERRORS ON STATES
 
-    @Test(.tags(.RawSocket.connect, .RawSocket.all), .timeLimit(.minutes(1)))
+    @Test
     func whenConnecting_ThrowsAlreadyError() async throws {
         let transport = RawSocketTransport.tcp
         let timeout: TimeInterval = 0
@@ -96,7 +97,7 @@ struct RawSocketConnectTests {
         }
     }
 
-    @Test(.tags(.RawSocket.connect, .RawSocket.all), .timeLimit(.minutes(1)))
+    @Test
     func whenConnected_ThrowsConnectedError() async throws {
         let transport = RawSocketTransport.tcp
         let timeout: TimeInterval = 0
@@ -117,7 +118,7 @@ struct RawSocketConnectTests {
         }
     }
 
-    @Test(.tags(.RawSocket.connect, .RawSocket.all), .timeLimit(.minutes(1)))
+    @Test
     func whenCancelling_ThrowsCanceledError() async throws {
         let transport = RawSocketTransport.tcp
         let timeout: TimeInterval = 0
@@ -142,7 +143,7 @@ struct RawSocketConnectTests {
         }
     }
 
-    @Test(.tags(.RawSocket.connect, .RawSocket.all), .timeLimit(.minutes(1)))
+    @Test
     func whenClosed_ThrowsCanceledError() async throws {
         let transport = RawSocketTransport.tcp
         let timeout: TimeInterval = 0
@@ -167,7 +168,7 @@ struct RawSocketConnectTests {
 
     // MARK: ENDPOINT ERRORS
 
-    @Test(.tags(.RawSocket.connect, .RawSocket.all), .timeLimit(.minutes(1)))
+    @Test
     func whenAddressIsNotAvailable_FailsWithError() async throws {
         let config = RawSocketConfiguration("127-0-0-1", 65535, isSecure: false, sni: nil, transport: .tcp,
                                             maxDataBlock: 256, timeout: 0)
@@ -185,7 +186,7 @@ struct RawSocketConnectTests {
         }
     }
 
-    @Test(.tags(.RawSocket.connect, .RawSocket.all), .timeLimit(.minutes(1)))
+    @Test
     func whenIpIsWrong_FailsWithError() async throws {
         let config = RawSocketConfiguration("127.0.0.256", 65535, isSecure: false, sni: nil, transport: .tcp,
                                             maxDataBlock: 256, timeout: 0)
@@ -205,7 +206,7 @@ struct RawSocketConnectTests {
 
     // MARK: ERRORS BY SERVER BEHAVIOUR
 
-    @Test(.tags(.RawSocket.connect, .RawSocket.all), .timeLimit(.minutes(1)))
+    @Test
     func connectionGoesToFailedState_ThrowsErrorFromTheState() async throws {
         let transport = RawSocketTransport.tcp
         let timeout: TimeInterval = 0
@@ -225,7 +226,7 @@ struct RawSocketConnectTests {
         }
     }
 
-    @Test(.tags(.RawSocket.connect, .RawSocket.all), .timeLimit(.minutes(1)))
+    @Test
     func whenServerNoExists_FailsWithRefusedError() async throws {
         let config = RawSocketConfiguration("127.0.0.1", 65535, isSecure: true, sni: "localhost", transport: .tcp,
                                             maxDataBlock: 256, timeout: 0)
@@ -249,7 +250,7 @@ struct RawSocketConnectTests {
     @available(swift, introduced: 6.2)
     @available(iOS, unavailable)
     @available(tvOS, unavailable)
-    @Test(.tags(.RawSocket.connect, .RawSocket.all), .timeLimit(.minutes(1)))
+    @Test
     func connectCallbackCalledOnlyOnce() async throws {
         try await #require(processExitsWith: .success) {
             let transport = RawSocketTransport.tcp
@@ -276,7 +277,7 @@ struct RawSocketConnectTests {
 
     // MARK: REFERENCE STORING
 
-    @Test(.tags(.RawSocket.connect, .RawSocket.all), .timeLimit(.minutes(1)))
+    @Test
     func afterConnect_ReferenceStored() async throws {
         let transport = RawSocketTransport.tcp
         let timeout: TimeInterval = 0
@@ -303,7 +304,7 @@ struct RawSocketConnectTests {
 
     // MARK: DELEGATE QUEUE
 
-    @Test(.tags(.RawSocket.connect, .RawSocket.all), .timeLimit(.minutes(1)))
+    @Test
     func callbackCalledOnProvidedQueue() async throws {
         let delegateQueue = DispatchQueue(label: "delegate." + #function)
         let key = DispatchSpecificKey<Int>()

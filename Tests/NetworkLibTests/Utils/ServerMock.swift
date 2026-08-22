@@ -20,6 +20,7 @@ private func loadIdentityFromP12() throws -> SecIdentity {
     return identity as! SecIdentity
 }
 
+@available(*, unavailable)
 final class ServerMock: @unchecked Sendable {
     enum Flow: Sendable {
         case none
