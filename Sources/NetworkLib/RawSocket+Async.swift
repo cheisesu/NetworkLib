@@ -15,6 +15,7 @@ extension RawSocket {
     /// ```
     ///
     /// - Returns: Information about the established connection.
+    /// - Throws: The `NWError` reported by the connection attempt or cancellation.
     @discardableResult
     public func connect() async throws(NWError) -> ConnectionInfo {
         try await withSocketCancellation { done in
@@ -33,6 +34,7 @@ extension RawSocket {
     /// ```
     ///
     /// - Parameter data: The bytes to send.
+    /// - Throws: The `NWError` that prevented the send from completing.
     public func send(_ data: Data) async throws(NWError) {
         try await withSocketCancellation { done in
             send(data, done)
@@ -44,6 +46,7 @@ extension RawSocket {
     /// If the surrounding task is cancelled while this operation is suspended, the socket is cancelled.
     ///
     /// - Parameter message: The typed message that supplies content and context.
+    /// - Throws: The `NWError` that prevented the message from being sent.
     public func sendMessage<M: RawSocketSendMessage>(_ message: M) async throws(NWError) {
         try await withSocketCancellation { done in
             sendMessage(message, done)
@@ -63,6 +66,7 @@ extension RawSocket {
     /// ```
     ///
     /// - Returns: The next data block, or `nil` when the connection completes cleanly with no more data.
+    /// - Throws: The `NWError` that prevented the receive from completing.
     public func receiveNext() async throws(NWError) -> Data? {
         try await withSocketCancellation { done in
             receiveNext(done)
@@ -75,6 +79,7 @@ extension RawSocket {
     ///
     /// - Parameter type: The typed message to decode. The default is inferred from the return type.
     /// - Returns: The decoded message.
+    /// - Throws: The `NWError` that prevented receiving or decoding the message.
     public func receiveNextMessage<M: RawSocketReceiveMessage>(of type: M.Type = M.self) async throws(NWError) -> M {
         try await withSocketCancellation { done in
             receiveNextMessage(of: M.self, done)

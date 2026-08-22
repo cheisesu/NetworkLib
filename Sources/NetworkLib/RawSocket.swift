@@ -1,14 +1,18 @@
 import Foundation
 import Network
 
-/// A lightweight wrapper around `NWConnection` that exposes callback and async socket operations.
+/// A lightweight socket wrapper that exposes callback and async operations over a Network framework connection.
+///
+/// `RawSocket` serializes access to the underlying connection, reports failures as `NWError`, and keeps itself alive while the
+/// connection is active.
 ///
 /// For example, connect and receive data asynchronously:
 ///
 /// ```swift
 /// let socket = try RawSocket(configuration)
-/// try await socket.connect()
+/// let info = try await socket.connect()
 /// let data = try await socket.receiveNext()
+/// print(info.remoteEndpoint, data?.count ?? 0)
 /// await socket.cancel()
 /// ```
 @available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
@@ -56,7 +60,7 @@ public class RawSocket: @unchecked Sendable {
     /// - Parameters:
     ///   - configuration: The destination, transport, security, proxy, and timeout settings.
     ///   - delegateQueue: Optional queue used to deliver callback-based API completions.
-    /// - Throws: An `NWError` if the underlying `NWConnection` cannot be created from the configuration.
+    /// - Throws: An `NWError` if the underlying Network framework connection cannot be created from the configuration.
     public convenience init(_ configuration: RawSocketConfiguration, delegateQueue: DispatchQueue? = nil) throws(NWError) {
         try self.init(configuration, accessQueue: nil, delegateQueue: delegateQueue)
     }
@@ -143,20 +147,22 @@ public class RawSocket: @unchecked Sendable {
 
     /// Sends raw bytes on the socket.
     ///
-    /// The socket must be connecting or connected. The completion receives `nil` on success or the `NWError` that prevented the
-    /// send from completing.
+    /// The socket must be connecting or connected. The completion receives `.success(())` when the bytes are processed, or
+    /// `.failure` with the `NWError` that prevented the send from completing.
     ///
     /// For example, send UTF-8 bytes:
     ///
     /// ```swift
-    /// socket.send(Data("ping".utf8)) { error in
-    ///     if let error { print(error) }
+    /// socket.send(Data("ping".utf8)) { result in
+    ///     if case .failure(let error) = result {
+    ///         print(error)
+    ///     }
     /// }
     /// ```
     ///
     /// - Parameters:
     ///   - data: The bytes to send.
-    ///   - completion: A closure invoked when the send is processed.
+    ///   - completion: A closure invoked with the send result after the content is processed.
     public func send(_ data: Data, _ completion: (@Sendable (_ result: Result<Void, NWError>) -> Void)?) {
         let completion = delivered(completion)
         accessQueue.async { [weak self] in
@@ -183,12 +189,13 @@ public class RawSocket: @unchecked Sendable {
 
     /// Sends a typed message with protocol metadata.
     ///
-    /// Use this when an application protocol is installed in the `NWConnection` stack and data must be sent with a content
-    /// context, such as a custom `NWProtocolFramer.Message`.
+    /// Use this when an application protocol is installed in the connection stack and data must be sent with a content context,
+    /// such as a custom `NWProtocolFramer.Message`. The completion receives `.success(())` when the message is processed, or
+    /// `.failure` with the `NWError` that prevented the send from completing.
     ///
     /// - Parameters:
     ///   - message: The typed message that supplies content and context.
-    ///   - completion: A closure invoked when the send is processed.
+    ///   - completion: A closure invoked with the send result after the content is processed.
     public func sendMessage<M: RawSocketSendMessage>(_ message: M,
                                                      _ completion: (@Sendable (_ result: Result<Void, NWError>) -> Void)?)
     {
@@ -279,7 +286,7 @@ public class RawSocket: @unchecked Sendable {
     /// Receives and decodes the next typed message.
     ///
     /// The socket receives a Network framework message and asks `M` to initialize itself from the delivered content context and
-    /// payload. If decoding fails, the completion receives `EBADMSG` unless the connection is already closing.
+    /// payload. If decoding fails, the completion receives `.failure(.posix(.EBADMSG))`.
     ///
     /// - Parameters:
     ///   - type: The typed message to decode. The default is inferred from the completion result type.

@@ -11,6 +11,9 @@ extension RawSocketConfiguration {
 extension RawSocketConfiguration {
     /// HTTP CONNECT proxy settings used when creating a proxied socket connection.
     ///
+    /// On newer OS versions, these settings are applied through Network framework proxy configuration. On older supported OS
+    /// versions, NetworkLib uses its HTTP CONNECT framer fallback.
+    ///
     /// For example, attach a proxy to an existing socket configuration:
     ///
     /// ```swift
@@ -99,7 +102,8 @@ public struct RawSocketConfiguration: Sendable {
     /// Optional HTTP CONNECT proxy settings.
     public let proxy: Proxy?
 
-    /// Additional Network framework application protocols inserted into the protocol stack.
+    /// Additional Network framework application protocols inserted above the transport, or above the tunneled connection when a
+    /// proxy is used.
     public let additionalProtocols: [NWProtocolOptions]
 #if DEBUG
     var disableInBoxProxy: Bool = false
@@ -120,7 +124,7 @@ public struct RawSocketConfiguration: Sendable {
     ///   - transport: The transport protocol to use.
     ///   - maxDataBlock: The maximum byte count requested by each raw receive operation.
     ///   - timeout: The socket operation timeout in seconds.
-    ///   - additionalProtocols: Application protocols to insert before the transport protocol stack is used.
+    ///   - additionalProtocols: Application protocols to insert above the transport protocol stack.
     public init(_ host: NWEndpoint.Host, _ port: NWEndpoint.Port, ipVersion: NWProtocolIP.Options.Version = .any,
                 isSecure: Bool = true, sni: String? = nil,
                 transport: RawSocketTransport = .tcp, maxDataBlock: Int = Self.maxDataLength,
