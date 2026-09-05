@@ -51,8 +51,8 @@ type_body_length:
 
 # To set both levels explicitly, use a dictionary.
 file_length:
-  warning: 500
-  error: 1200
+  warning: 800
+  error: 1000
   
 # Naming rules can set warnings/errors for `min_length` and `max_length`. Additionally, they can
 # set excluded names and allowed symbols.
