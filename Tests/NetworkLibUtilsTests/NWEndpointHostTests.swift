@@ -1,14 +1,15 @@
 import Foundation
 import Network
 import Testing
-@testable import NetworkLib
+@testable import NetworkLibUtils
 
-extension Tag {
+extension Tag.LibUtils {
     @Tag static var endpointHost: Tag
 }
 
+@Suite(.tags(.LibUtils.all, .LibUtils.endpointHost))
 struct NWEndpointHostTests {
-    @Test(.tags(.endpointHost), arguments: [
+    @Test(arguments: [
         (NWEndpoint.Host.name("example.com", nil), "example.com"),
         (NWEndpoint.Host.ipv4(IPv4Address("127.0.0.1")!), "127.0.0.1"),
         (NWEndpoint.Host.ipv6(IPv6Address("2001:0db8:85a3:0000:0000:8a2e:0370:7334")!), "2001:db8:85a3::8a2e:370:7334"),
@@ -20,7 +21,7 @@ struct NWEndpointHostTests {
         try #require(host.asString == expected)
     }
 
-    @Test(.tags(.endpointHost), arguments: [
+    @Test(arguments: [
         (NWEndpoint.Host.name("example.com", nil), "example.com"),
         (NWEndpoint.Host.ipv4(IPv4Address("127.0.0.1")!), "127.0.0.1"),
         (NWEndpoint.Host.ipv6(IPv6Address("2001:0db8:85a3:0000:0000:8a2e:0370:7334")!), "[2001:db8:85a3::8a2e:370:7334]"),
@@ -32,7 +33,7 @@ struct NWEndpointHostTests {
         try #require(host.asUrlString == expected)
     }
 
-    @Test(.tags(.endpointHost), arguments: [
+    @Test(arguments: [
         (NWEndpoint.Host.name("example.com", nil), false),
         (NWEndpoint.Host.ipv4(IPv4Address("127.0.0.1")!), true),
         (NWEndpoint.Host.ipv6(IPv6Address("2001:0db8:85a3:0000:0000:8a2e:0370:7334")!), true),

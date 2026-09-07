@@ -88,6 +88,14 @@
         "identifier" : "NetworkLibTests",
         "name" : "NetworkLibTests"
       }
+    },
+    {
+      "parallelizable" : true,
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "NetworkLibUtilsTests",
+        "name" : "NetworkLibUtilsTests"
+      }
     }
   ],
   "version" : 2

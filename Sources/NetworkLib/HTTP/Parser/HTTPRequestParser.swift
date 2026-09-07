@@ -1,5 +1,6 @@
 import Foundation
 import Network
+import NetworkLibUtils
 
 final class HTTPRequestParser: Sendable {
     let parsedData: Data

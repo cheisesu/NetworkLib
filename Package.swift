@@ -15,10 +15,8 @@ let package = Package(
         .macOS(.v10_15),
     ],
     products: [
-        .library(
-            name: "NetworkLib",
-            targets: ["NetworkLib"]
-        ),
+        .library(name: "NetworkLib", targets: ["NetworkLib"]),
+        .library(name: "NetworkLibUtils", targets: ["NetworkLibUtils"]),
         .plugin(name: "nl-swiftlint-plugin", targets: ["nl-swiftlint-plugin"]),
     ],
     targets: [
@@ -27,6 +25,12 @@ let package = Package(
         // MARK: LIB TARGETS
         .target(
             name: "NetworkLib",
+            dependencies: ["NetworkLibUtils"],
+            swiftSettings: commonSettings,
+            plugins: [.plugin(name: "nl-swiftlint-plugin")]
+        ),
+        .target(
+            name: "NetworkLibUtils",
             swiftSettings: commonSettings,
             plugins: [.plugin(name: "nl-swiftlint-plugin")]
         ),
@@ -39,6 +43,11 @@ let package = Package(
                 .copy("Resources/localhost.key"),
                 .copy("Resources/localhost.p12"),
             ],
+            swiftSettings: commonSettings
+        ),
+        .testTarget(
+            name: "NetworkLibUtilsTests",
+            dependencies: ["NetworkLib", "NetworkLibUtils"],
             swiftSettings: commonSettings
         ),
     ],

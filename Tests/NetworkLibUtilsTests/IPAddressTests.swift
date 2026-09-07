@@ -1,13 +1,17 @@
 import Testing
 import Network
-@testable import NetworkLib
+@testable import NetworkLibUtils
 
 extension Tag {
-    @Tag static var ipAddress: Self
+    enum LibUtils {
+        @Tag static var ipAddress: Tag
+        @Tag static var all: Tag
+    }
 }
 
+@Suite(.tags(.LibUtils.all, .LibUtils.ipAddress))
 struct IPAddressTests {
-    @Test("IPv4 string converting", .tags(.ipAddress), arguments: [
+    @Test("IPv4 string converting", arguments: [
         // ===== VALID =====
         ("0.0.0.0", IPv4Address("0.0.0.0")),
         ("127.0.0.1", IPv4Address("127.0.0.1")),
@@ -37,7 +41,7 @@ struct IPAddressTests {
         try #require(ip.isIPv4 == (expected != nil))
     }
     
-    @Test("IPv6 string converting", .tags(.ipAddress), arguments: [
+    @Test("IPv6 string converting", arguments: [
         // ===== VALID =====
         ("::1", IPv6Address("::1")),
         ("::", IPv6Address("::")),
@@ -88,7 +92,7 @@ struct IPAddressTests {
         try #require(ip.isIPv6 == (expected != nil))
     }
     
-    @Test(.tags(.ipAddress), arguments: [
+    @Test(arguments: [
         // valid
         ("0.0.0.0", "0.0.0.0"),
         ("127.0.0.1", "127.0.0.1"),
@@ -114,7 +118,7 @@ struct IPAddressTests {
         try #require(IPv4Address(ip)?.asString == expected)
     }
     
-    @Test(.tags(.ipAddress), arguments: [
+    @Test(arguments: [
         // ===== VALID (canonical stays same) =====
         ("::1", "::1"),
         ("::", "::"),
@@ -151,7 +155,7 @@ struct IPAddressTests {
         try #require(IPv6Address(ip)?.asString == expected)
     }
     
-    @Test("IPv6 url format", .tags(.ipAddress), arguments: [
+    @Test("IPv6 url format", arguments: [
         ("::1", "[::1]"),
         ("::", "[::]"),
         ("2001:db8::1", "[2001:db8::1]"),
