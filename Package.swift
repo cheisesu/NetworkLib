@@ -3,6 +3,10 @@
 import PackageDescription
 import Foundation
 
+private let commonSettings: [SwiftSetting]? = [
+    .unsafeFlags(["-warnings-as-errors"]),
+]
+
 let package = Package(
     name: "NetworkLib",
     platforms: [
@@ -18,14 +22,15 @@ let package = Package(
         .plugin(name: "nl-swiftlint-plugin", targets: ["nl-swiftlint-plugin"]),
     ],
     targets: [
+        // MARK: PLUGINS
         .plugin(name: "nl-swiftlint-plugin", capability: .buildTool()),
+        // MARK: LIB TARGETS
         .target(
             name: "NetworkLib",
-            swiftSettings: [
-                .unsafeFlags(["-warnings-as-errors"])
-            ],
+            swiftSettings: commonSettings,
             plugins: [.plugin(name: "nl-swiftlint-plugin")]
         ),
+        // MARK: TEST TARGETS
         .testTarget(
             name: "NetworkLibTests",
             dependencies: ["NetworkLib"],
@@ -34,9 +39,7 @@ let package = Package(
                 .copy("Resources/localhost.key"),
                 .copy("Resources/localhost.p12"),
             ],
-            swiftSettings: [
-                .unsafeFlags(["-warnings-as-errors"])
-            ]
+            swiftSettings: commonSettings
         ),
     ],
     swiftLanguageModes: [.v6]
