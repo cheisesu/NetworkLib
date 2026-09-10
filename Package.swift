@@ -15,7 +15,8 @@ let package = Package(
         .macOS(.v10_15),
     ],
     products: [
-        .library(name: "NetworkLib", targets: ["NetworkLib"]),
+        .library(name: "NetworkLibCore", targets: ["NetworkLibCore"]),
+        .library(name: "NetworkLibHttpCore", targets: ["NetworkLibHttpCore"]),
         .library(name: "NetworkLibUtils", targets: ["NetworkLibUtils"]),
         .plugin(name: "nl-swiftlint-plugin", targets: ["nl-swiftlint-plugin"]),
     ],
@@ -24,7 +25,14 @@ let package = Package(
         .plugin(name: "nl-swiftlint-plugin", capability: .buildTool()),
         // MARK: LIB TARGETS
         .target(
-            name: "NetworkLib",
+            name: "NetworkLibCore",
+            dependencies: ["NetworkLibUtils", "NetworkLibHttpCore"],
+            exclude: ["Proxy/ProtocolProxy.swift"],
+            swiftSettings: commonSettings,
+            plugins: [.plugin(name: "nl-swiftlint-plugin")]
+        ),
+        .target(
+            name: "NetworkLibHttpCore",
             dependencies: ["NetworkLibUtils"],
             swiftSettings: commonSettings,
             plugins: [.plugin(name: "nl-swiftlint-plugin")]
@@ -36,18 +44,23 @@ let package = Package(
         ),
         // MARK: TEST TARGETS
         .testTarget(
-            name: "NetworkLibTests",
-            dependencies: ["NetworkLib"],
-            resources: [
-                .copy("Resources/localhost.crt"),
-                .copy("Resources/localhost.key"),
-                .copy("Resources/localhost.p12"),
-            ],
+            name: "NetworkLibCoreTests",
+            dependencies: ["NetworkLibCore", "NetworkLibHttpCore"],
+//            resources: [
+//                .copy("Resources/localhost.crt"),
+//                .copy("Resources/localhost.key"),
+//                .copy("Resources/localhost.p12"),
+//            ],
+            swiftSettings: commonSettings
+        ),
+        .testTarget(
+            name: "NetworkLibHttpCoreTests",
+            dependencies: ["NetworkLibHttpCore", "NetworkLibUtils"],
             swiftSettings: commonSettings
         ),
         .testTarget(
             name: "NetworkLibUtilsTests",
-            dependencies: ["NetworkLib", "NetworkLibUtils"],
+            dependencies: ["NetworkLibCore", "NetworkLibUtils"],
             swiftSettings: commonSettings
         ),
     ],
