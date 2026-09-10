@@ -1,5 +1,6 @@
 import Foundation
 import Network
+import NetworkLibHttpCore
 
 @available(iOS 15.4, tvOS 15.4, macOS 12.3, *)
 extension ProtocolProxy {

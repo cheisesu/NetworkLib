@@ -17,7 +17,7 @@ public enum HTTPAuthorization: Sendable, Equatable {
     /// Basic authentication credentials rendered as `Basic ` followed by Base64-encoded `username:password` bytes.
     case basic(userName: String, password: String)
 
-    var httpHeader: String {
+    public var httpHeader: String {
         switch self {
         case let .basic(username, password):
             let encoded = Data("\(username):\(password)".utf8).base64EncodedString()

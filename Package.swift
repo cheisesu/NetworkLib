@@ -27,7 +27,6 @@ let package = Package(
         .target(
             name: "NetworkLibCore",
             dependencies: ["NetworkLibUtils", "NetworkLibHttpCore"],
-            exclude: ["Proxy/ProtocolProxy.swift"],
             swiftSettings: commonSettings,
             plugins: [.plugin(name: "nl-swiftlint-plugin")]
         ),

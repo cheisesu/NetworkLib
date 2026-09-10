@@ -2,8 +2,8 @@ import Foundation
 import Network
 import NetworkLibUtils
 
-final class HTTPRequestParser: Sendable {
-    let parsedData: Data
+public final class HTTPRequestParser: Sendable {
+    public let parsedData: Data
 
     init(_ urlRequest: URLRequest, version: HTTPVersion = .v1_1) {
         var urlRequest = urlRequest
@@ -30,14 +30,14 @@ final class HTTPRequestParser: Sendable {
         parsedData = Data([headerData, urlRequest.httpBody].compactMap { $0 }.joined())
     }
 
-    convenience init(connectTo host: NWEndpoint.Host, _ port: NWEndpoint.Port?, headers: [String: String]) {
+    public convenience init(connectTo host: NWEndpoint.Host, _ port: NWEndpoint.Port?, headers: [String: String]) {
         let headers = headers.reduce(into: [HTTPHeaderKey: String]()) { partialResult, keyValue in
             partialResult[HTTPHeaderKey(keyValue.key)] = keyValue.value
         }
         self.init(connectTo: host, port, headerKeys: headers)
     }
 
-    init(connectTo host: NWEndpoint.Host, _ port: NWEndpoint.Port?, headerKeys headers: [HTTPHeaderKey: String]) {
+    public init(connectTo host: NWEndpoint.Host, _ port: NWEndpoint.Port?, headerKeys headers: [HTTPHeaderKey: String]) {
         let target = if let port {
             [host.asUrlString, String(port.rawValue)].joined(separator: ":")
         } else {

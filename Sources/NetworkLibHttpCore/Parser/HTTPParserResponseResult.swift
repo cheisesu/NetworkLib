@@ -1,13 +1,13 @@
 import Foundation
 
-struct HTTPParserResponseResult: Sendable, Equatable {
-    let versionRaw: String
-    let status: Int
-    let headers: [HTTPHeaderKey: String]
-    let rawSize: Int
-    let leftBuffer: Data
+public struct HTTPParserResponseResult: Sendable, Equatable {
+    public let versionRaw: String
+    public let status: Int
+    public let headers: [HTTPHeaderKey: String]
+    public let rawSize: Int
+    public let leftBuffer: Data
 
-    func urlResponse(with url: URL) -> HTTPURLResponse? {
+    public func urlResponse(with url: URL) -> HTTPURLResponse? {
         HTTPURLResponse(
             url: url,
             statusCode: status,
@@ -18,7 +18,7 @@ struct HTTPParserResponseResult: Sendable, Equatable {
 }
 
 extension HTTPParserResponseResult: CustomStringConvertible {
-    var description: String {
+    public var description: String {
         var lines: [String] = [
             "HTTPParserResponseResult (" + String(rawSize) + "b) {",
             ["\tVersion", versionRaw].joined(separator: ": "),

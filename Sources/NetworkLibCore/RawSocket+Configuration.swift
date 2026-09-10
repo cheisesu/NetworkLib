@@ -243,7 +243,6 @@ public struct RawSocketConfiguration: Sendable {
         if #available(iOS 17.0, tvOS 17.0, macOS 14.0, *), !disableInBoxProxy {
             return makeInBoxProxyParameters(proxy)
         }
-#if false
         if #available(iOS 15.4, tvOS 15.4, macOS 12.3, *) {
             let parameters = makeDirectNWParameters(.tcp, ipVersion: overrideIpVersion, isSecure: proxy.isSecure, sni: proxy.sni)
             let options: NWProtocolFramer.Options = .proxy(
@@ -257,7 +256,6 @@ public struct RawSocketConfiguration: Sendable {
             parameters.defaultProtocolStack.applicationProtocols.insert(options, at: 0)
             return parameters
         }
-#endif
         throw NWError.posix(.ENOTSUP)
     }
 

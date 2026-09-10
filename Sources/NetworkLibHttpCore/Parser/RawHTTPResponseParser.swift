@@ -1,22 +1,22 @@
 import Foundation
 
-struct RawHTTPResponseParser: Sendable {
+public struct RawHTTPResponseParser: Sendable {
     private var buffer: Data
     private var lastResult: HTTPParserResponseResult?
 
-    var isCompleted: Bool { lastResult != nil }
+    public var isCompleted: Bool { lastResult != nil }
 
-    init() {
+    public init() {
         buffer = Data()
         lastResult = nil
     }
 
-    mutating func append(_ data: Data) {
+    public mutating func append(_ data: Data) {
         guard !isCompleted else { return }
         buffer.append(contentsOf: data)
     }
 
-    mutating func tryParse() -> HTTPParserResponseResult? {
+    public mutating func tryParse() -> HTTPParserResponseResult? {
         guard let crlfEndIndex = findCRLF()?.upperBound else { return nil }
         let http = buffer.subdata(in: buffer.startIndex..<crlfEndIndex)
         let message = createHTTPMesage(from: http)
@@ -55,7 +55,7 @@ struct RawHTTPResponseParser: Sendable {
 }
 
 extension RawHTTPResponseParser {
-    static func parse(_ data: Data) -> HTTPParserResponseResult? {
+    public static func parse(_ data: Data) -> HTTPParserResponseResult? {
         var parser = RawHTTPResponseParser()
         parser.append(data)
         return parser.tryParse()

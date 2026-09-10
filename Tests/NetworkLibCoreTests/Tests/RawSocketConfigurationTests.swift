@@ -52,12 +52,11 @@ struct RawSocketConfigurationTests {
             try #require(RawSocketConfiguration.maxDataLength == Int.bitWidth * 1024)
         }
 
-#if false
         @Test(arguments: [RawSocketTransport.tcp, .udp])
         func init_NoProxy_AssignsProperties(_ transport: RawSocketTransport) throws {
             let config = RawSocketConfiguration("some.host", 9999, ipVersion: .v6, isSecure: true, sni: "sni-value",
                                                 transport: transport, maxDataBlock: 256, timeout: 20,
-                                                additionalProtocols: [.http()])
+                                                additionalProtocols: [.mock()])
             try #require(config.proxy == nil)
             try #require(config.host == "some.host")
             try #require(config.port == 9999)
@@ -69,7 +68,6 @@ struct RawSocketConfigurationTests {
             try #require(config.timeout == 20)
             try #require(config.additionalProtocols.count == 1)
         }
-#endif
 
         @Test
         func initDefault_NoProxy_AssignsProperties() throws {
@@ -86,15 +84,14 @@ struct RawSocketConfigurationTests {
             try #require(config.additionalProtocols.isEmpty)
         }
 
-#if false
         @Test(arguments: [RawSocketTransport.tcp, .udp])
         func usingProxy_AssignsProperties(_ transport: RawSocketTransport) throws {
-            let auth = RawSocketConfiguration.Proxy.Authorization.basic(userName: "foo", password: "pas)01")
+            let auth = HTTPAuthorization.basic(userName: "foo", password: "pas)01")
             let proxy = RawSocketConfiguration.Proxy(host: "some.host", port: 9999, isSecure: true, sni: "sni-value",
                                                      authorization: auth)
             let config = RawSocketConfiguration("some.host", 9999, ipVersion: .v6, isSecure: true, sni: "sni-value",
                                                 transport: transport, maxDataBlock: 256, timeout: 20,
-                                                additionalProtocols: [.http()])
+                                                additionalProtocols: [.mock()])
                 .using(proxy: proxy)
             try #require(config.proxy == proxy)
             try #require(config.host == "some.host")
@@ -110,12 +107,12 @@ struct RawSocketConfigurationTests {
 
         @Test(arguments: [RawSocketTransport.tcp, .udp])
         func init_WithProxy_AssignsProperties(_ transport: RawSocketTransport) throws {
-            let auth = RawSocketConfiguration.Proxy.Authorization.basic(userName: "foo", password: "pas)01")
+            let auth = HTTPAuthorization.basic(userName: "foo", password: "pas)01")
             let proxy = RawSocketConfiguration.Proxy(host: "some.host", port: 9999, isSecure: true, sni: "sni-value",
                                                      authorization: auth)
             let config = RawSocketConfiguration("some.host", 9999, ipVersion: .v6, isSecure: true, sni: "sni-value", proxy: proxy,
                                                 transport: transport, maxDataBlock: 256, timeout: 20,
-                                                additionalProtocols: [.http()])
+                                                additionalProtocols: [.mock()])
             try #require(config.proxy == proxy)
             try #require(config.host == "some.host")
             try #require(config.port == 9999)
@@ -127,7 +124,6 @@ struct RawSocketConfigurationTests {
             try #require(config.timeout == 20)
             try #require(config.additionalProtocols.count == 1)
         }
-#endif
 
         @Test
         func initDefault_WithProxy_AssignsProperties() throws {
@@ -179,10 +175,9 @@ struct RawSocketConfigurationTests {
             try #require(parameters.defaultProtocolStack.applicationProtocols.isEmpty)
         }
 
-#if false
         @Test(arguments: [RawSocketTransport.tcp, .udp])
         func noProxy_Insecure_WithAdditionalProtocols_ReturnsCorrect(_ transport: RawSocketTransport) throws {
-            let http = NWProtocolFramer.Options.http()
+            let http = NWProtocolFramer.Options.mock()
             let config = RawSocketConfiguration("some.host", 9999, isSecure: false, transport: transport,
                                                 additionalProtocols: [http])
             let connection = try config.makeNWConnection()
@@ -198,7 +193,6 @@ struct RawSocketConfigurationTests {
             }
             try #require(parameters.defaultProtocolStack.applicationProtocols.count == 1)
         }
-#endif
 
         @Test(arguments: [RawSocketTransport.tcp, .udp])
         func noProxy_Secure_NoAdditionalProtocols_ReturnsCorrect(_ transport: RawSocketTransport) throws {
@@ -220,10 +214,9 @@ struct RawSocketConfigurationTests {
             try #require(tls != nil)
         }
 
-#if false
         @Test(arguments: [RawSocketTransport.tcp, .udp])
         func noProxy_Secure_WithAdditionalProtocols_ReturnsCorrect(_ transport: RawSocketTransport) throws {
-            let http = NWProtocolFramer.Options.http()
+            let http = NWProtocolFramer.Options.mock()
             let config = RawSocketConfiguration("some.host", 9999, isSecure: true, transport: transport,
                                                 additionalProtocols: [http])
             let connection = try config.makeNWConnection()
@@ -243,7 +236,6 @@ struct RawSocketConfigurationTests {
             try #require(tls != nil)
             try #require(httpAdded == nil)
         }
-#endif
 
         // MARK: WITH PROXY INBOX
 
@@ -258,13 +250,8 @@ struct RawSocketConfigurationTests {
         static let customProxySniSet: String? = "some-sni"
         static let customProxySniNone: String? = nil
         static let customProxyProtocolsEmpty: [NWProtocolOptions] = []
-#if false
-        static let customProxyProtocolsHttp: [NWProtocolOptions] = [.http()]
-#else
-        static let customProxyProtocolsHttp: [NWProtocolOptions] = []
-#endif
+        static let customProxyProtocolsHttp: [NWProtocolOptions] = [.mock()]
 
-#if false
         @Test(arguments: [
                 (false, "some.host", RawSocketTransport.tcp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty, NWProtocolIP.Options.Version.any),
                 (false, "some.host", RawSocketTransport.tcp, Self.customProxyAuthBasic, false, Self.customProxySniNone, Self.customProxyProtocolsEmpty, .v4),
@@ -556,7 +543,7 @@ struct RawSocketConfigurationTests {
                 (true, "2001:db8::1", RawSocketTransport.udp, nil, true, Self.customProxySniSet, Self.customProxyProtocolsHttp, .v6),
               ])
         func withCustomProxy_ReturnsCorrect(_ isProxySecure: Bool, _ host: String, _ transport: RawSocketTransport,
-                                            _ auth: RawSocketConfiguration.Proxy.Authorization?, _ isSecure: Bool, _ sni: String?,
+                                            _ auth: HTTPAuthorization?, _ isSecure: Bool, _ sni: String?,
                                             _ additionalProtocols: [NWProtocolOptions], _ ipVersion: NWProtocolIP.Options.Version) throws
         {
             let host = NWEndpoint.Host(host)
@@ -580,7 +567,7 @@ struct RawSocketConfigurationTests {
             let optPort = try #require(options["kOptionsEndpointPort"] as? NWEndpoint.Port)
             let optIsSecure = try #require(options["kOptionsIsSecure"] as? Bool)
             let optSni = options["kOptionsServerName"] as? String
-            let optAuth = options["kOptionsProxyAuth"] as? RawSocketConfiguration.Proxy.Authorization
+            let optAuth = options["kOptionsProxyAuth"] as? HTTPAuthorization
             let optTopProtocols = try #require(options["kOptionsProxyTopProtocols"] as? [NWProtocolOptions])
             let ip = try #require(parameters.defaultProtocolStack.internetProtocol as? NWProtocolIP.Options)
 
@@ -597,6 +584,48 @@ struct RawSocketConfigurationTests {
             try #require(optTopProtocols.count == additionalProtocols.count)
             try #require(ip.version == ipVersion)
         }
-#endif
+    }
+}
+
+// MARK: - PRIVATE MOCK PROTOCOL
+
+extension NWProtocolDefinition {
+    static var mock: NWProtocolFramer.Definition { return _MockProtocol.definition }
+}
+
+extension NWProtocolOptions {
+    static func mock() -> NWProtocolFramer.Options {
+        return NWProtocolFramer.Options(definition: .mock)
+    }
+}
+
+private final class _MockProtocol: NWProtocolFramerImplementation, @unchecked Sendable {
+    static let definition = NWProtocolFramer.Definition(implementation: _MockProtocol.self)
+    static let label: String = "_MockProtocol"
+
+    init(framer: NWProtocolFramer.Instance) {
+    }
+
+    func start(framer: NWProtocolFramer.Instance) -> NWProtocolFramer.StartResult {
+        return .ready
+    }
+
+    func handleInput(framer: NWProtocolFramer.Instance) -> Int {
+        0
+    }
+
+    func handleOutput(framer: NWProtocolFramer.Instance, message: NWProtocolFramer.Message,
+                      messageLength: Int, isComplete: Bool)
+    {
+    }
+
+    func wakeup(framer: NWProtocolFramer.Instance) {
+    }
+
+    func stop(framer: NWProtocolFramer.Instance) -> Bool {
+        true
+    }
+
+    func cleanup(framer: NWProtocolFramer.Instance) {
     }
 }
