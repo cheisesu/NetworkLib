@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "2640"
+   LastUpgradeVersion = "2700"
    version = "1.7">
    <BuildAction
       parallelizeBuildables = "YES"
@@ -15,9 +15,8 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "NetworkLib"
-               BuildableName = "NetworkLib"
-               BlueprintName = "NetworkLib"
+               BlueprintIdentifier = "NetworkLibCore"
+               BuildableName = "NetworkLibCore"
                ReferencedContainer = "container:">
             </BuildableReference>
          </BuildActionEntry>
@@ -39,9 +38,8 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "NetworkLibTests"
-               BuildableName = "NetworkLibTests"
-               BlueprintName = "NetworkLibTests"
+               BlueprintIdentifier = "NetworkLibCoreTests"
+               BuildableName = "NetworkLibCoreTests"
                ReferencedContainer = "container:">
             </BuildableReference>
          </TestableReference>
@@ -57,7 +55,7 @@
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
       allowLocationSimulation = "YES"
-      queueDebuggingEnableBacktraceRecording = "Yes">
+      queueDebuggingEnabled = "No">
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"
@@ -68,9 +66,8 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "NetworkLib"
-            BuildableName = "NetworkLib"
-            BlueprintName = "NetworkLib"
+            BlueprintIdentifier = "NetworkLibCore"
+            BuildableName = "NetworkLibCore"
             ReferencedContainer = "container:">
          </BuildableReference>
       </MacroExpansion>
