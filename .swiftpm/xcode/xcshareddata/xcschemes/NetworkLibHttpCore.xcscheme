@@ -15,8 +15,8 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "NetworkLib"
-               BuildableName = "NetworkLib"
+               BlueprintIdentifier = "NetworkLibHttpCore"
+               BuildableName = "NetworkLibHttpCore"
                ReferencedContainer = "container:">
             </BuildableReference>
          </BuildActionEntry>
@@ -55,8 +55,8 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "NetworkLib"
-            BuildableName = "NetworkLib"
+            BlueprintIdentifier = "NetworkLibHttpCore"
+            BuildableName = "NetworkLibHttpCore"
             ReferencedContainer = "container:">
          </BuildableReference>
       </MacroExpansion>

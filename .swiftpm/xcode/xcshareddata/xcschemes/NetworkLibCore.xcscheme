@@ -15,8 +15,8 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "NetworkLib"
-               BuildableName = "NetworkLib"
+               BlueprintIdentifier = "NetworkLibCore"
+               BuildableName = "NetworkLibCore"
                ReferencedContainer = "container:">
             </BuildableReference>
          </BuildActionEntry>
@@ -33,6 +33,17 @@
             default = "YES">
          </TestPlanReference>
       </TestPlans>
+      <Testables>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "NetworkLibCoreTests"
+               BuildableName = "NetworkLibCoreTests"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </TestableReference>
+      </Testables>
    </TestAction>
    <LaunchAction
       buildConfiguration = "Debug"
@@ -55,8 +66,8 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "NetworkLib"
-            BuildableName = "NetworkLib"
+            BlueprintIdentifier = "NetworkLibCore"
+            BuildableName = "NetworkLibCore"
             ReferencedContainer = "container:">
          </BuildableReference>
       </MacroExpansion>
