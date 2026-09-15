@@ -22,29 +22,6 @@
       "parallelizable" : true,
       "target" : {
         "containerPath" : "container:",
-        "identifier" : "NetworkLibUtilsTests",
-        "name" : "NetworkLibUtilsTests"
-      }
-    },
-    {
-      "parallelizable" : false,
-      "target" : {
-        "containerPath" : "container:",
-        "identifier" : "NetworkLibCoreTests",
-        "name" : "NetworkLibCoreTests"
-      }
-    },
-    {
-      "parallelizable" : true,
-      "target" : {
-        "containerPath" : "container:",
-        "identifier" : "NetworkLibHttpCoreTests",
-        "name" : "NetworkLibHttpCoreTests"
-      }
-    },
-    {
-      "target" : {
-        "containerPath" : "container:",
         "identifier" : "NetworkLibTests",
         "name" : "NetworkLibTests"
       }
