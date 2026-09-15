@@ -1,7 +1,11 @@
 // swift-tools-version: 6.0
 
 import PackageDescription
-import Foundation
+
+private let commonSettings: [SwiftSetting]? = [
+    .unsafeFlags(["-warnings-as-errors"]),
+    .enableUpcomingFeature("StrictConcurrency"),
+]
 
 let package = Package(
     name: "NetworkLib",
@@ -11,21 +15,22 @@ let package = Package(
         .macOS(.v10_15),
     ],
     products: [
-        .library(
-            name: "NetworkLib",
-            targets: ["NetworkLib"]
-        ),
+        .executable(name: "Test", targets: ["Test"]),
+        .library(name: "NetworkLib", targets: ["NetworkLib"]),
         .plugin(name: "nl-swiftlint-plugin", targets: ["nl-swiftlint-plugin"]),
     ],
     targets: [
+        // MARK: EXECUTABLES
+        .executableTarget(name: "Test", dependencies: ["NetworkLib"]),
+        // MARK: PLUGINS
         .plugin(name: "nl-swiftlint-plugin", capability: .buildTool()),
+        // MARK: LIB TARGETS
         .target(
             name: "NetworkLib",
-            swiftSettings: [
-                .unsafeFlags(["-warnings-as-errors"])
-            ],
+            swiftSettings: commonSettings,
             plugins: [.plugin(name: "nl-swiftlint-plugin")]
         ),
+        // MARK: TEST TARGETS
         .testTarget(
             name: "NetworkLibTests",
             dependencies: ["NetworkLib"],
@@ -34,9 +39,7 @@ let package = Package(
                 .copy("Resources/localhost.key"),
                 .copy("Resources/localhost.p12"),
             ],
-            swiftSettings: [
-                .unsafeFlags(["-warnings-as-errors"])
-            ]
+            swiftSettings: commonSettings
         ),
     ],
     swiftLanguageModes: [.v6]
