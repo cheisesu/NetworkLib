@@ -3,7 +3,7 @@ import Testing
 import Network
 @testable import NetworkLib
 
-@Suite(.tags(.core, .RawSocket.receiveMessage, .RawSocket.all), .timeLimit(.minutes(1)))
+@Suite(.tags(.core, .RawSocket.all, .RawSocket.receiveMessage), .timeLimit(.minutes(1)))
 struct RawSocketAsyncReceiveMessageTests {
     private struct _ReceiveMessage: RawSocketReceiveMessage {
         let data: Data?

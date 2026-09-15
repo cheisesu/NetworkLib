@@ -7,7 +7,7 @@ extension Tag.RawSocket {
     @Tag static var cancel: Tag
 }
 
-@Suite(.tags(.core, .RawSocket.cancel, .RawSocket.all), .timeLimit(.minutes(1)))
+@Suite(.tags(.core, .RawSocket.all, .RawSocket.cancel), .timeLimit(.minutes(1)))
 struct RawSocketCancelTests {
     @Test(arguments: [RawSocketTransport.tcp, .udp])
     func callbackCalledOnDelegateQueue(_ transport: RawSocketTransport) async throws {

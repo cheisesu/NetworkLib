@@ -3,7 +3,7 @@ import Testing
 import Network
 @testable import NetworkLib
 
-@Suite(.tags(.core, .RawSocket.cancel, .RawSocket.all), .timeLimit(.minutes(1)))
+@Suite(.tags(.core, .RawSocket.all, .RawSocket.cancel), .timeLimit(.minutes(1)))
 struct RawSocketAsyncCancelTests {
     @Test(arguments: [RawSocketTransport.tcp, .udp])
     func onSuccess(_ transport: RawSocketTransport) async throws {

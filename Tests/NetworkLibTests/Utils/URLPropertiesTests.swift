@@ -2,11 +2,11 @@ import Foundation
 import Testing
 @testable import NetworkLib
 
-extension Tag.LibUtils {
+extension Tag.Utils {
     @Tag static var urlProperties: Tag
 }
 
-@Suite(.tags(.LibUtils.all, .LibUtils.urlProperties))
+@Suite(.tags(.Utils.all, .Utils.urlProperties))
 struct URLPropertiesTests {
     @Test("Wrapped host", arguments: [
         ("https://example.com/path", "example.com"),

@@ -7,7 +7,7 @@ extension Tag.RawSocket {
     @Tag static var send: Tag
 }
 
-@Suite(.tags(.core, .RawSocket.send, .RawSocket.all), .timeLimit(.minutes(1)))
+@Suite(.tags(.core, .RawSocket.all, .RawSocket.send), .timeLimit(.minutes(1)))
 struct RawSocketSendTests {
     @Test(arguments: [RawSocketTransport.tcp, .udp], [Data("Hello".utf8)])
     func underlyingConnection_MethodSendCalled(_ transport: RawSocketTransport, _ dataToSend: Data) async throws {

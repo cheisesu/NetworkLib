@@ -6,7 +6,7 @@ extension Tag.RawSocket {
     @Tag static var internalState: Tag
 }
 
-@Suite(.tags(.core, .RawSocket.internalState, .RawSocket.all), .timeLimit(.minutes(1)))
+@Suite(.tags(.core, .RawSocket.all, .RawSocket.internalState), .timeLimit(.minutes(1)))
 struct RawSocketInternalStateTests {
     @Test(arguments: [RawSocketTransport.tcp, .udp])
     func connectThenCancel_CorrectSequence(_ transport: RawSocketTransport) async throws {

@@ -3,11 +3,11 @@ import Testing
 import Network
 @testable import NetworkLib
 
-extension Tag {
-    @Tag static var httpProtocol: Self
+extension Tag.HTTP {
+    @Tag static var `protocol`: Tag
 }
 
-@Suite(.disabled(), .tags(.httpProtocol))
+@Suite(.disabled(), .tags(.HTTP.all, .HTTP.protocol))
 struct HTTPReceiveMessageTests {
     @Test
     func contextDoesntHaveHTTPMetadata_ReturnsNil() throws {

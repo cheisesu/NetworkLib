@@ -3,11 +3,11 @@ import Network
 import Testing
 @testable import NetworkLib
 
-extension Tag {
-    @Tag static var httpNetwork: Self
+extension Tag.HTTP {
+    @Tag static var networkTask: Tag
 }
 
-@Suite(.disabled())
+@Suite(.disabled(), .tags(.HTTP.all, .HTTP.networkTask))
 struct HTTPNetworkTaskTests {
     @Test(arguments: [nil, "localhost"], [Data(), Data("Hello World".utf8), Data(repeating: 0xab, count: 1024 * 1024)])
     func noRedirect_AllValuesCorrect(_ sni: String?, _ body: Data) async throws {

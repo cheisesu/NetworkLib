@@ -3,7 +3,7 @@ import Testing
 import Network
 @testable import NetworkLib
 
-@Suite(.tags(.core, .RawSocket.sendMessage, .RawSocket.all), .timeLimit(.minutes(1)))
+@Suite(.tags(.core, .RawSocket.all, .RawSocket.sendMessage), .timeLimit(.minutes(1)))
 struct RawSocketAsyncSendMessageTests {
     private struct _SendMessage: RawSocketSendMessage {
         let context: NWConnection.ContentContext

@@ -3,7 +3,7 @@ import Network
 import Testing
 @testable import NetworkLib
 
-@Suite(.disabled(), .tags(.httpProtocol))
+@Suite(.disabled(), .tags(.HTTP.all, .HTTP.protocol))
 struct ProtocolHTTPTests {
 
     // MARK: - TESTS FOR SENDING

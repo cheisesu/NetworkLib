@@ -3,13 +3,13 @@ import Network
 @testable import NetworkLib
 
 extension Tag {
-    enum LibUtils {
+    enum Utils {
         @Tag static var ipAddress: Tag
         @Tag static var all: Tag
     }
 }
 
-@Suite(.tags(.LibUtils.all, .LibUtils.ipAddress))
+@Suite(.tags(.Utils.all, .Utils.ipAddress))
 struct IPAddressTests {
     @Test("IPv4 string converting", arguments: [
         // ===== VALID =====

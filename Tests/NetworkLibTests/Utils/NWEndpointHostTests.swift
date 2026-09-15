@@ -3,11 +3,11 @@ import Network
 import Testing
 @testable import NetworkLib
 
-extension Tag.LibUtils {
+extension Tag.Utils {
     @Tag static var endpointHost: Tag
 }
 
-@Suite(.tags(.LibUtils.all, .LibUtils.endpointHost))
+@Suite(.tags(.Utils.all, .Utils.endpointHost))
 struct NWEndpointHostTests {
     @Test(arguments: [
         (NWEndpoint.Host.name("example.com", nil), "example.com"),
