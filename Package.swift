@@ -4,6 +4,7 @@ import PackageDescription
 
 private let commonSettings: [SwiftSetting]? = [
     .unsafeFlags(["-warnings-as-errors"]),
+    .enableUpcomingFeature("StrictConcurrency"),
 ]
 
 let package = Package(
