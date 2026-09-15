@@ -31,6 +31,7 @@ public class RawSocket: @unchecked Sendable {
 
     var onInternalStateChange: (@Sendable (_ oldState: _InternalState, _ newState: _InternalState) -> Void)?
 
+    private let id: String
     private let connection: UnderlyingConnection
     private let accessQueue: DispatchQueue
     private let maxDataBlock: Int
@@ -61,12 +62,14 @@ public class RawSocket: @unchecked Sendable {
     ///   - configuration: The destination, transport, security, proxy, and timeout settings.
     ///   - delegateQueue: Optional queue used to deliver callback-based API completions.
     /// - Throws: An `NWError` if the underlying Network framework connection cannot be created from the configuration.
-    public convenience init(_ configuration: RawSocketConfiguration, delegateQueue: DispatchQueue? = nil) throws(NWError) {
-        try self.init(configuration, accessQueue: nil, delegateQueue: delegateQueue)
+    public convenience init(_ configuration: RawSocketConfiguration, delegateQueue: DispatchQueue? = nil,
+                            id: String = #function) throws(NWError)
+    {
+        try self.init(configuration, accessQueue: nil, delegateQueue: delegateQueue, id: id)
     }
 
     convenience init(_ configuration: RawSocketConfiguration, accessQueue: DispatchQueue?,
-                     delegateQueue: DispatchQueue?) throws(NWError)
+                     delegateQueue: DispatchQueue?, id: String = #function) throws(NWError)
     {
         try self.init(
             configuration.makeNWConnection(),
@@ -74,13 +77,15 @@ public class RawSocket: @unchecked Sendable {
             delegateQueue: delegateQueue,
             timeout: configuration.timeout,
             maxDataBlock: configuration.maxDataBlock,
-            transport: configuration.transport
+            transport: configuration.transport,
+            id: id
         )
     }
 
     init(_ connection: UnderlyingConnection, accessQueue: DispatchQueue?, delegateQueue: DispatchQueue?,
-         timeout: TimeInterval, maxDataBlock: Int, transport: RawSocketTransport) throws(NWError)
+         timeout: TimeInterval, maxDataBlock: Int, transport: RawSocketTransport, id: String = #function) throws(NWError)
     {
+        self.id = id
         self.connection = connection
         internalState = .initial
         self.accessQueue = accessQueue ?? .RawSocket.access
