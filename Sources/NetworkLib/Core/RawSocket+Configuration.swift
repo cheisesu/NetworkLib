@@ -11,8 +11,9 @@ extension RawSocketConfiguration {
 extension RawSocketConfiguration {
     /// HTTP CONNECT proxy settings used when creating a proxied socket connection.
     ///
-    /// On newer OS versions, these settings are applied through Network framework proxy configuration. On older supported OS
-    /// versions, NetworkLib uses its HTTP CONNECT framer fallback.
+    /// On iOS and tvOS 17 or later and macOS 14 or later, NetworkLib applies these settings using
+    /// `ProxyConfiguration`. On iOS and tvOS 15.4 through 16 and macOS 12.3 through 13, it uses an HTTP CONNECT
+    /// protocol framer. Proxy connections aren't supported on earlier deployment targets.
     ///
     /// For example, attach a proxy to an existing socket configuration:
     ///
@@ -96,7 +97,7 @@ public struct RawSocketConfiguration: Sendable {
     /// The maximum number of bytes requested by each raw receive operation.
     public let maxDataBlock: Int
 
-    /// The timeout, in seconds, used by socket operations that touch the timeout timer.
+    /// The timeout, in seconds, for establishing the connection and completing send or receive operations.
     public let timeout: TimeInterval
 
     /// Optional HTTP CONNECT proxy settings.

@@ -17,7 +17,10 @@ public enum HTTPTaskErrorInfoKey {
     public static let error = "NetworkLib.HTTPTask.error"
 }
 
-/// A single HTTP request task backed by ``RawSocket``.
+/// A single HTTP or HTTPS request task backed by ``RawSocket``.
+///
+/// The task opens one socket connection, sends the request, parses one response, and collects the complete response body.
+/// It doesn't provide URL session features such as redirect handling, authentication challenges, cookies, or caching.
 ///
 /// For example, perform a request asynchronously:
 ///

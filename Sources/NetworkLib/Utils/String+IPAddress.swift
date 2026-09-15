@@ -5,7 +5,8 @@ import Network
 extension String {
     /// An IPv4 address parsed from this string after trimming whitespace, newlines, and leading or trailing square brackets.
     ///
-    /// The parser uses the trimmed string directly with `IPv4Address`, so Foundation's IPv4 normalization rules apply.
+    /// The parser uses the trimmed string directly with Network framework's `IPv4Address` initializer, so its IPv4
+    /// normalization rules apply.
     /// Host names, IPv6 addresses, malformed input, and IPv4 addresses with out-of-range octets return `nil`.
     ///
     /// For example, parse plain, padded, and normalized IPv4 input:
