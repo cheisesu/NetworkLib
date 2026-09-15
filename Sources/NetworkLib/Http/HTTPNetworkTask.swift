@@ -10,11 +10,6 @@ public enum HTTPTaskErrorInfoKey {
     ///
     /// The value is a `String`, for example `"connecting"`, `"sending"`, or `"receiving"`.
     public static let phase = "NetworkLib.HTTPTask.phase"
-
-    /// A short string describing the original error.
-    ///
-    /// The value is a `String`. Use `NSUnderlyingErrorKey` when the original typed error is needed.
-    public static let error = "NetworkLib.HTTPTask.error"
 }
 
 /// A single HTTP or HTTPS request task backed by ``RawSocket``.
@@ -318,7 +313,7 @@ extension HTTPNetworkTask {
         _ rawSocket: RawSocket?,
         _ urlRequest: URLRequest,
         with error: Error?,
-        phase: FailurePhase? = nil
+        phase: URLError.Phase? = nil
     ) {
         guard !isFinished else { return }
         isFinished = true
@@ -340,73 +335,7 @@ extension HTTPNetworkTask {
         }
     }
 
-    private func urlError(from error: Error, request: URLRequest, phase: FailurePhase?) -> URLError {
-        var userInfo = (error as? URLError)?.errorUserInfo ?? [:]
-        if !(error is URLError) {
-            userInfo[NSUnderlyingErrorKey] = error
-        }
-        if let url = request.url {
-            userInfo[NSURLErrorFailingURLErrorKey] = url as NSURL
-            userInfo[NSURLErrorFailingURLStringErrorKey] = url.absoluteString
-            userInfo[NSURLErrorKey] = url as NSURL
-        }
-        if let phase {
-            userInfo[HTTPTaskErrorInfoKey.phase] = phase.rawValue
-        }
-        userInfo[HTTPTaskErrorInfoKey.error] = String(describing: error)
-        return URLError(urlErrorCode(from: error), userInfo: userInfo)
-    }
-
-    private func urlErrorCode(from error: Error) -> URLError.Code {
-        if let error = error as? URLError {
-            return error.code
-        }
-        guard let error = error as? NWError else {
-            return .unknown
-        }
-        switch error {
-        case let .posix(code):
-            return urlErrorCode(from: code)
-        case .dns:
-            return .cannotFindHost
-        case .tls:
-            return .secureConnectionFailed
-        default:
-            return .unknown
-        }
-    }
-
-    private func urlErrorCode(from code: POSIXErrorCode) -> URLError.Code {
-        switch code {
-        case .ECANCELED:
-            return .cancelled
-        case .ETIMEDOUT:
-            return .timedOut
-        case .ECONNREFUSED, .EHOSTUNREACH, .ENETUNREACH:
-            return .cannotConnectToHost
-        case .ECONNRESET, .ECONNABORTED, .EPIPE:
-            return .networkConnectionLost
-        case .ENOTCONN:
-            return .notConnectedToInternet
-        case .EAUTH, .EACCES:
-            return .userAuthenticationRequired
-        case .EBADMSG, .EPROTO, .EIO, .EINVAL:
-            return .cannotParseResponse
-        case .ENOTSUP:
-            return .unsupportedURL
-        default:
-            return .unknown
-        }
-    }
-}
-
-@available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
-private extension HTTPNetworkTask {
-    enum FailurePhase: String, Sendable {
-        case scheduling
-        case connecting
-        case sending
-        case receiving
-        case parsing
+    private func urlError(from error: Error, request: URLRequest, phase: URLError.Phase?) -> URLError {
+        return URLError(orUpdate: error, for: request, phase: phase ?? .common)
     }
 }
