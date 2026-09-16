@@ -309,12 +309,9 @@ extension HTTPNetworkTask {
         self.data?.append(contentsOf: data)
     }
 
-    private func finishAndNotifyUnsafe(
-        _ rawSocket: RawSocket?,
-        _ urlRequest: URLRequest,
-        with error: Error?,
-        phase: URLError.Phase? = nil
-    ) {
+    private func finishAndNotifyUnsafe(_ rawSocket: RawSocket?, _ urlRequest: URLRequest,with error: Error?,
+                                       phase: URLError.Phase? = nil)
+    {
         guard !isFinished else { return }
         isFinished = true
         rawSocket?.cancel(nil)

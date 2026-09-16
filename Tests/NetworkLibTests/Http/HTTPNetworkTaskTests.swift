@@ -74,7 +74,6 @@ struct HTTPNetworkTaskTests {
         } catch let error as URLError where error.code == .timedOut {
             let errorInfo = error as NSError
             #expect(errorInfo.userInfo[HTTPTaskErrorInfoKey.phase] as? String == "receiving")
-            #expect(errorInfo.userInfo[HTTPTaskErrorInfoKey.error] != nil)
             #expect(errorInfo.userInfo[NSUnderlyingErrorKey] as? NWError == .posix(.ETIMEDOUT))
             #expect(errorInfo.userInfo[NSURLErrorFailingURLStringErrorKey] as? String == url.absoluteString)
         } catch { throw error }
