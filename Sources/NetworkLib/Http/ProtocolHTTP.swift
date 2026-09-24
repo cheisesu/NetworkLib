@@ -65,10 +65,12 @@ private final class ProtocolHTTP: NWProtocolFramerImplementation, @unchecked Sen
 
     private let parser: HTTPResponseParser
     private var pendingEvents: [HTTPResponseParser.Event]
+    private var pendingParserError: HTTPResponseParser.Error?
 
     init(framer: NWProtocolFramer.Instance) {
         parser = HTTPResponseParser()
         pendingEvents = []
+        pendingParserError = nil
     }
 
     func start(framer: NWProtocolFramer.Instance) -> NWProtocolFramer.StartResult {
@@ -80,12 +82,12 @@ private final class ProtocolHTTP: NWProtocolFramerImplementation, @unchecked Sen
             return 0
         }
         while true {
-            var ended = false
+            var shouldStop = false
             let parsed = framer.parseInput(minimumIncompleteLength: 1, maximumLength: .max) { buffer, _ in
-                parseInputBuffer(with: framer, buffer, &ended)
+                parseInputBuffer(with: framer, buffer, &shouldStop)
             }
             if !parsed { return 0 }
-            if ended { return 0 }
+            if shouldStop { return 0 }
         }
     }
 
@@ -121,25 +123,27 @@ private final class ProtocolHTTP: NWProtocolFramerImplementation, @unchecked Sen
 
 extension ProtocolHTTP {
     private func parseInputBuffer(with framer: NWProtocolFramer.Instance, _ buffer: UnsafeMutableRawBufferPointer?,
-                                  _ ended: inout Bool) -> Int
+                                  _ shouldStop: inout Bool) -> Int
     {
         guard let buffer, !buffer.isEmpty else { return 0 }
         let data = Data(buffer)
         do throws(HTTPResponseParser.Error) {
-            let events = try parser.append(data)
-            pendingEvents.append(contentsOf: events)
-            if deliverPendingEvents(with: framer) {
-                ended = events.contains {
-                    if case .end = $0 { return true }
-                    return false
+            var reachedEnd = false
+
+            try parser.append(data) { event in
+                assert(!reachedEnd, "Parser emitted an event after .end")
+                if !reachedEnd {
+                    pendingEvents.append(event)
                 }
+                reachedEnd = reachedEnd || event.isEnd
             }
+
+            let deliveryCompleted = deliverPendingEvents(with: framer)
+            shouldStop = reachedEnd || !deliveryCompleted
         } catch {
-            switch error {
-            case .invalidChunkSize: framer.markFailed(error: .posix(.EBADMSG))
-            case .invalidChunkTerminator: framer.markFailed(error: .posix(.EPROTO))
-            case .parsingCompleted: framer.markFailed(error: .posix(.EPROTO))
-            }
+            pendingParserError = error
+            _ = deliverPendingEvents(with: framer)
+            shouldStop = true
         }
         return buffer.count
     }
@@ -149,7 +153,17 @@ extension ProtocolHTTP {
             guard deliver(event, with: framer) else { return false }
             pendingEvents.removeFirst()
         }
-        return true
+        guard let error = pendingParserError else { return true }
+        pendingParserError = nil
+
+        switch error {
+        case .invalidChunkSize:
+            framer.markFailed(error: .posix(.EBADMSG))
+        case .invalidChunkTerminator, .parsingCompleted:
+            framer.markFailed(error: .posix(.EPROTO))
+        }
+
+        return false
     }
 
     private func deliver(_ event: HTTPResponseParser.Event, with framer: NWProtocolFramer.Instance) -> Bool {

@@ -61,13 +61,19 @@ final class HTTPResponseParser: @unchecked Sendable {
     }
 
     func append(_ data: Data) throws(HTTPResponseParser.Error) -> [Event] {
+        var events: [Event] = []
+        try append(data) { events.append($0) }
+        return events
+    }
+
+    func append(_ data: Data, onEvent: (Event) -> Void) throws(HTTPResponseParser.Error) {
         guard bodyKind != .finished else { throw .parsingCompleted }
+
         currentBuffer.append(data)
-        var result: [Event] = []
+
         while let nextEvent = try parseNext() {
-            result.append(nextEvent)
+            onEvent(nextEvent)
         }
-        return result
     }
 
     private func parseNext() throws(HTTPResponseParser.Error) -> Event? {
