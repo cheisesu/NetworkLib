@@ -16,13 +16,14 @@ final class HTTPRequestParser: Sendable {
             urlRequest.setValue(urlRequest.url?.wrappedHost, forHTTPHeaderField: .host)
         }
         urlRequest.setValue("close", forHTTPHeaderField: .connection)
-        let headers = urlRequest.allHTTPHeaderFields?.map { (key: String, value: String) in
+        // as headers are already set, fail on unwrap is unexpected and must be recorded
+        let headers = urlRequest.allHTTPHeaderFields!.map { (key: String, value: String) in
             (key, value)
         }.sorted { lhs, rhs in
             let lhsIsHost = lhs.0.caseInsensitiveCompare(HTTPHeaderKey.host.rawValue) == .orderedSame
             let rhsIsHost = rhs.0.caseInsensitiveCompare(HTTPHeaderKey.host.rawValue) == .orderedSame
             return lhsIsHost == rhsIsHost ? lhs.0 < rhs.0 : lhsIsHost
-        } ?? []
+        }
         for (key, value) in headers {
             let line = [key, value].joined(separator: ": ")
             lines.append(line)
