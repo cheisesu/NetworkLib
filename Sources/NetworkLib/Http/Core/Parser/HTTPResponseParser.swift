@@ -72,11 +72,10 @@ final class HTTPResponseParser: @unchecked Sendable {
         currentBuffer.append(data)
 
         while let nextEvent = try parseNext() {
+            if nextEvent.isEnd, !currentBuffer.isEmpty {
+                throw .parsingCompleted
+            }
             onEvent(nextEvent)
-        }
-
-        if bodyKind == .finished, !currentBuffer.isEmpty {
-            throw .parsingCompleted
         }
     }
 

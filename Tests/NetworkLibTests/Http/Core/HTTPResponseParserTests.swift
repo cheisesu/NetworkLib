@@ -68,12 +68,11 @@ struct HTTPResponseParserTests {
         } catch HTTPResponseParser.Error.parsingCompleted {
         }
 
-        try #require(events.count == 3)
+        try #require(events.count == 2)
         guard case .response = events[0],
-              case .data(body) = events[1],
-              case .end = events[2]
+              case .data(body) = events[1]
         else {
-            Issue.record("Expected response, body, and end events")
+            Issue.record("Expected response and body events")
             return
         }
     }
