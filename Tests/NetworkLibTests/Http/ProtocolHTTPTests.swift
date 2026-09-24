@@ -3,11 +3,16 @@ import Network
 import Testing
 @testable import NetworkLib
 
-@Suite(.disabled(), .tags(.HTTP.all, .HTTP.protocol))
+@Suite(.tags(.HTTP.all, .HTTP.protocol))
 struct ProtocolHTTPTests {
+    @Test
+    func protocolOptions_CreatesHTTPFramerOptions() {
+        let _: NWProtocolFramer.Options = .http()
+    }
 
     // MARK: - TESTS FOR SENDING
 
+    @Suite(.disabled("Requires a local TLS server and test certificates"))
     struct Send {
         @Test
         func messageWithCorrectUrlRequest_CorrectDataSent() async throws {
@@ -81,6 +86,7 @@ struct ProtocolHTTPTests {
 
     // MARK: - TESTS FOR RECEIVEING
 
+    @Suite(.disabled("Requires a local TLS server and test certificates"))
     struct Receive {
         @Test
         func correctResponseData_ReturnsCorrectMessages() async throws {

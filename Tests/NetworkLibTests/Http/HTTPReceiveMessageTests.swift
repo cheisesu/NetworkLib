@@ -7,7 +7,7 @@ extension Tag.HTTP {
     @Tag static var `protocol`: Tag
 }
 
-@Suite(.disabled(), .tags(.HTTP.all, .HTTP.protocol))
+@Suite(.tags(.HTTP.all, .HTTP.protocol))
 struct HTTPReceiveMessageTests {
     @Test
     func contextDoesntHaveHTTPMetadata_ReturnsNil() throws {
