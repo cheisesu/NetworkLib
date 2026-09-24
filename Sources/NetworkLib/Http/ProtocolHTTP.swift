@@ -43,18 +43,10 @@ enum HTTPReceiveMessage: Sendable, RawSocketReceiveMessage, Equatable {
     }
 }
 
-enum HTTPMessageKind: Sendable, CustomStringConvertible {
+enum HTTPMessageKind: Sendable {
     case response
     case body
     case end
-
-    var description: String {
-        switch self {
-        case .response: return "Response"
-        case .body: return "Body"
-        case .end: return "End"
-        }
-    }
 }
 
 // MARK: - PRIVATE IMPLEMENTATIONS AND ENTITIES
