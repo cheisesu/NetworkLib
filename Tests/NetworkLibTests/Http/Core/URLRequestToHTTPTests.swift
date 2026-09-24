@@ -69,7 +69,20 @@ struct URLRequestToHTTPTests {
         try #require(result == expected)
     }
     
+    @Test
+    func missingURL_UsesDefaultStartLine() throws {
+        let initialURL = try #require(URL(string: "http://localhost/path"))
+        var request = URLRequest(url: initialURL)
+        request.url = nil
+        request.httpMethod = nil
+
+        let result = request.httpStartLine(.v1_1)
+
+        try #require(result == "GET / HTTP/1.1")
+    }
+
     @Test(arguments: [
+        ("/path", nil),
         ("http://localhost/path", "Host: localhost"),
         ("http://localhost:123/path", "Host: localhost:123"),
         ("http://127.0.0.1/path", "Host: 127.0.0.1"),
