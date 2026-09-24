@@ -76,13 +76,13 @@ private final class ProtocolHTTP: NWProtocolFramerImplementation, @unchecked Sen
     }
 
     func handleInput(framer: NWProtocolFramer.Instance) -> Int {
-        if !deliverPendingEventsUnsafe(with: framer) {
+        if !deliverPendingEvents(with: framer) {
             return 0
         }
         while true {
             var ended = false
             let parsed = framer.parseInput(minimumIncompleteLength: 1, maximumLength: .max) { buffer, _ in
-                foo(with: framer, buffer, &ended)
+                parseInputBuffer(with: framer, buffer, &ended)
             }
             if !parsed { return 0 }
             if ended { return 0 }
@@ -120,8 +120,8 @@ private final class ProtocolHTTP: NWProtocolFramerImplementation, @unchecked Sen
 }
 
 extension ProtocolHTTP {
-    private func foo(with framer: NWProtocolFramer.Instance, _ buffer: UnsafeMutableRawBufferPointer?,
-                     _ ended: inout Bool) -> Int
+    private func parseInputBuffer(with framer: NWProtocolFramer.Instance, _ buffer: UnsafeMutableRawBufferPointer?,
+                                  _ ended: inout Bool) -> Int
     {
         guard let buffer, !buffer.isEmpty else { return 0 }
         let assumedBuffer = buffer.assumingMemoryBound(to: UInt8.self)
@@ -129,7 +129,7 @@ extension ProtocolHTTP {
         do throws(HTTPResponseParser.Error) {
             let events = try parser.append(data)
             pendingEvents.append(contentsOf: events)
-            if deliverPendingEventsUnsafe(with: framer) {
+            if deliverPendingEvents(with: framer) {
                 ended = events.contains {
                     if case .end = $0 { return true }
                     return false
@@ -144,7 +144,7 @@ extension ProtocolHTTP {
         }
         return buffer.count
     }
-    private func deliverPendingEventsUnsafe(with framer: NWProtocolFramer.Instance) -> Bool {
+    private func deliverPendingEvents(with framer: NWProtocolFramer.Instance) -> Bool {
         while !pendingEvents.isEmpty {
             let event = pendingEvents[0]
             guard deliver(event, with: framer) else { return false }
