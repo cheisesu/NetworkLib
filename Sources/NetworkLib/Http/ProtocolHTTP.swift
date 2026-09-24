@@ -139,7 +139,7 @@ extension ProtocolHTTP {
             switch error {
             case .invalidChunkSize: framer.markFailed(error: .posix(.EBADMSG))
             case .invalidChunkTerminator: framer.markFailed(error: .posix(.EPROTO))
-            case .parsingCompleted: framer.markFailed(error: .posix(.EINVAL))
+            case .parsingCompleted: framer.markFailed(error: .posix(.EPROTO))
             }
         }
         return buffer.count

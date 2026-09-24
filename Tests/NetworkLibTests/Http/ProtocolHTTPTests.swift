@@ -196,7 +196,7 @@ struct ProtocolHTTPTests {
         }
 
         @Test
-        func moreDataReceived_ThrowsInvalidArgumentError() async throws {
+        func moreDataReceived_ThrowsProtocolError() async throws {
             let lines = [
                 "HTTP/1.1 200 OK",
                 "Connection: close",
@@ -227,7 +227,7 @@ struct ProtocolHTTPTests {
                 _ = try await server.manualEcho()
                 _ = try await socket.receiveNextMessage() as HTTPReceiveMessage
                 Issue.record("Unexpected entrance")
-            } catch NWError.posix(.EINVAL) {
+            } catch NWError.posix(.EPROTO) {
             }
         }
 
