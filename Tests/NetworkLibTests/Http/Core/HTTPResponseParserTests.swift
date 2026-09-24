@@ -24,6 +24,60 @@ struct HTTPResponseParserTests {
     }
 
     @Test
+    func validResponseBeforeInvalidChunkSize_PreservesResponseEvent() throws {
+        let lines = [
+            "HTTP/1.1 200 OK",
+            "Transfer-Encoding: chunked",
+            "",
+            "G",
+            "",
+        ]
+        let data = Data(lines.joined(separator: "\r\n").utf8)
+        let parser = HTTPResponseParser()
+        var events: [HTTPResponseParser.Event] = []
+
+        do {
+            try parser.append(data) { events.append($0) }
+            Issue.record("Expected invalidChunkSize")
+        } catch HTTPResponseParser.Error.invalidChunkSize {
+        }
+
+        let event = try #require(events.first)
+        guard case .response = event else {
+            Issue.record("Expected response event")
+            return
+        }
+    }
+
+    @Test
+    func extraDataAfterCompletedResponse_ThrowsAfterPreservingEvents() throws {
+        let body = Data("Hello".utf8)
+        let lines = [
+            "HTTP/1.1 200 OK",
+            "Content-Length: \(body.count)",
+            "",
+            "",
+        ]
+        let data = Data(lines.joined(separator: "\r\n").utf8) + body + Data("EXTRA".utf8)
+        let parser = HTTPResponseParser()
+        var events: [HTTPResponseParser.Event] = []
+
+        do {
+            try parser.append(data) { events.append($0) }
+            Issue.record("Expected parsingCompleted")
+        } catch HTTPResponseParser.Error.parsingCompleted {
+        }
+
+        try #require(events.count == 2)
+        guard case .response = events[0],
+              case .data(body) = events[1]
+        else {
+            Issue.record("Expected response and body events")
+            return
+        }
+    }
+
+    @Test
     func withNoBody_ReturnsHTTPResponseEvent() throws {
         let _data = [
             "HTTP/1.1 201 Created",
@@ -778,4 +832,3 @@ le",
         }
     }
 }
-
