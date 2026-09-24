@@ -176,7 +176,7 @@ struct HTTPResponseParserTests {
     }
 
     @Test
-    func wrongContentLengthHeaderValue_NotRetunsData() throws {
+    func wrongContentLengthHeaderValue_ThrowsForTrailingData() throws {
         let httpBody = [
             """
 {
@@ -200,18 +200,20 @@ struct HTTPResponseParserTests {
         ].joined(separator: "\r\n").data(using: .utf8)!
         let httpData = httpMessage + httpBody
         let parser = HTTPResponseParser()
-        let events = try parser.append(httpData)
-        try #require(events.count == 2)
-        var event = events[0]
+        var events: [HTTPResponseParser.Event] = []
+
+        do {
+            try parser.append(httpData) { events.append($0) }
+            Issue.record("Expected parsingCompleted")
+        } catch HTTPResponseParser.Error.parsingCompleted {
+        }
+
+        let event = try #require(events.first)
         switch event {
         case .response: break
-        default: try #require(Bool(false), "Wrong event type: \(event)")
+        default: Issue.record("Wrong event type: \(event)")
         }
-        event = events[1]
-        switch event {
-        case .end: break
-        default: try #require(Bool(false), "Wrong event type: \(event)")
-        }
+        try #require(events.count == 1)
     }
 
     // MARK: - SMALL PORTIONS
