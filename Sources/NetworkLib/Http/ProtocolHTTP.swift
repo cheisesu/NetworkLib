@@ -124,8 +124,7 @@ extension ProtocolHTTP {
                                   _ ended: inout Bool) -> Int
     {
         guard let buffer, !buffer.isEmpty else { return 0 }
-        let assumedBuffer = buffer.assumingMemoryBound(to: UInt8.self)
-        let data = Data(bytes: assumedBuffer.baseAddress!, count: buffer.count)
+        let data = Data(buffer)
         do throws(HTTPResponseParser.Error) {
             let events = try parser.append(data)
             pendingEvents.append(contentsOf: events)
