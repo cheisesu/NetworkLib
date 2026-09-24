@@ -15,7 +15,15 @@ extension URLError {
         if let error = anyError as? URLError {
             self = error._updating(with: request, phase: phase, underlyingError: nil)
         } else if let error = anyError as? NWError {
-            self = URLError(error.urlErrorCode)._updating(with: request, phase: phase, underlyingError: error)
+            let code: URLError.Code = switch (phase, error) {
+            case (.sending, .posix(.EBADMSG)),
+                 (.sending, .posix(.EMSGSIZE)),
+                 (.sending, .posix(.EPROTO)):
+                .unknown
+            default:
+                error.urlErrorCode
+            }
+            self = URLError(code)._updating(with: request, phase: phase, underlyingError: error)
         } else {
             self = URLError(.unknown)._updating(with: request, phase: phase, underlyingError: anyError)
         }

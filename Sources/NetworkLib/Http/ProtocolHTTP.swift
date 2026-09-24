@@ -95,7 +95,7 @@ private final class ProtocolHTTP: NWProtocolFramerImplementation, @unchecked Sen
                       messageLength: Int, isComplete: Bool)
     {
         guard isComplete else {
-            framer.markFailed(error: .posix(.EIO))
+            framer.markFailed(error: .posix(.EPROTO))
             return
         }
         guard messageLength == 0 else {
