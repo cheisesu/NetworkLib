@@ -122,7 +122,7 @@ struct ProtocolHTTPTests {
         }
 
         @Test
-        func invalidChunkSize_ThrowsIOError() async throws {
+        func invalidChunkSize_ThrowsBadMessageError() async throws {
             let lines = [
                 "HTTP/1.1 200 OK",
                 "Transfer-Encoding: chunked",
@@ -154,7 +154,7 @@ struct ProtocolHTTPTests {
             do {
                 _ = try await socket.receiveNextMessage() as HTTPReceiveMessage
                 Issue.record("Unexpected entrance")
-            } catch NWError.posix(.EIO) {
+            } catch NWError.posix(.EBADMSG) {
             }
         }
 
@@ -268,4 +268,3 @@ struct ProtocolHTTPTests {
         }
     }
 }
-
