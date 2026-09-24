@@ -55,6 +55,26 @@ struct RawSocketReceiveTests {
         }
     }
 
+    @Test
+    func emptyIncompleteReceive_ThrowsIOError() async throws {
+        let underlyingConnection = NWConnectionMock(overridedReceiveComplete: false)
+        let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: 0,
+                                   maxDataBlock: 256, transport: .tcp)
+        defer { socket.cancel(nil) }
+
+        do {
+            _ = try await withCheckedThrowingContinuation { continuation in
+                socket.connect { _ in
+                    socket.receiveNext { result in
+                        continuation.resume(with: result)
+                    }
+                }
+            }
+            Issue.record("Unexpected entrance")
+        } catch NWError.posix(.EIO) {
+        }
+    }
+
     // MARK: SUCCESS BY STATE
 
     @Test
