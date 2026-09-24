@@ -63,6 +63,8 @@ private final class ProtocolHTTP: NWProtocolFramerImplementation, @unchecked Sen
     static let definition = NWProtocolFramer.Definition(implementation: ProtocolHTTP.self)
     static let label: String = "ProtocolHTTP"
 
+    private static let maximumInputLength = 64 * 1024
+
     private let parser: HTTPResponseParser
     private var pendingEvents: ArraySlice<HTTPResponseParser.Event>
     private var pendingParserError: HTTPResponseParser.Error?
@@ -83,7 +85,7 @@ private final class ProtocolHTTP: NWProtocolFramerImplementation, @unchecked Sen
         }
         while true {
             var shouldStop = false
-            let parsed = framer.parseInput(minimumIncompleteLength: 1, maximumLength: .max) { buffer, _ in
+            let parsed = framer.parseInput(minimumIncompleteLength: 1, maximumLength: Self.maximumInputLength) { buffer, _ in
                 parseInputBuffer(with: framer, buffer, &shouldStop)
             }
             if !parsed { return 0 }
