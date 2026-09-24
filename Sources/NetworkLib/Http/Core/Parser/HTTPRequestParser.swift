@@ -18,7 +18,11 @@ final class HTTPRequestParser: Sendable {
         urlRequest.setValue("close", forHTTPHeaderField: .connection)
         let headers = urlRequest.allHTTPHeaderFields?.map { (key: String, value: String) in
             (key, value)
-        }.sorted(by: { $0.0 < $1.0 }) ?? []
+        }.sorted { lhs, rhs in
+            let lhsIsHost = lhs.0.caseInsensitiveCompare(HTTPHeaderKey.host.rawValue) == .orderedSame
+            let rhsIsHost = rhs.0.caseInsensitiveCompare(HTTPHeaderKey.host.rawValue) == .orderedSame
+            return lhsIsHost == rhsIsHost ? lhs.0 < rhs.0 : lhsIsHost
+        } ?? []
         for (key, value) in headers {
             let line = [key, value].joined(separator: ": ")
             lines.append(line)
@@ -49,7 +53,11 @@ final class HTTPRequestParser: Sendable {
         headers[.connection] = "close"
         let headersPairs = headers
             .map { ($0.key, $0.value) }
-            .sorted(by: { $0.0.rawValue < $1.0.rawValue })
+            .sorted { lhs, rhs in
+                let lhsIsHost = lhs.0 == .host
+                let rhsIsHost = rhs.0 == .host
+                return lhsIsHost == rhsIsHost ? lhs.0.rawValue < rhs.0.rawValue : lhsIsHost
+            }
             .map { [$0.0.rawValue, $0.1].joined(separator: ": ") }
         let lines = [startLine] + headersPairs + ["", ""]
         parsedData = Data(lines.joined(separator: "\r\n").utf8)

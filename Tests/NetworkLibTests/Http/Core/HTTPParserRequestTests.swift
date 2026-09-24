@@ -15,8 +15,8 @@ struct HTTPParserRequestTests {
         let request = URLRequest(url: url)
         let expectedLines = [
             "GET /path HTTP/1.1",
-            "Connection: close",
             "Host: localhost",
+            "Connection: close",
             "",
             ""
         ]
@@ -39,8 +39,8 @@ struct HTTPParserRequestTests {
         request.httpMethod = method
         let expectedLines = [
             "\(expectedMethod) /path1?q1=query1 HTTP/\(version.rawValue)",
-            "Connection: close",
             version == .v1_1 ? "Host: localhost" : nil,
+            "Connection: close",
             "",
             ""
         ]
@@ -63,7 +63,11 @@ struct HTTPParserRequestTests {
             ("Connection", "close"),
         ]
             .compactMap { $0 }
-            .sorted(by: { $0.0 < $1.0 })
+            .sorted { lhs, rhs in
+                let lhsIsHost = lhs.0.caseInsensitiveCompare(HTTPHeaderKey.host.rawValue) == .orderedSame
+                let rhsIsHost = rhs.0.caseInsensitiveCompare(HTTPHeaderKey.host.rawValue) == .orderedSame
+                return lhsIsHost == rhsIsHost ? lhs.0 < rhs.0 : lhsIsHost
+            }
         let url = try #require(URL(string: "http://localhost/path1?q1=query1"))
         var request = URLRequest(url: url)
         request.httpMethod = method
@@ -97,9 +101,9 @@ struct HTTPParserRequestTests {
         
         let headerStrings = [
             "\(expectedMethod) /path1?q1=query1 HTTP/\(version.rawValue)",
+            version == .v1_1 ? "Host: localhost" : nil,
             "Connection: close",
             ["Content-Length", String(body.count)].joined(separator: ": "),
-            version == .v1_1 ? "Host: localhost" : nil,
             "",
             "",
         ].compactMap { $0 }
@@ -125,7 +129,11 @@ struct HTTPParserRequestTests {
             ("Connection", "close"),
         ]
             .compactMap { $0 }
-            .sorted(by: { $0.0 < $1.0 })
+            .sorted { lhs, rhs in
+                let lhsIsHost = lhs.0.caseInsensitiveCompare(HTTPHeaderKey.host.rawValue) == .orderedSame
+                let rhsIsHost = rhs.0.caseInsensitiveCompare(HTTPHeaderKey.host.rawValue) == .orderedSame
+                return lhsIsHost == rhsIsHost ? lhs.0 < rhs.0 : lhsIsHost
+            }
         let url = try #require(URL(string: "http://localhost/path1?q1=query1"))
         var request = URLRequest(url: url)
         request.httpMethod = method
@@ -180,8 +188,8 @@ extension HTTPParserRequestTests {
             }
             let expectedLines = [
                 expectedString,
-                "Connection: close",
                 "Host: \(target)",
+                "Connection: close",
                 "",
                 ""
             ]
@@ -225,10 +233,10 @@ extension HTTPParserRequestTests {
             let parser = HTTPRequestParser(connectTo: host, port, headers: headers)
             let expectedLines = [
                 expectedString,
+                "Host: \(target)",
                 "Connection: close",
                 "Header2: Header value 2",
                 "Header3: Header value 3",
-                "Host: \(target)",
                 "",
                 ""
             ]
@@ -243,8 +251,8 @@ extension HTTPParserRequestTests {
             let parser = HTTPRequestParser(connectTo: host, port, headers: [:])
             let expectedLines = [
                 "CONNECT example.com:90 HTTP/1.1",
-                "Connection: close",
                 "Host: example.com:90",
+                "Connection: close",
                 "",
                 ""
             ]
