@@ -47,6 +47,64 @@ struct URLErrorTests {
         try #require(_MockError.justMock.urlErrorCode == .unknown)
     }
 
+    @Test
+    func updatingURLError_PreservesCodeAndUserInfo() throws {
+        let url = try #require(URL(string: "https://example.com/path"))
+        let request = URLRequest(url: url)
+        let original = URLError(.cancelled, userInfo: ["Existing": "value"])
+
+        let error = URLError(orUpdate: original, for: request, phase: .receiving)
+
+        #expect(error.code == .cancelled)
+        #expect(error.userInfo["Existing"] as? String == "value")
+        #expect(error.userInfo[NSURLErrorFailingURLErrorKey] as? URL == url)
+        #expect(error.userInfo[NSURLErrorFailingURLStringErrorKey] as? String == url.absoluteString)
+        #expect(error.userInfo[NSURLErrorKey] as? URL == url)
+        #expect(error.userInfo[HTTPTaskErrorInfoKey.phase] as? String == "receiving")
+        #expect(error.userInfo[NSUnderlyingErrorKey] == nil)
+    }
+
+    @Test
+    func updatingNWError_MapsCodeAndStoresUnderlyingError() throws {
+        let url = try #require(URL(string: "https://example.com"))
+        let request = URLRequest(url: url)
+        let underlyingError = NWError.posix(.ETIMEDOUT)
+
+        let error = URLError(orUpdate: underlyingError, for: request, phase: .connecting)
+
+        #expect(error.code == .timedOut)
+        #expect(error.userInfo[HTTPTaskErrorInfoKey.phase] as? String == "connecting")
+        #expect(error.userInfo[NSUnderlyingErrorKey] as? NWError == underlyingError)
+    }
+
+    @Test(arguments: [POSIXErrorCode.EBADMSG, .EMSGSIZE, .EPROTO])
+    func sendingProtocolError_UsesUnknownCode(_ posixCode: POSIXErrorCode) throws {
+        let url = try #require(URL(string: "https://example.com"))
+        let underlyingError = NWError.posix(posixCode)
+
+        let error = URLError(orUpdate: underlyingError, for: URLRequest(url: url), phase: .sending)
+
+        #expect(error.code == .unknown)
+        #expect(error.userInfo[NSUnderlyingErrorKey] as? NWError == underlyingError)
+    }
+
+    @Test
+    func arbitraryErrorWithoutURL_UsesUnknownCodeAndDefaultPhase() throws {
+        let initialURL = try #require(URL(string: "https://example.com"))
+        var request = URLRequest(url: initialURL)
+        request.url = nil
+        let underlyingError = _MockError.justMock
+
+        let error = URLError(orUpdate: underlyingError, for: request)
+
+        #expect(error.code == .unknown)
+        #expect(error.userInfo[HTTPTaskErrorInfoKey.phase] as? String == "common")
+        #expect(error.userInfo[NSUnderlyingErrorKey] as? _MockError == underlyingError)
+        #expect(error.userInfo[NSURLErrorFailingURLErrorKey] == nil)
+        #expect(error.userInfo[NSURLErrorFailingURLStringErrorKey] == nil)
+        #expect(error.userInfo[NSURLErrorKey] == nil)
+    }
+
     @Test(arguments: [
         (POSIXErrorCode.ECANCELED, URLError.Code.cancelled),
         (POSIXErrorCode.ETIMEDOUT, URLError.Code.timedOut),
