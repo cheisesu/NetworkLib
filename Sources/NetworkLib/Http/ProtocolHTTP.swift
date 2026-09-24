@@ -64,7 +64,7 @@ private final class ProtocolHTTP: NWProtocolFramerImplementation, @unchecked Sen
     static let label: String = "ProtocolHTTP"
 
     private let parser: HTTPResponseParser
-    private var pendingEvents: [HTTPResponseParser.Event]
+    private var pendingEvents: ArraySlice<HTTPResponseParser.Event>
     private var pendingParserError: HTTPResponseParser.Error?
 
     init(framer: NWProtocolFramer.Instance) {
@@ -149,10 +149,11 @@ extension ProtocolHTTP {
     }
     private func deliverPendingEvents(with framer: NWProtocolFramer.Instance) -> Bool {
         while !pendingEvents.isEmpty {
-            let event = pendingEvents[0]
+            guard let event = pendingEvents.first else { break }
             guard deliver(event, with: framer) else { return false }
             pendingEvents.removeFirst()
         }
+        pendingEvents = []
         guard let error = pendingParserError else { return true }
         pendingParserError = nil
 
