@@ -74,6 +74,10 @@ final class HTTPResponseParser: @unchecked Sendable {
         while let nextEvent = try parseNext() {
             onEvent(nextEvent)
         }
+
+        if bodyKind == .finished, !currentBuffer.isEmpty {
+            throw .parsingCompleted
+        }
     }
 
     private func parseNext() throws(HTTPResponseParser.Error) -> Event? {

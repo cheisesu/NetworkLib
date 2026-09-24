@@ -50,6 +50,35 @@ struct HTTPResponseParserTests {
     }
 
     @Test
+    func extraDataAfterCompletedResponse_ThrowsAfterPreservingEvents() throws {
+        let body = Data("Hello".utf8)
+        let lines = [
+            "HTTP/1.1 200 OK",
+            "Content-Length: \(body.count)",
+            "",
+            "",
+        ]
+        let data = Data(lines.joined(separator: "\r\n").utf8) + body + Data("EXTRA".utf8)
+        let parser = HTTPResponseParser()
+        var events: [HTTPResponseParser.Event] = []
+
+        do {
+            try parser.append(data) { events.append($0) }
+            Issue.record("Expected parsingCompleted")
+        } catch HTTPResponseParser.Error.parsingCompleted {
+        }
+
+        try #require(events.count == 3)
+        guard case .response = events[0],
+              case .data(body) = events[1],
+              case .end = events[2]
+        else {
+            Issue.record("Expected response, body, and end events")
+            return
+        }
+    }
+
+    @Test
     func withNoBody_ReturnsHTTPResponseEvent() throws {
         let _data = [
             "HTTP/1.1 201 Created",
