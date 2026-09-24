@@ -9,6 +9,24 @@ extension Tag.HTTP {
 
 @Suite(.tags(.HTTP.all, .HTTP.parser))
 struct HTTPParserRequestTests {
+    @Test
+    func defaultVersion_UsesHTTP11() throws {
+        let url = try #require(URL(string: "http://localhost/path"))
+        let request = URLRequest(url: url)
+        let expectedLines = [
+            "GET /path HTTP/1.1",
+            "Connection: close",
+            "Host: localhost",
+            "",
+            ""
+        ]
+        let expectedData = Data(expectedLines.joined(separator: "\r\n").utf8)
+
+        let parsed = HTTPRequestParser(request)
+
+        try #require(parsed.parsedData == expectedData)
+    }
+
     @Test(arguments: [
         (nil as String?, "GET", HTTPVersion.v1_0),
         ("_GET", "_GET", HTTPVersion.v1_0),
