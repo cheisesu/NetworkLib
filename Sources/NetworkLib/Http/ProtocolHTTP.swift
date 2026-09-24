@@ -134,10 +134,8 @@ extension ProtocolHTTP {
 
             try parser.append(data) { event in
                 assert(!reachedEnd, "Parser emitted an event after .end")
-                if !reachedEnd {
-                    pendingEvents.append(event)
-                }
-                reachedEnd = reachedEnd || event.isEnd
+                pendingEvents.append(event)
+                reachedEnd = event.isEnd
             }
 
             let deliveryCompleted = deliverPendingEvents(with: framer)
