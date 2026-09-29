@@ -10,12 +10,23 @@ final class MockProtocolFramer: ProtocolFramer {
         let noCopy: Bool
     }
 
+    struct ParseInputCall {
+        let minimumIncompleteLength: Int
+        let maximumLength: Int
+    }
+
+    enum Event: Equatable {
+        case deliver(HTTPMessageKind)
+        case failure(NWError)
+    }
+
     private var inputChunks: [Data]
     var outputs: [Data] = []
     var deliveredInputs: [DeliveredInput] = []
     var failures: [NWError] = []
-
-    var deliverInputNoCopyResult = true
+    var parseInputCalls: [ParseInputCall] = []
+    var deliverInputNoCopyResults = [Bool]()
+    var events: [Event] = []
 
     init(inputChunks: [Data] = []) {
         self.inputChunks = inputChunks
@@ -31,6 +42,7 @@ final class MockProtocolFramer: ProtocolFramer {
 
     func parseInput(minimumIncompleteLength: Int, maximumLength: Int,
                     parse: (UnsafeMutableRawBufferPointer?, Bool) -> Int) -> Bool {
+        parseInputCalls.append(.init(minimumIncompleteLength: minimumIncompleteLength, maximumLength: maximumLength))
         guard !inputChunks.isEmpty else { return false }
 
         var input = inputChunks.removeFirst()
@@ -59,14 +71,24 @@ final class MockProtocolFramer: ProtocolFramer {
 
     func deliverInput(data: Data, message: NWProtocolFramer.Message, isComplete: Bool) {
         deliveredInputs.append(.init(data: data, message: message, isComplete: isComplete, noCopy: false))
+
+        if let kind = message.httpKind {
+            events.append(.deliver(kind))
+        }
     }
 
     func deliverInputNoCopy(length: Int, message: NWProtocolFramer.Message, isComplete: Bool) -> Bool {
         deliveredInputs.append(.init(data: nil, message: message, isComplete: isComplete, noCopy: true))
-        return deliverInputNoCopyResult
+
+        if let kind = message.httpKind {
+            events.append(.deliver(kind))
+        }
+
+        return deliverInputNoCopyResults.isEmpty ? true : deliverInputNoCopyResults.removeFirst()
     }
 
     func markFailed(error: NWError) {
         failures.append(error)
+        events.append(.failure(error))
     }
 }

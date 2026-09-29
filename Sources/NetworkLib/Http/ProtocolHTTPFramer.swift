@@ -28,8 +28,9 @@ final class ProtocolHTTPFramer: ProtocolFramerImplementation, @unchecked Sendabl
                 parseInputBuffer(with: framer, buffer, &shouldStop)
             }
             if !parsed { return 0 }
-            if shouldStop { return 0 }
+            if shouldStop { break }
         }
+        return 0
     }
 
     func handleOutput(framer: any ProtocolFramer, message: NWProtocolFramer.Message,
@@ -49,16 +50,6 @@ final class ProtocolHTTPFramer: ProtocolFramerImplementation, @unchecked Sendabl
         }
         let requestParser = HTTPRequestParser(request, version: .v1_1)
         framer.writeOutput(data: requestParser.parsedData)
-    }
-
-    func wakeup(framer: any ProtocolFramer) {
-    }
-
-    func stop(framer: any ProtocolFramer) -> Bool {
-        true
-    }
-
-    func cleanup(framer: any ProtocolFramer) {
     }
 }
 
@@ -86,9 +77,9 @@ extension ProtocolHTTPFramer {
         }
         return buffer.count
     }
+
     private func deliverPendingEvents(with framer: any ProtocolFramer) -> Bool {
-        while !pendingEvents.isEmpty {
-            guard let event = pendingEvents.first else { break }
+        while let event = pendingEvents.first {
             guard deliver(event, with: framer) else { return false }
             pendingEvents.removeFirst()
         }
