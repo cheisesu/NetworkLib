@@ -16,6 +16,13 @@ import Testing
 @Suite(.tags(.HTTP.all, .HTTP.protocol), .timeLimit(.minutes(1)))
 struct ProtocolHTTPFramerTests {
     @Test
+    func proxy_ReturnsProtocolProxyFramer() {
+        let proxyProto: any ProtocolFramerImplementation = .http()
+
+        #expect(type(of: proxyProto) == ProtocolHTTPFramer.self)
+    }
+
+    @Test
     func startReturnsReady() throws {
         let httpProto = ProtocolHTTPFramer()
         let framerMock = MockProtocolFramer()
