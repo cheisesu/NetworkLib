@@ -77,7 +77,7 @@ final class ProtocolProxyFramer: ProtocolFramerImplementation, @unchecked Sendab
 extension ProtocolProxyFramer {
     private func startAsync(with framer: any ProtocolFramer) {
         do {
-            if let protocols = framer[ProxyOptions.kOptionsProxyTopProtocols] as? [NWProtocolFramer.Options] {
+            if let protocols = framer[ProxyOptions.kOptionsProxyTopProtocols] as? [NWProtocolOptions] {
                 for proto in protocols {
                     try framer.prependApplicationProtocol(options: proto)
                 }
