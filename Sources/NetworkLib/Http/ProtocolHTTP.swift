@@ -81,7 +81,7 @@ private final class ProtocolHTTP: NWProtocolFramerImplementation, @unchecked Sen
     private let implementation: any ProtocolFramerImplementation
 
     init(framer: NWProtocolFramer.Instance) {
-        implementation = ProtocolHTTPFramer()
+        implementation = .http()
     }
 
     func start(framer: NWProtocolFramer.Instance) -> NWProtocolFramer.StartResult {

@@ -1,6 +1,10 @@
 import Foundation
 import Network
 
+extension ProtocolFramerImplementation where Self == ProtocolHTTPFramer {
+    static func http() -> ProtocolHTTPFramer { ProtocolHTTPFramer() }
+}
+
 final class ProtocolHTTPFramer: ProtocolFramerImplementation, @unchecked Sendable {
     private static let maximumInputLength = 64 * 1024
 
