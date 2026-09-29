@@ -2,65 +2,31 @@ import Foundation
 import Network
 
 @available(iOS 15.4, tvOS 15.4, macOS 12.3, *)
-extension ProtocolProxy {
-    static let kOptionsEndpointHost = "kOptionsEndpointHost"
-    static let kOptionsEndpointPort = "kOptionsEndpointPort"
-    static let kOptionsIsSecure = "kOptionsIsSecure"
-    static let kOptionsServerName = "kOptionsServerName"
-    static let kOptionsProxyAuth = "kOptionsProxyAuth"
-    static let kOptionsProxyTopProtocols = "kOptionsProxyTopProtocols"
-}
-
-extension NWProtocolFramer.Options {
-    @available(iOS 15.4, tvOS 15.4, macOS 12.3, *)
-    static func proxy(
-        connectingToRemote host: NWEndpoint.Host,
-        _ port: NWEndpoint.Port,
-        isSecure: Bool = true,
-        sni: String? = nil,
-        authorization: HTTPAuthorization? = nil,
-        additionalProtocols: [NWProtocolOptions] = []
-    ) -> NWProtocolFramer.Options
-    {
-        let options = NWProtocolFramer.Options(definition: ProtocolProxy.definition)
-        options[ProtocolProxy.kOptionsEndpointHost] = host
-        options[ProtocolProxy.kOptionsEndpointPort] = port
-        options[ProtocolProxy.kOptionsIsSecure] = isSecure
-        options[ProtocolProxy.kOptionsServerName] = if isSecure, sni == nil, !host.isIPAddress {
-            host.asString
-        } else {
-            sni
-        }
-        options[ProtocolProxy.kOptionsProxyAuth] = authorization
-        options[ProtocolProxy.kOptionsProxyTopProtocols] = additionalProtocols
-        return options
-    }
+extension ProtocolFramerImplementation where Self == ProtocolProxyFramer {
+    static func proxy() -> ProtocolProxyFramer { ProtocolProxyFramer() }
 }
 
 @available(iOS 15.4, tvOS 15.4, macOS 12.3, *)
-private final class ProtocolProxy: NWProtocolFramerImplementation, @unchecked Sendable {
-    static let definition = NWProtocolFramer.Definition(implementation: ProtocolProxy.self)
-    static let label: String = "ProtocolProxy"
-
+final class ProtocolProxyFramer: ProtocolFramerImplementation, @unchecked Sendable {
     private let parserLock: NSLock
     private var parser: RawHTTPResponseParser
     private var isCompleted: Bool {
         parserLock.withLock { parser.isCompleted }
     }
 
-    init(framer: NWProtocolFramer.Instance) {
+    init() {
         parserLock = NSLock()
         parser = RawHTTPResponseParser()
     }
 
-    func start(framer: NWProtocolFramer.Instance) -> NWProtocolFramer.StartResult {
-        framer.async { [weak self] in
+    func start(framer: any ProtocolFramer) -> NWProtocolFramer.StartResult {
+        framer.async { [weak self, framer] in
             self?.startAsync(with: framer)
         }
         return .willMarkReady
     }
 
-    func handleInput(framer: NWProtocolFramer.Instance) -> Int {
+    func handleInput(framer: any ProtocolFramer) -> Int {
         if isCompleted {
             return 0
         }
@@ -83,7 +49,7 @@ private final class ProtocolProxy: NWProtocolFramerImplementation, @unchecked Se
                     framer.markReady()
 
                     if !response.leftBuffer.isEmpty {
-                        let message = NWProtocolFramer.Message(definition: Self.definition)
+                        let message = framer.makeMessage()
                         framer.deliverInput(data: response.leftBuffer, message: message, isComplete: false)
                     }
                 } catch let error as NWError {
@@ -101,27 +67,17 @@ private final class ProtocolProxy: NWProtocolFramerImplementation, @unchecked Se
         return 0
     }
 
-    func handleOutput(framer: NWProtocolFramer.Instance, message: NWProtocolFramer.Message,
+    func handleOutput(framer: any ProtocolFramer, message: NWProtocolFramer.Message,
                       messageLength: Int, isComplete: Bool)
     {
-    }
-
-    func wakeup(framer: NWProtocolFramer.Instance) {
-    }
-
-    func stop(framer: NWProtocolFramer.Instance) -> Bool {
-        true
-    }
-
-    func cleanup(framer: NWProtocolFramer.Instance) {
     }
 }
 
 @available(iOS 15.4, tvOS 15.4, macOS 12.3, *)
-extension ProtocolProxy {
-    private func startAsync(with framer: NWProtocolFramer.Instance) {
+extension ProtocolProxyFramer {
+    private func startAsync(with framer: any ProtocolFramer) {
         do {
-            if let protocols = framer.options[Self.kOptionsProxyTopProtocols] as? [NWProtocolFramer.Options] {
+            if let protocols = framer[ProxyOptions.kOptionsProxyTopProtocols] as? [NWProtocolFramer.Options] {
                 for proto in protocols {
                     try framer.prependApplicationProtocol(options: proto)
                 }
@@ -139,12 +95,12 @@ extension ProtocolProxy {
         }
     }
 
-    private func makeConnectRequestData(from framer: NWProtocolFramer.Instance) throws(NWError) -> Data {
-        let host = framer.options[Self.kOptionsEndpointHost] as? NWEndpoint.Host
-        let port = framer.options[Self.kOptionsEndpointPort] as? NWEndpoint.Port
+    private func makeConnectRequestData(from framer: any ProtocolFramer) throws(NWError) -> Data {
+        let host = framer[ProxyOptions.kOptionsEndpointHost] as? NWEndpoint.Host
+        let port = framer[ProxyOptions.kOptionsEndpointPort] as? NWEndpoint.Port
         guard let host, let port else { throw NWError.posix(.EDESTADDRREQ) }
         var headers: [HTTPHeaderKey: String] = [:]
-        if let auth = framer.options[Self.kOptionsProxyAuth] as? HTTPAuthorization {
+        if let auth = framer[ProxyOptions.kOptionsProxyAuth] as? HTTPAuthorization {
             headers[.proxyAuthorization] = auth.httpHeader
         }
         let parser = HTTPRequestParser(connectTo: host, port, headerKeys: headers)
@@ -165,10 +121,10 @@ extension ProtocolProxy {
         }
     }
 
-    private func createNextTLSIfNeeded(from framer: NWProtocolFramer.Instance) -> NWProtocolTLS.Options? {
-        guard let isSecure = framer.options[Self.kOptionsIsSecure] as? Bool, isSecure else { return nil }
+    private func createNextTLSIfNeeded(from framer: any ProtocolFramer) -> NWProtocolTLS.Options? {
+        guard let isSecure = framer[ProxyOptions.kOptionsIsSecure] as? Bool, isSecure else { return nil }
         let tls = NWProtocolTLS.Options()
-        if let sni = framer.options[Self.kOptionsServerName] as? String {
+        if let sni = framer[ProxyOptions.kOptionsServerName] as? String {
             sec_protocol_options_set_tls_server_name(tls.securityProtocolOptions, sni)
         }
         return tls

@@ -2,7 +2,7 @@ import Foundation
 import Network
 @testable import NetworkLib
 
-final class MockProtocolFramer: ProtocolFramer {
+final class MockProtocolFramer: ProtocolFramer, @unchecked Sendable {
     struct DeliveredInput {
         let data: Data?
         let message: NWProtocolFramer.Message
@@ -27,6 +27,13 @@ final class MockProtocolFramer: ProtocolFramer {
     var parseInputCalls: [ParseInputCall] = []
     var deliverInputNoCopyResults = [Bool]()
     var events: [Event] = []
+    var options: [String: Any] = [:]
+    var asyncBlocks: [@Sendable () -> Void] = []
+    var prependedProtocols: [NWProtocolOptions] = []
+    var prependApplicationProtocolError: Error?
+    var passThroughInputCount = 0
+    var passThroughOutputCount = 0
+    var markReadyCount = 0
 
     init(inputChunks: [Data] = []) {
         self.inputChunks = inputChunks
@@ -90,5 +97,38 @@ final class MockProtocolFramer: ProtocolFramer {
     func markFailed(error: NWError) {
         failures.append(error)
         events.append(.failure(error))
+    }
+
+    func async(_ block: @escaping @Sendable () -> Void) {
+        asyncBlocks.append(block)
+    }
+
+    func runNextAsyncBlock() {
+        guard !asyncBlocks.isEmpty else { return }
+        asyncBlocks.removeFirst()()
+    }
+
+    func prependApplicationProtocol(options: NWProtocolOptions) throws {
+        if let prependApplicationProtocolError {
+            throw prependApplicationProtocolError
+        }
+        prependedProtocols.append(options)
+    }
+
+    func passThroughInput() {
+        passThroughInputCount += 1
+    }
+
+    func passThroughOutput() {
+        passThroughOutputCount += 1
+    }
+
+    func markReady() {
+        markReadyCount += 1
+    }
+
+    subscript(key: String) -> Any? {
+        get { options[key] }
+        _modify { yield &options[key] }
     }
 }

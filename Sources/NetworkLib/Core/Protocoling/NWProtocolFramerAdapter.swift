@@ -40,4 +40,30 @@ struct NWProtocolFramerAdapter: ProtocolFramer {
     func markFailed(error: NWError) {
         framer.markFailed(error: error)
     }
+
+    func async(_ block: @escaping @Sendable () -> Void) {
+        framer.async(execute: block)
+    }
+
+    func prependApplicationProtocol(options: NWProtocolOptions) throws {
+        try framer.prependApplicationProtocol(options: options)
+    }
+
+    func passThroughInput() {
+        framer.passThroughInput()
+    }
+
+    func passThroughOutput() {
+        framer.passThroughOutput()
+    }
+
+    func markReady() {
+        framer.markReady()
+    }
+
+    @available(macOS 12.3, *)
+    subscript(key: String) -> Any? {
+        get { framer.options[key] }
+        _modify { yield &framer.options[key] }
+    }
 }
