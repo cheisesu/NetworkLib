@@ -5,7 +5,8 @@ import Network
 extension RawSocket {
     /// Starts the underlying network connection and returns connection details when it becomes ready.
     ///
-    /// If the surrounding task is cancelled while this operation is suspended, the socket is cancelled.
+    /// Cancelling the surrounding task permanently cancels the socket. The operation then throws the `NWError` produced by
+    /// socket cancellation.
     ///
     /// For example, connect and inspect the selected endpoint:
     ///
@@ -25,7 +26,8 @@ extension RawSocket {
 
     /// Sends raw bytes on the socket.
     ///
-    /// If the surrounding task is cancelled while this operation is suspended, the socket is cancelled.
+    /// Cancelling the surrounding task permanently cancels the socket. The operation then throws the `NWError` produced by
+    /// socket cancellation.
     ///
     /// For example, send a small payload:
     ///
@@ -43,7 +45,8 @@ extension RawSocket {
 
     /// Sends a typed message with protocol metadata.
     ///
-    /// If the surrounding task is cancelled while this operation is suspended, the socket is cancelled.
+    /// Cancelling the surrounding task permanently cancels the socket. The operation then throws the `NWError` produced by
+    /// socket cancellation.
     ///
     /// - Parameter message: The typed message that supplies content and context.
     /// - Throws: The `NWError` that prevented the message from being sent.
@@ -55,7 +58,8 @@ extension RawSocket {
 
     /// Receives the next available raw data block.
     ///
-    /// If the surrounding task is cancelled while this operation is suspended, the socket is cancelled.
+    /// Cancelling the surrounding task permanently cancels the socket. The operation then throws the `NWError` produced by
+    /// socket cancellation.
     ///
     /// For example, receive one block of data:
     ///
@@ -75,7 +79,8 @@ extension RawSocket {
 
     /// Receives and decodes the next typed message.
     ///
-    /// If the surrounding task is cancelled while this operation is suspended, the socket is cancelled.
+    /// Cancelling the surrounding task permanently cancels the socket. The operation then throws the `NWError` produced by
+    /// socket cancellation.
     ///
     /// - Parameter type: The typed message to decode. The default is inferred from the return type.
     /// - Returns: The decoded message.
@@ -86,7 +91,9 @@ extension RawSocket {
         }
     }
 
-    /// Cancels the socket and suspends until cancellation callbacks have been drained.
+    /// Permanently cancels the socket and suspends until the underlying connection reaches its terminal state.
+    ///
+    /// Calling this method more than once is safe.
     public func cancel() async {
         await withCheckedContinuation { continuation in
             cancel {

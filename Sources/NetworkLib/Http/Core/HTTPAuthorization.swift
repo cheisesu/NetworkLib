@@ -14,7 +14,11 @@ import Foundation
 /// ```
 @available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
 public enum HTTPAuthorization: Sendable, Equatable {
-    /// Basic authentication credentials rendered as `Basic ` followed by Base64-encoded `username:password` bytes.
+    /// Basic authentication credentials rendered as `Basic ` followed by Base64-encoded `userName:password` bytes.
+    ///
+    /// - Parameters:
+    ///   - userName: The user name included in the credential.
+    ///   - password: The password included in the credential.
     case basic(userName: String, password: String)
 
     var httpHeader: String {

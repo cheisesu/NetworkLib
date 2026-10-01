@@ -104,8 +104,8 @@ struct ProtocolProxyFramerTests {
     func withAdditionalProtocols_PrependsProtocolsBeforeTLS() throws {
         let proxyProto = ProtocolProxyFramer()
         let framerMock = MockProtocolFramer()
-        let firstProtocol = NWProtocolFramer.Options(definition: .http)
-        let secondProtocol = NWProtocolFramer.Options(definition: .http)
+        let firstProtocol = NWProtocolFramer.Options(definition: _MockAnyProtocol.definition)
+        let secondProtocol = NWProtocolFramer.Options(definition: _MockAnyProtocol.definition)
 
         framerMock[ProxyOptions.kOptionsEndpointHost] = NWEndpoint.Host("example.com")
         framerMock[ProxyOptions.kOptionsEndpointPort] = NWEndpoint.Port(integerLiteral: 443)
@@ -160,7 +160,7 @@ struct ProtocolProxyFramerTests {
     func withProtocolPrependFailure_FailsWithoutWritingRequest() {
         let proxyProto = ProtocolProxyFramer()
         let framerMock = MockProtocolFramer()
-        let additionalProtocol = NWProtocolFramer.Options(definition: .http)
+        let additionalProtocol = NWProtocolFramer.Options(definition: _MockAnyProtocol.definition)
 
         framerMock[ProxyOptions.kOptionsEndpointHost] = NWEndpoint.Host("example.com")
         framerMock[ProxyOptions.kOptionsEndpointPort] = NWEndpoint.Port(integerLiteral: 443)
@@ -237,6 +237,7 @@ struct ProtocolProxyFramerTests {
         let framerMock = MockProtocolFramer(inputChunks: [
             Data("HTTP/1.1 200 Connection established\r\n\r\nhello".utf8)
         ])
+        framerMock.definition = .mock
 
         _ = proxyProto.handleInput(framer: framerMock)
 
@@ -435,6 +436,7 @@ struct ProtocolProxyFramerTests {
         response.append(leftover)
 
         let framerMock = MockProtocolFramer(inputChunks: [response])
+        framerMock.definition = .mock
 
         _ = proxyProto.handleInput(framer: framerMock)
 
@@ -450,6 +452,7 @@ struct ProtocolProxyFramerTests {
     func withOutput_DoesNothing() {
         let proxyProto = ProtocolProxyFramer()
         let framerMock = MockProtocolFramer()
+        framerMock.definition = _MockAnyProtocol.definition
         let message = framerMock.makeMessage()
 
         proxyProto.handleOutput(framer: framerMock, message: message, messageLength: 100, isComplete: true)
@@ -519,8 +522,8 @@ struct ProtocolProxyFramerTests {
 
         @Test
         func withAdditionalProtocols_StoresProtocols() throws {
-            let firstProtocol = NWProtocolFramer.Options(definition: .http)
-            let secondProtocol = NWProtocolFramer.Options(definition: .http)
+            let firstProtocol = NWProtocolFramer.Options(definition: _MockAnyProtocol.definition)
+            let secondProtocol = NWProtocolFramer.Options(definition: _MockAnyProtocol.definition)
             let options = NWProtocolFramer.Options.proxy(
                 connectingToRemote: "example.com",
                 443,
@@ -549,101 +552,3 @@ struct ProtocolProxyFramerTests {
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-extension ProtocolProxyFramerTests {
-//    @Test(.disabled())
-//    func continuationCalledOnlyOnce() async throws {
-//        let timeout: TimeInterval = 0
-//        let lines = [
-//            "GET /v2/ip.json HTTP/1.1",
-//            "Host: api.my-ip.io",
-//            "Connection: close",
-//            "",
-//            "",
-//        ]
-//        let dataToSend = Data(lines.joined(separator: "\r\n").utf8)
-//        let proxy = RawSocketConfiguration.Proxy(host: "<#server#>", port: 0,
-//                                                 authorization: .basic(userName: "<#username#>", password: "<#userpassword#>"))
-//        let config = RawSocketConfiguration("api.my-ip.io", 443, isSecure: true, proxy: proxy, transport: .tcp,
-//                                            maxDataBlock: .max, timeout: timeout)
-//        let socket = try RawSocket(config)
-//        defer { socket.cancel(nil) }
-//        try await socket.connect()
-//        try await socket.send(dataToSend)
-//        let received = try #require(await socket.receiveNext())
-//        let str = String(data: received, encoding: .utf8) ?? "--"
-//        print("==>>", str)
-//
-//        await socket.cancel()
-//    }
-}
-
-//final class Logger: NWProtocolFramerImplementation {
-//    static let definition = NWProtocolFramer.Definition(implementation: Logger.self)
-//    static let label: String = "Logger"
-//
-//    public init(framer: NWProtocolFramer.Instance) {
-//    }
-//
-//    public func start(framer: NWProtocolFramer.Instance) -> NWProtocolFramer.StartResult {
-//        return .ready
-//    }
-//
-//    public func handleInput(framer: NWProtocolFramer.Instance) -> Int {
-//        while true {
-//            let parsed = framer.parseInput(minimumIncompleteLength: 1, maximumLength: .max) {buffer, isComplete in
-//                guard let buffer, !buffer.isEmpty else { return 0 }
-//                let assumedBuffer = buffer.assumingMemoryBound(to: UInt8.self)
-//                let data = Data(bytes: assumedBuffer.baseAddress!, count: buffer.count)
-//                let string = String(data: data, encoding: .ascii) ?? ""
-//                print("==>> received", data, string)
-//                framer.deliverInput(data: data, message: .init(definition: Logger.definition), isComplete: isComplete)
-//
-//                return buffer.count
-//            }
-//            if !parsed  {
-//                return 0
-//            }
-//        }
-//    }
-//
-//    public func handleOutput(framer: NWProtocolFramer.Instance, message: NWProtocolFramer.Message, messageLength: Int, isComplete: Bool) {
-//        var fullData = Data()
-//        _ = framer.parseOutput(minimumIncompleteLength: 1, maximumLength: .max) { buffer, isComplete in
-//            guard let buffer, !buffer.isEmpty else {
-//                return 0
-//            }
-//            let assumedBuffer = buffer.assumingMemoryBound(to: UInt8.self)
-//            let data = Data(bytes: assumedBuffer.baseAddress!, count: buffer.count)
-//            let string = String(data: data, encoding: .ascii) ?? ""
-//            print("==>> send", data, string)
-//            fullData.append(data)
-//            return buffer.count
-//        }
-//        framer.writeOutput(data: fullData)
-////        try! framer.writeOutputNoCopy(length: messageLength)
-//    }
-//
-//    public func wakeup(framer: NWProtocolFramer.Instance) {
-//    }
-//
-//    public func stop(framer: NWProtocolFramer.Instance) -> Bool {
-//        true
-//    }
-//
-//    public func cleanup(framer: NWProtocolFramer.Instance) {
-//    }
-//}
