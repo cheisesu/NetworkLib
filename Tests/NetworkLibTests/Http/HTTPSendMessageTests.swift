@@ -3,7 +3,7 @@ import Testing
 import Network
 @testable import NetworkLib
 
-@Suite(.disabled(), .tags(.HTTP.all, .HTTP.protocol))
+@Suite(.tags(.HTTP.all, .HTTP.protocol))
 struct HTTPSendMessageTests {
     @Test
     func correctValues() throws {

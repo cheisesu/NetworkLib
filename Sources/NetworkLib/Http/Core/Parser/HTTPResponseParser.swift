@@ -31,16 +31,6 @@ extension HTTPResponseParser {
     }
 }
 
-extension HTTPResponseParser.Event: CustomStringConvertible {
-    var description: String {
-        switch self {
-        case let .response(response): return "RESPONSE: \(response)"
-        case let .data(data): return "DATA: \(data.count)"
-        case .end: return "END"
-        }
-    }
-}
-
 final class HTTPResponseParser: @unchecked Sendable {
     private enum BodyKind {
         case none

@@ -237,8 +237,40 @@ struct RawSocketConfigurationTests {
 
         // MARK: WITH PROXY INBOX
 
-        @Test(.disabled("Not possible to get privacyContext"), arguments: [RawSocketTransport.tcp, .udp])
-        func withInsecureProxy_Insecure_InBox_NoAdditionalProtocols_ReturnsCorrect(_ transport: RawSocketTransport) throws {
+        @Test
+        func withInsecureProxy_Insecure_InBox_ReturnsDestinationConnection() throws {
+            let proxy = RawSocketConfiguration.Proxy(host: "proxy.host", port: 8080, isSecure: false)
+            let config = RawSocketConfiguration("destination.host", 9999, ipVersion: .v4, isSecure: false,
+                                                proxy: proxy, transport: .tcp)
+            let connection = try config.makeNWConnection()
+
+            #expect(connection.endpoint == config.endpoint)
+            #expect(connection.parameters.defaultProtocolStack.transportProtocol is NWProtocolTCP.Options)
+            let ip = try #require(connection.parameters.defaultProtocolStack.internetProtocol as? NWProtocolIP.Options)
+            #expect(ip.version == .v4)
+            #expect(connection.parameters.defaultProtocolStack.applicationProtocols.isEmpty)
+            // TODO: Verify the proxy endpoint once Network exposes the connection's privacy context.
+        }
+
+        @Test
+        func withSecureAuthenticatedProxy_Secure_InBox_ReturnsConfiguredDestinationConnection() throws {
+            let proxy = RawSocketConfiguration.Proxy(host: "proxy.host", port: 8443, isSecure: true,
+                                                     sni: "proxy-sni.host",
+                                                     authorization: .basic(userName: "foo", password: "pas)01"))
+            let additionalProtocol = NWProtocolFramer.Options.mock()
+            let config = RawSocketConfiguration("destination.host", 9999, ipVersion: .v6, isSecure: true,
+                                                sni: "destination-sni.host", proxy: proxy, transport: .udp,
+                                                additionalProtocols: [additionalProtocol])
+            let connection = try config.makeNWConnection()
+
+            #expect(connection.endpoint == config.endpoint)
+            #expect(connection.parameters.defaultProtocolStack.transportProtocol is NWProtocolUDP.Options)
+            let ip = try #require(connection.parameters.defaultProtocolStack.internetProtocol as? NWProtocolIP.Options)
+            #expect(ip.version == .v6)
+            #expect(connection.parameters.defaultProtocolStack.applicationProtocols.count == 2)
+            #expect(connection.parameters.defaultProtocolStack.applicationProtocols[0] is NWProtocolFramer.Options)
+            #expect(connection.parameters.defaultProtocolStack.applicationProtocols[1] is NWProtocolTLS.Options)
+            // TODO: Verify proxy TLS, SNI, and credentials once Network exposes the connection's privacy context.
         }
 
         // MARK: WITH PROXY CUSTOM

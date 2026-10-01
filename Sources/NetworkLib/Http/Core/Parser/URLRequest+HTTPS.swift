@@ -2,7 +2,8 @@ import Foundation
 
 extension URLRequest {
     func httpStartLine(_ version: HTTPVersion) -> String {
-        let method = httpMethod?.uppercased() ?? "GET"
+        // httpMethod always exists
+        let method = httpMethod!.uppercased()
         let path = url?.wrappedPath ?? "/"
         let query = url?.wrappedQuery
         let target = [path, query].compactMap { $0 }.joined(separator: "?")

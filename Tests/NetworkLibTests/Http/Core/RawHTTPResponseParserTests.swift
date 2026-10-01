@@ -98,6 +98,29 @@ struct RawHTTPResponseParserTests {
     }
 
     @Test
+    func appendingAfterCompletion_IsIgnored() throws {
+        let httpData = [
+            "HTTP/1.1 204 No Content",
+            "",
+            "",
+        ].joined(separator: "\r\n").data(using: .utf8)!
+        let additionalData = Data("unexpected".utf8)
+        var parser = RawHTTPResponseParser()
+        parser.append(httpData)
+        let initialParsed = parser.tryParse()
+        let initialResult = try #require(initialParsed)
+
+        parser.append(additionalData)
+        let parsedAfterAppend = parser.tryParse()
+        let resultAfterAppend = try #require(parsedAfterAppend)
+
+        try #require(parser.isCompleted)
+        try #require(initialResult.leftBuffer.isEmpty)
+        try #require(resultAfterAppend.leftBuffer.isEmpty)
+        try #require(resultAfterAppend.rawSize == httpData.count)
+    }
+
+    @Test
     func appendingDataWithBuffer_ParseReturnsCorrect() throws {
         let httpMessageData = [
             "HTTP/1.1 201 Created",

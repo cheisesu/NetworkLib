@@ -176,7 +176,7 @@ struct HTTPResponseParserTests {
     }
 
     @Test
-    func wrongContentLengthHeaderValue_NotRetunsData() throws {
+    func wrongContentLengthHeaderValue_ThrowsForTrailingData() throws {
         let httpBody = [
             """
 {
@@ -200,18 +200,20 @@ struct HTTPResponseParserTests {
         ].joined(separator: "\r\n").data(using: .utf8)!
         let httpData = httpMessage + httpBody
         let parser = HTTPResponseParser()
-        let events = try parser.append(httpData)
-        try #require(events.count == 2)
-        var event = events[0]
+        var events: [HTTPResponseParser.Event] = []
+
+        do {
+            try parser.append(httpData) { events.append($0) }
+            Issue.record("Expected parsingCompleted")
+        } catch HTTPResponseParser.Error.parsingCompleted {
+        }
+
+        let event = try #require(events.first)
         switch event {
         case .response: break
-        default: try #require(Bool(false), "Wrong event type: \(event)")
+        default: Issue.record("Wrong event type: \(event)")
         }
-        event = events[1]
-        switch event {
-        case .end: break
-        default: try #require(Bool(false), "Wrong event type: \(event)")
-        }
+        try #require(events.count == 1)
     }
 
     // MARK: - SMALL PORTIONS
@@ -302,7 +304,7 @@ struct HTTPResponseParserTests {
     // MARK: - ENDING
 
     @Test
-    func contentLengthZero_ReturnsEndEventAfterResponse() throws {
+    func missingContentLengthWithBody_ThrowsForTrailingData() throws {
         let httpData = [
             "HTTP/1.1 201 Created",
             "Content-Type: application/json",
@@ -322,18 +324,20 @@ struct HTTPResponseParserTests {
 """
         ].joined(separator: "\r\n").data(using: .utf8)!
         let parser = HTTPResponseParser()
-        let events = try parser.append(httpData)
-        try #require(events.count == 2)
-        var event = events[0]
+        var events: [HTTPResponseParser.Event] = []
+
+        do {
+            try parser.append(httpData) { events.append($0) }
+            Issue.record("Expected parsingCompleted")
+        } catch HTTPResponseParser.Error.parsingCompleted {
+        }
+
+        let event = try #require(events.first)
         switch event {
         case .response: break
         default: try #require(Bool(false), "Wrong event type: \(event)")
         }
-        event = events[1]
-        switch event {
-        case .end: break
-        default: try #require(Bool(false), "Wrong event type: \(event)")
-        }
+        try #require(events.count == 1)
     }
 
     @Test
@@ -421,7 +425,7 @@ struct HTTPResponseParserTests {
     }
 
     @Test
-    func appendingMoreDataAsContentLength_ReturnsEndEventAndResultedDataIsCorrect() throws {
+    func appendingMoreDataThanContentLength_ThrowsAfterResultedData() throws {
         let httpBody = [
             """
 {
@@ -445,8 +449,15 @@ struct HTTPResponseParserTests {
         ].joined(separator: "\r\n").data(using: .utf8)!
         let httpData = httpMessageData + httpBody + Data("blablabla".utf8)
         let parser = HTTPResponseParser()
-        let events = try parser.append(httpData)
-        try #require(events.count == 3)
+        var events: [HTTPResponseParser.Event] = []
+
+        do {
+            try parser.append(httpData) { events.append($0) }
+            Issue.record("Expected parsingCompleted")
+        } catch HTTPResponseParser.Error.parsingCompleted {
+        }
+
+        try #require(events.count == 2)
         var event = events[0]
         switch event {
         case .response: break
@@ -455,11 +466,6 @@ struct HTTPResponseParserTests {
         event = events[1]
         switch event {
         case let .data(data): try #require(data == httpBody)
-        default: try #require(Bool(false), "Wrong event type: \(event)")
-        }
-        event = events[2]
-        switch event {
-        case .end: break
         default: try #require(Bool(false), "Wrong event type: \(event)")
         }
     }
@@ -751,7 +757,7 @@ le",
         }
 
         @Test
-        func newChunksAfterEndOne_Full_NotThrowsError() throws {
+        func newChunksAfterEndOne_Full_ThrowsAfterPreservingEvents() throws {
             let httpMessageData = [
                 "HTTP/1.1 201 Created",
                 "Transfer-Encoding: chunked",
@@ -778,11 +784,17 @@ le",
             let httpChunk3 = httpChunk1
             let data = httpMessageData + httpChunk1 + httpChunk2 + httpChunk3
             let parser = HTTPResponseParser()
-            let events = try parser.append(data)
-            try #require(events.count == 3)
+            var events: [HTTPResponseParser.Event] = []
+
+            do {
+                try parser.append(data) { events.append($0) }
+                Issue.record("Expected parsingCompleted")
+            } catch HTTPResponseParser.Error.parsingCompleted {
+            }
+
+            try #require(events.count == 2)
             try #require(events[0].response != nil)
             try #require(events[1].data != nil)
-            try #require(events[2].isEnd)
         }
     }
 

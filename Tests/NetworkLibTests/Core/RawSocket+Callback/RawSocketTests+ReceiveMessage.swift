@@ -52,6 +52,26 @@ struct RawSocketReceiveMessageTests {
         try #require(result == expectedMessage)
     }
 
+    @Test
+    func emptyIncompleteReceive_ThrowsIOError() async throws {
+        let underlyingConnection = NWConnectionMock(overridedReceiveComplete: false)
+        let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: 0,
+                                   maxDataBlock: 256, transport: .udp)
+        defer { socket.cancel(nil) }
+
+        do {
+            _ = try await withCheckedThrowingContinuation { continuation in
+                socket.connect { _ in
+                    socket.receiveNextMessage(of: _OnlyDataMessage.self) { result in
+                        continuation.resume(with: result)
+                    }
+                }
+            }
+            Issue.record("Unexpected entrance")
+        } catch NWError.posix(.EIO) {
+        }
+    }
+
     // MARK: ERRORS ON CONVERTING MESSAGE
 
     @Test

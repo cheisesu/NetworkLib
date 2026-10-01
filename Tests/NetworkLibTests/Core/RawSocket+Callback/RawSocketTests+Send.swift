@@ -25,6 +25,25 @@ struct RawSocketSendTests {
         try #require(underlyingConnection.sendDataPortions.count == 1)
     }
 
+    @Test
+    func withoutCompletion_SendsData() async throws {
+        let transport = RawSocketTransport.tcp
+        let dataToSend = Data("Hello".utf8)
+        let underlyingConnection = NWConnectionMock()
+        let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: 0,
+                                   maxDataBlock: 256, transport: transport)
+        defer { socket.cancel(nil) }
+        socket.connect { _ in }
+
+        socket.send(dataToSend, nil)
+
+        try await withAsyncTimeout(.seconds(1)) {
+            while underlyingConnection.sendDataFull != dataToSend {
+                try await Task.sleep(for: .milliseconds(10))
+            }
+        }
+    }
+
     // MARK: SUCCESS IN DIFFERENT STATES
 
     @Test(arguments: [RawSocketTransport.tcp, .udp])

@@ -283,7 +283,6 @@ public class RawSocket: @unchecked Sendable {
                 completion(.success(nil))
             }
         } else {
-            assertionFailure("Unexpected receive state: content=nil, isComplete=false, error=nil")
             completion(.failure(.posix(.EIO)))
         }
     }
@@ -344,7 +343,6 @@ public class RawSocket: @unchecked Sendable {
         } else if isComplete {
             completion(.failure(.posix(.EIO)))
         } else {
-            assertionFailure("Unexpected receive state: content=nil, contentContext=nil, isComplete=false, error=nil")
             completion(.failure(.posix(.EIO)))
         }
     }
@@ -407,7 +405,6 @@ extension RawSocket {
         switch newState {
         case .setup: break
         case let .waiting(error):
-            // TODO: check and reorder to remove timeoutevent cancel from here
             timeoutEvent?.cancel()
             notifyConnectingComplete(.failure(error))
             cancelUnsafe(manually: false)
@@ -418,12 +415,10 @@ extension RawSocket {
             let info = connection.connectionInfo(with: transport)
             notifyConnectingComplete(.success(info))
         case let .failed(error):
-            // TODO: check and reorder to remove timeoutevent cancel from here
             timeoutEvent?.cancel()
             notifyConnectingComplete(.failure(error))
             cancelUnsafe(manually: false)
         case .cancelled:
-            // TODO: check and reorder to remove timeoutevent cancel from here
             timeoutEvent?.cancel()
             internalState = .closed
             if let pendingError {
@@ -465,10 +460,6 @@ extension RawSocket {
             } else {
                 return .posix(.ECANCELED)
             }
-        }
-        if let operationCancelError {
-            assertionFailure("Investigate how it passed here.")
-            return operationCancelError
         }
         return nil
     }
