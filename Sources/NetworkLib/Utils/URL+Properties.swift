@@ -1,7 +1,7 @@
 import Foundation
 
 extension URL {
-    /// The URL's percent-encoded host component, exposed consistently across supported OS versions.
+    /// The URL's host component, using the host accessor available on the current OS version.
     ///
     /// Returns `nil` when the URL has no host component.
     public var wrappedHost: String? {
@@ -12,7 +12,7 @@ extension URL {
         }
     }
 
-    /// The URL's percent-encoded path component, exposed consistently across supported OS versions.
+    /// The URL's path component, using the path accessor available on the current OS version.
     ///
     /// An empty path is returned as an empty string.
     public var wrappedPath: String? {
@@ -23,7 +23,7 @@ extension URL {
         }
     }
 
-    /// The URL's percent-encoded query component, exposed consistently across supported OS versions.
+    /// The URL's query component, using the query accessor available on the current OS version.
     ///
     /// Returns `nil` when the URL has no query component.
     public var wrappedQuery: String? {

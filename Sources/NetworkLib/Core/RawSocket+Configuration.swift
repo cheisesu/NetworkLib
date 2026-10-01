@@ -3,7 +3,9 @@ import Foundation
 
 @available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
 extension RawSocketConfiguration {
-    /// The default maximum number of bytes requested by a single receive operation.
+    /// The default upper bound for a data block returned by a single raw receive operation.
+    ///
+    /// The value is `Int.bitWidth * 1024` bytes.
     public static let maxDataLength: Int = Int.bitWidth * 1024
 }
 
@@ -32,6 +34,8 @@ extension RawSocketConfiguration {
         public let isSecure: Bool
 
         /// The Server Name Indication value used for TLS when connecting to the proxy.
+        ///
+        /// A `nil` value leaves server-name selection to the Network framework.
         public let sni: String?
 
         /// Credentials sent to the proxy in the `Proxy-Authorization` header when required.
@@ -94,17 +98,22 @@ public struct RawSocketConfiguration: Sendable {
     /// The IP protocol version preference applied to the connection parameters.
     public let overrideIpVersion: NWProtocolIP.Options.Version
 
-    /// The maximum number of bytes requested by each raw receive operation.
+    /// The upper bound for a data block returned by each raw receive operation.
+    ///
+    /// This value applies to ``RawSocket/receiveNext(_:)`` and ``RawSocket/receiveNext()``.
     public let maxDataBlock: Int
 
-    /// The timeout, in seconds, for establishing the connection and completing send or receive operations.
+    /// The inactivity timeout, in seconds, for connection, send, and receive operations.
+    ///
+    /// Network activity refreshes the timeout. When it expires, the socket fails pending work with `NWError.posix(.ETIMEDOUT)`.
     public let timeout: TimeInterval
 
     /// Optional HTTP CONNECT proxy settings.
     public let proxy: Proxy?
 
-    /// Additional Network framework application protocols inserted above the transport, or above the tunneled connection when a
-    /// proxy is used.
+    /// Additional Network framework application protocols inserted at the front of the application protocol stack.
+    ///
+    /// For a proxied connection, these protocols apply to the connection inside the established HTTP CONNECT tunnel.
     public let additionalProtocols: [NWProtocolOptions]
 #if DEBUG
     var disableInBoxProxy: Bool = false
@@ -174,7 +183,9 @@ public struct RawSocketConfiguration: Sendable {
         self.additionalProtocols = additionalProtocols
     }
 
-    /// Returns a copy of this configuration that connects through the specified proxy.
+    /// Returns a copy of this configuration that connects through the specified HTTP CONNECT proxy.
+    ///
+    /// All destination, transport, security, receive-size, timeout, and application-protocol settings remain unchanged.
     ///
     /// - Parameter proxy: The proxy server configuration to use.
     /// - Returns: A new configuration with the same destination and socket settings, plus the supplied proxy.

@@ -1,10 +1,10 @@
 import Foundation
 import Network
 
-/// A lightweight socket wrapper that exposes callback and async operations over a Network framework connection.
+/// A socket that sends and receives raw data or protocol-framed messages over a Network framework connection.
 ///
-/// `RawSocket` serializes access to the underlying connection, reports failures as `NWError`, and keeps itself alive while the
-/// connection is active.
+/// `RawSocket` serializes operations on an internal queue and reports connection, send, and receive failures as `NWError`.
+/// A socket represents one connection attempt and can't be reconnected after it is cancelled or closed.
 ///
 /// For example, connect and receive data asynchronously:
 ///
@@ -55,13 +55,15 @@ public class RawSocket: @unchecked Sendable {
 
     /// Creates a socket from the supplied configuration.
     ///
-    /// The socket is not connected until ``connect(_:)`` or ``connect()`` is called. Callback-based APIs deliver their callbacks
-    /// on `delegateQueue`, or on the socket's default delegate queue when `delegateQueue` is `nil`.
+    /// The socket is idle until you call ``connect(_:)`` or ``connect()``. Callback-based APIs deliver their completions on
+    /// `delegateQueue`, or on NetworkLib's shared socket delegate queue when `delegateQueue` is `nil`.
     ///
     /// - Parameters:
-    ///   - configuration: The destination, transport, security, proxy, and timeout settings.
-    ///   - delegateQueue: Optional queue used to deliver callback-based API completions.
-    /// - Throws: An `NWError` if the underlying Network framework connection cannot be created from the configuration.
+    ///   - configuration: The destination, transport, security, proxy, receive-size, and timeout settings.
+    ///   - delegateQueue: The queue on which callback-based completions run, or `nil` to use the shared default queue.
+    ///   - id: A diagnostic identifier included in debug logging. The default identifies this initializer.
+    /// - Throws: An `NWError` if a connection can't be created from `configuration`. In particular, unsupported proxy
+    ///   configurations throw `NWError.posix(.ENOTSUP)`.
     public convenience init(_ configuration: RawSocketConfiguration, delegateQueue: DispatchQueue? = nil,
                             id: String = #function) throws(NWError)
     {
@@ -113,8 +115,9 @@ public class RawSocket: @unchecked Sendable {
 
     /// Starts the underlying network connection.
     ///
-    /// Only one connection attempt may be active at a time. The callback receives `.success` with connection details once the
-    /// connection becomes ready, or `.failure` with the `NWError` reported by the underlying connection.
+    /// Only one connection attempt may be active at a time, and a closed socket can't be reused. The callback receives
+    /// `.success` when the connection becomes ready. It receives `.failure` for connection errors, cancellation, repeated calls,
+    /// or attempts to connect an already connected socket.
     ///
     /// For example, start a callback-based connection:
     ///
@@ -135,11 +138,13 @@ public class RawSocket: @unchecked Sendable {
         }
     }
 
-    /// Cancels the socket and invokes an optional handler after cancellation is observed.
+    /// Permanently cancels the socket.
     ///
-    /// Calling this method is idempotent. Pending operations complete with the cancellation error when possible.
+    /// Calling this method more than once is safe. Pending operations fail with `NWError.posix(.ECANCELED)` when cancellation is
+    /// observed. The socket can't be connected again after cancellation.
     ///
-    /// - Parameter handler: A closure called after the socket cancellation callbacks are drained.
+    /// - Parameter handler: A closure invoked on the socket's callback queue after the underlying connection reaches its terminal
+    ///   state. Pass `nil` when no notification is needed.
     public func cancel(_ handler: (@Sendable () -> Void)?) { // done
         accessQueue.async { [weak self] in
             printDebug("[socket] queue async close")
@@ -289,8 +294,9 @@ public class RawSocket: @unchecked Sendable {
 
     /// Receives and decodes the next typed message.
     ///
-    /// The socket receives a Network framework message and asks `M` to initialize itself from the delivered content context and
-    /// payload. If decoding fails, the completion receives `.failure(.posix(.EBADMSG))`.
+    /// The socket receives one complete Network framework message and asks `M` to initialize itself from its content context
+    /// and optional payload. If the message is incomplete, the context is missing, or `M` rejects the message, the completion
+    /// receives a POSIX-backed `NWError` such as `.EIO` or `.EBADMSG`.
     ///
     /// - Parameters:
     ///   - type: The typed message to decode. The default is inferred from the completion result type.

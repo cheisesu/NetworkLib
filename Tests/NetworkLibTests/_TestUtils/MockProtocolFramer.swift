@@ -15,18 +15,12 @@ final class MockProtocolFramer: ProtocolFramer, @unchecked Sendable {
         let maximumLength: Int
     }
 
-    enum Event: Equatable {
-        case deliver(HTTPMessageKind)
-        case failure(NWError)
-    }
-
     private var inputChunks: [Data]
     var outputs: [Data] = []
     var deliveredInputs: [DeliveredInput] = []
     var failures: [NWError] = []
     var parseInputCalls: [ParseInputCall] = []
     var deliverInputNoCopyResults = [Bool]()
-    var events: [Event] = []
     var options: [String: Any] = [:]
     var asyncBlocks: [@Sendable () -> Void] = []
     var prependedProtocols: [NWProtocolOptions] = []
@@ -34,6 +28,7 @@ final class MockProtocolFramer: ProtocolFramer, @unchecked Sendable {
     var passThroughInputCount = 0
     var passThroughOutputCount = 0
     var markReadyCount = 0
+    var definition: NWProtocolFramer.Definition?
 
     init(inputChunks: [Data] = []) {
         self.inputChunks = inputChunks
@@ -44,7 +39,7 @@ final class MockProtocolFramer: ProtocolFramer, @unchecked Sendable {
     }
 
     func makeMessage() -> NWProtocolFramer.Message {
-        NWProtocolFramer.Message(definition: .http)
+        NWProtocolFramer.Message(definition: definition!)
     }
 
     func parseInput(minimumIncompleteLength: Int, maximumLength: Int,
@@ -78,25 +73,16 @@ final class MockProtocolFramer: ProtocolFramer, @unchecked Sendable {
 
     func deliverInput(data: Data, message: NWProtocolFramer.Message, isComplete: Bool) {
         deliveredInputs.append(.init(data: data, message: message, isComplete: isComplete, noCopy: false))
-
-        if let kind = message.httpKind {
-            events.append(.deliver(kind))
-        }
     }
 
     func deliverInputNoCopy(length: Int, message: NWProtocolFramer.Message, isComplete: Bool) -> Bool {
         deliveredInputs.append(.init(data: nil, message: message, isComplete: isComplete, noCopy: true))
-
-        if let kind = message.httpKind {
-            events.append(.deliver(kind))
-        }
 
         return deliverInputNoCopyResults.isEmpty ? true : deliverInputNoCopyResults.removeFirst()
     }
 
     func markFailed(error: NWError) {
         failures.append(error)
-        events.append(.failure(error))
     }
 
     func async(_ block: @escaping @Sendable () -> Void) {
