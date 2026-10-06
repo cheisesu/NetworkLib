@@ -8,6 +8,21 @@ Welcome to NetworkLib, a Swift library for sending and receiving raw bytes and p
 
 Use NetworkLib when you need control over the transport, connection security, proxy settings, or application protocol framing. The library supports TCP and UDP, with TLS for TCP and DTLS for UDP. It also provides HTTP header, status code, and authorization types, along with utilities for working with network addresses and URLs.
 
+### Features
+
+- **TCP and UDP:** Send and receive raw bytes using either transport.
+- **Secure connections:** Use TLS over TCP or DTLS over UDP, with configurable Server Name Indication (SNI).
+- **Swift concurrency and callbacks:** Connect, send, receive, and cancel with async/await or completion handlers.
+- **Typed messages:** Exchange protocol-framed messages through ``RawSocketSendMessage`` and ``RawSocketReceiveMessage``.
+- **HTTP CONNECT proxies:** Configure a proxy with optional Basic authentication and independent security settings for the proxy and destination.
+- **Connection configuration:** Choose IPv4 or IPv6 preferences, inactivity timeouts, receive block sizes, and additional application protocols.
+- **Connection details:** Inspect the established connection through ``ConnectionInfo``.
+- **HTTP and address utilities:** Work with HTTP headers, status codes, authorization, IP addresses, network hosts, and URLs.
+
+### Installation
+
+See <doc:Installation> to add NetworkLib to an Xcode project or Swift package. The first release version is `0.0.1`.
+
 ### Configure a connection
 
 Start with ``RawSocketConfiguration`` to choose a destination and transport. You can also configure the IP version, server name, inactivity timeout, receive block size, and additional Network framework application protocols. Secure connections are enabled by default.
@@ -52,6 +67,10 @@ Proxy connections require iOS or tvOS 15.4 or later, or macOS 12.3 or later. Net
 The package uses Swift 6 and supports iOS 13 or later, tvOS 13 or later, and macOS 10.15 or later. Individual features may require newer operating system versions, as indicated in their API documentation.
 
 ## Topics
+
+### Getting started
+
+- <doc:Installation>
 
 ### Socket connections
 
