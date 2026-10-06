@@ -15,13 +15,13 @@ let package = Package(
         .macOS(.v10_15),
     ],
     products: [
-        .executable(name: "Test", targets: ["Test"]),
+        .executable(name: "Examples", targets: ["Examples"]),
         .library(name: "NetworkLib", targets: ["NetworkLib"]),
         .plugin(name: "nl-swiftlint-plugin", targets: ["nl-swiftlint-plugin"]),
     ],
     targets: [
         // MARK: EXECUTABLES
-        .executableTarget(name: "Test", dependencies: ["NetworkLib"]),
+        .executableTarget(name: "Examples", dependencies: ["NetworkLib"]),
         // MARK: PLUGINS
         .plugin(name: "nl-swiftlint-plugin", capability: .buildTool()),
         // MARK: LIB TARGETS

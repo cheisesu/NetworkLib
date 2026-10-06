@@ -72,6 +72,14 @@ The package uses Swift 6 and supports iOS 13 or later, tvOS 13 or later, and mac
 
 - <doc:Installation>
 
+### API usage examples
+
+- <doc:SendingAndReceiving>
+- <doc:UsingCallbacks>
+- <doc:UsingProxies>
+- <doc:TypedMessages>
+- <doc:HTTPHeaders>
+
 ### Socket connections
 
 - ``RawSocket``
