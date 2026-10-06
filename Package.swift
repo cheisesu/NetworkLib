@@ -21,7 +21,11 @@ let package = Package(
     ],
     targets: [
         // MARK: EXECUTABLES
-        .executableTarget(name: "Examples", dependencies: ["NetworkLib"]),
+        .executableTarget(
+            name: "Examples",
+            dependencies: ["NetworkLib"],
+            path: "Sources/Examples"
+        ),
         // MARK: PLUGINS
         .plugin(name: "nl-swiftlint-plugin", capability: .buildTool()),
         // MARK: LIB TARGETS

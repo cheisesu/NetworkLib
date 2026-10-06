@@ -52,6 +52,18 @@ The initializer accepts a `delegateQueue` argument. Without it, callbacks run on
 
 The example disables TLS for its local plaintext service. Use `isSecure: true` when connecting to a TLS-enabled server.
 
+### Run the CLI example
+
+From a local checkout of NetworkLib, run this command in the directory containing `Package.swift`:
+
+```sh
+swift run Examples callbacks
+```
+
+Before running, start a TCP listener in another terminal with `nc -l 9000`. The listener displays the payload; the CLI reports when the send has been processed and the socket has closed.
+
+The runnable implementation is in `Sources/Examples/CallbackExample.swift`. See <doc:RunningExamples> for tool requirements, the complete command list, and shared CLI behavior.
+
 ## See Also
 
 - <doc:SendingAndReceiving>

@@ -50,6 +50,18 @@ The configuration's `timeout` is an inactivity timeout in seconds, not a total r
 
 Cancelling a task waiting on a socket's asynchronous connect, send, or receive operation permanently cancels the socket. Cancellation is reported through `NWError`, rather than necessarily as `CancellationError`. Both success and failure paths above await cleanup. Create a new socket for another connection.
 
+### Run the CLI example
+
+From a local checkout of NetworkLib, run this command in the directory containing `Package.swift`:
+
+```sh
+swift run Examples async
+```
+
+Requires Internet access. The CLI logs each receive block, then prints the collected raw HTTP response and closes the socket.
+
+The runnable implementation is in `Sources/Examples/SendingAndReceivingExample.swift`. See <doc:RunningExamples> for tool requirements, the complete command list, and shared CLI behavior.
+
 ## See Also
 
 - <doc:UsingCallbacks>

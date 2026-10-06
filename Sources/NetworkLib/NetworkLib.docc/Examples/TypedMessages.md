@@ -71,6 +71,32 @@ UDP doesn't guarantee delivery or ordering. A successful connect doesn't establi
 
 These protocols don't add framing to a TCP byte stream. For typed messages over TCP, install a suitable Network framework application protocol through the configuration's `additionalProtocols` and supply the metadata that protocol expects.
 
+### Run the CLI example
+
+From a local checkout of NetworkLib, run this command in the directory containing `Package.swift`:
+
+```sh
+swift run Examples udp
+```
+
+Start this UDP echo server in another terminal first (requires Python 3):
+
+```sh
+python3 -u - <<'PYTHON'
+import socket
+s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+s.bind(("127.0.0.1", 9001))
+print("UDP echo ready")
+while True:
+    data, addr = s.recvfrom(65535)
+    s.sendto(data, addr)
+PYTHON
+```
+
+The CLI sends a typed datagram, decodes the reply, verifies that it matches, and closes the socket. Stop the echo server with Control-C when finished.
+
+The runnable implementation is in `Sources/Examples/TypedMessagesExample.swift`. See <doc:RunningExamples> for tool requirements, the complete command list, and shared CLI behavior.
+
 ## See Also
 
 - <doc:SendingAndReceiving>

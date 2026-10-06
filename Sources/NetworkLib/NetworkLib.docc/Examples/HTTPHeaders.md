@@ -28,18 +28,31 @@ Pass the resulting request to your Foundation networking code. These helpers con
 
 ### Convert a typed header dictionary
 
+Read the same request through `allHTTPHeaders`, then convert its typed keys back to strings. This preserves all headers, including `X-Request-ID`.
+
 ```swift
 import Foundation
 import NetworkLib
 
-let headers: [HTTPHeaderKey: String] = [
-    .accept: "application/json",
-    .userAgent: "NetworkLibExample"
-]
-let rawHeaders: [String: String] = headers.rawFields
+func rawHeaders(for request: URLRequest) -> [String: String] {
+    let headers = request.allHTTPHeaders ?? [:]
+    return headers.rawFields
+}
 ```
 
 Use `rawFields` with APIs that expect string keys. Direct `HTTPHeaderKey` equality and dictionary hashing preserve exact spelling, so differently capitalized keys remain distinct in a Swift dictionary even though HTTP field names are case-insensitive on the wire.
+
+### Run the CLI example
+
+From a local checkout of NetworkLib, run this command in the directory containing `Package.swift`:
+
+```sh
+swift run Examples headers
+```
+
+No server or network connection is needed. The CLI prints the request's headers before and after conversion through `allHTTPHeaders` and `rawFields`. Both outputs include the same three headers.
+
+The runnable implementation is in `Sources/Examples/HTTPHeadersExample.swift`. See <doc:RunningExamples> for tool requirements, the complete command list, and shared CLI behavior.
 
 ## See Also
 
