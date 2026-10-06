@@ -3,7 +3,9 @@ import Network
 
 @available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
 extension IPv4Address {
-    /// The canonical presentation string for this IPv4 address.
+    /// The presentation-format string for this IPv4 address.
+    ///
+    /// The value is produced by `inet_ntop` and contains no port or surrounding brackets.
     ///
     /// For example, display a parsed IPv4 address:
     ///
@@ -26,7 +28,9 @@ extension IPv4Address {
 
 @available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
 extension IPv6Address {
-    /// The canonical presentation string for this IPv6 address, without URL host brackets.
+    /// The presentation-format string for this IPv6 address, without URL host brackets.
+    ///
+    /// The value is produced by `inet_ntop` and may use the standard compressed IPv6 notation.
     ///
     /// For example, display a parsed IPv6 address:
     ///

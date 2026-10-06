@@ -6,6 +6,9 @@ import Foundation
 /// HTTP header fields. The wrapper preserves the exact wire name in ``rawValue`` while
 /// making header dictionaries and `URLRequest` helpers harder to mix up with unrelated strings.
 ///
+/// Equality and hashing use the exact spelling of ``rawValue``. Although HTTP field names are case-insensitive on the wire,
+/// differently cased keys remain distinct when used directly in a Swift dictionary.
+///
 /// For example, set typed headers on a request:
 ///
 /// ```swift
@@ -20,14 +23,18 @@ public struct HTTPHeaderKey: RawRepresentable {
 
     /// Creates a header key from a raw header field name.
     ///
-    /// - Parameter rawValue: The exact header field name to use.
+    /// This initializer doesn't validate header-name syntax or normalize capitalization.
+    ///
+    /// - Parameter rawValue: The exact header field name to preserve.
     public init(rawValue: String) {
         self.rawValue = rawValue
     }
 
     /// Creates a header key from a raw header field name.
     ///
-    /// - Parameter rawValue: The exact header field name to use.
+    /// This initializer doesn't validate header-name syntax or normalize capitalization.
+    ///
+    /// - Parameter rawValue: The exact header field name to preserve.
     public init(_ rawValue: String) {
         self.rawValue = rawValue
     }
@@ -56,7 +63,7 @@ extension HTTPHeaderKey: ExpressibleByStringLiteral {
 
 @available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
 extension Dictionary where Key == HTTPHeaderKey, Value == String {
-    /// Returns this dictionary using raw string header names as keys.
+    /// Returns this dictionary using each key's ``HTTPHeaderKey/rawValue`` as the corresponding string key.
     ///
     /// Use this when passing typed header dictionaries to Foundation APIs that still require
     /// `[String: String]`, such as `HTTPURLResponse` initializers.
@@ -73,7 +80,8 @@ extension Dictionary where Key == HTTPHeaderKey, Value == String {
 extension URLRequest {
     /// The request's HTTP headers keyed by ``HTTPHeaderKey``.
     ///
-    /// This mirrors `allHTTPHeaderFields` while preserving this library's typed header key API.
+    /// This mirrors `allHTTPHeaderFields` while preserving this library's typed header key API. Assigning to Foundation's
+    /// `allHTTPHeaderFields` or using the mutation methods below changes the value returned by this property.
     public var allHTTPHeaders: [HTTPHeaderKey: String]? {
         allHTTPHeaderFields?.reduce(into: [:]) { partialResult, keyValue in
             partialResult[.init(rawValue: keyValue.key)] = keyValue.value

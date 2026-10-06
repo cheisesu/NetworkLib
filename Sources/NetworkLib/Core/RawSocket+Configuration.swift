@@ -16,6 +16,8 @@ extension RawSocketConfiguration {
     /// On iOS and tvOS 17 or later and macOS 14 or later, NetworkLib applies these settings using
     /// `ProxyConfiguration`. On iOS and tvOS 15.4 through 16 and macOS 12.3 through 13, it uses an HTTP CONNECT
     /// protocol framer. Proxy connections aren't supported on earlier deployment targets.
+    /// The proxy connection always uses TCP; ``isSecure`` controls TLS to the proxy, independently of the destination's transport
+    /// and security settings.
     ///
     /// For example, attach a proxy to an existing socket configuration:
     ///
@@ -30,7 +32,7 @@ extension RawSocketConfiguration {
         /// The proxy server port.
         public let port: NWEndpoint.Port
 
-        /// A Boolean value indicating whether the connection to the proxy itself uses TLS.
+        /// A Boolean value indicating whether the TCP connection to the proxy itself uses TLS.
         public let isSecure: Bool
 
         /// The Server Name Indication value used for TLS when connecting to the proxy.
@@ -38,7 +40,7 @@ extension RawSocketConfiguration {
         /// A `nil` value leaves server-name selection to the Network framework.
         public let sni: String?
 
-        /// Credentials sent to the proxy in the `Proxy-Authorization` header when required.
+        /// Credentials sent to the proxy in the `Proxy-Authorization` header, or `nil` when the proxy requires no authentication.
         public let authorization: HTTPAuthorization?
 
         var endpoint: NWEndpoint {
@@ -86,16 +88,19 @@ public struct RawSocketConfiguration: Sendable {
     /// The remote port to connect to.
     public let port: NWEndpoint.Port
 
-    /// A Boolean value indicating whether the remote connection uses TLS or DTLS.
+    /// A Boolean value indicating whether the destination connection uses TLS for TCP or DTLS for UDP.
     public let isSecure: Bool
 
-    /// The Server Name Indication value used for TLS or DTLS, or `nil` for the default server name behavior.
+    /// The Server Name Indication value used for destination TLS or DTLS, or `nil` to leave server-name selection to the Network
+    /// framework.
     public let sni: String?
 
     /// The transport protocol used by the socket.
     public let transport: RawSocketTransport
 
     /// The IP protocol version preference applied to the connection parameters.
+    ///
+    /// The default `.any` permits the Network framework to select IPv4 or IPv6.
     public let overrideIpVersion: NWProtocolIP.Options.Version
 
     /// The upper bound for a data block returned by each raw receive operation.
@@ -108,7 +113,7 @@ public struct RawSocketConfiguration: Sendable {
     /// Network activity refreshes the timeout. When it expires, the socket fails pending work with `NWError.posix(.ETIMEDOUT)`.
     public let timeout: TimeInterval
 
-    /// Optional HTTP CONNECT proxy settings.
+    /// The HTTP CONNECT proxy settings, or `nil` for a direct connection.
     public let proxy: Proxy?
 
     /// Additional Network framework application protocols inserted at the front of the application protocol stack.
