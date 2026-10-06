@@ -1,0 +1,50 @@
+@Tutorial(time: 20) {
+    @Intro(title: "Configure Authenticated Proxy Connections") {
+        Combine configuration, TLS, validation, and the existing asynchronous transfer to connect through an HTTP CONNECT proxy. Complete <doc:ExchangeTypedMessages> first. You must supply a running proxy; the CLI does not create one. Requires macOS 12.3 or later.
+    }
+
+    @Section(title: "Separate proxy and destination settings") {
+        Follow the steps in order, then check your understanding below.
+
+        @Steps {
+            @Step {
+                Inspect this helper in a scratch file in the Examples target. The destination remains example.com over TLS. The proxy has its own host, port, and security settings. Applying using(proxy:) returns a new destination configuration.
+
+                @Code(name: "ProxyConfiguration.swift", file: "Proxy-01.swift")
+            }
+            @Step {
+                Open `Sources/Examples/ProxyExample.swift`. Read the environment settings, validate the port and TLS flag, and require both credential fields when authentication is used. Pass the resulting configuration to the shared transfer implementation. Credentials aren't included in the example's progress messages.
+
+                @Code(name: "ProxyExample.swift", file: "Proxy-02.swift")
+            }
+            @Step {
+                Set NL_PROXY_HOST and NL_PROXY_PORT to your proxy. For a plaintext local proxy on port 8080, run `NL_PROXY_HOST=localhost NL_PROXY_PORT=8080 NL_PROXY_TLS=false swift run Examples proxy`. Otherwise use your actual proxy address and security mode. See <doc:UsingProxies> for all settings.
+            }
+            @Step {
+                If needed, set NL_PROXY_USERNAME and NL_PROXY_PASSWORD in the environment before running. TLS to the proxy is enabled by default and requires a trusted certificate; TLS to example.com remains enabled even when the proxy connection is plaintext. Expect connection progress and the raw destination response. As a final exercise, compare this run with `swift run Examples async` and explain which connection settings changed.
+            }
+        }
+    }
+
+    @Assessments {
+        @MultipleChoice {
+            Does disabling TLS to the proxy also disable destination TLS?
+
+            @Choice(isCorrect: true) {
+                No; the proxy and destination have independent security settings.
+
+                @Justification {
+                    The proxy settings govern the first connection; the destination configuration governs the connection inside the tunnel.
+                }
+            }
+
+            @Choice(isCorrect: false) {
+                Yes; one security setting controls both connections.
+
+                @Justification {
+                    The proxy settings govern the first connection; the destination configuration governs the connection inside the tunnel.
+                }
+            }
+        }
+    }
+}

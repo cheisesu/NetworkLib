@@ -23,6 +23,10 @@ Use NetworkLib when you need control over the transport, connection security, pr
 
 See <doc:Installation> to add NetworkLib to an Xcode project or Swift package. The first release version is `0.0.1`.
 
+### Learn step by step
+
+Follow <doc:NetworkLibTutorials> to progress from configuring your first socket to cancellation, callbacks, typed messages, and authenticated proxies.
+
 ### Run the examples
 
 The repository includes an `Examples` CLI with runnable versions of the API examples. See <doc:RunningExamples> for commands, setup instructions, and source-file locations.
@@ -74,6 +78,7 @@ The package uses Swift 6 and supports iOS 13 or later, tvOS 13 or later, and mac
 
 ### Getting started
 
+- <doc:NetworkLibTutorials>
 - <doc:Installation>
 
 ### API usage examples

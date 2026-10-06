@@ -1,0 +1,50 @@
+@Tutorial(time: 10) {
+    @Intro(title: "Configure Your First Socket") {
+        Learn how a configuration describes a connection before any network activity begins. Start with a local checkout of NetworkLib, a Swift 6 toolchain, and the existing Examples target on macOS. See <doc:RunningExamples> for build requirements.
+    }
+
+    @Section(title: "Choose transport and security") {
+        Follow the steps in order, then check your understanding below.
+
+        @Steps {
+            @Step {
+                From the repository root, run `swift run Examples headers` to confirm that the existing CLI builds without needing a network service. Open the files under `Sources/Examples` in Xcode. The tutorial code files are snapshots for learning, not additional executable targets.
+            }
+            @Step {
+                In a scratch Swift file in the existing Examples target, define `makeConfiguration()`. The hostname and port select the destination. The default transport is TCP and security is enabled. Creating a configuration does not open a connection.
+
+                @Code(name: "Configuration.swift", file: "Configuration-01.swift")
+            }
+            @Step {
+                Make the choices explicit. Keep `.any` to allow IPv4 or IPv6. Set TLS's server name to the destination hostname, limit each raw receive block to 16 KiB, and choose a 15-second inactivity timeout. The receive limit is not a limit on the full response size.
+
+                @Code(name: "Configuration.swift", file: "Configuration-02.swift")
+            }
+            @Step {
+                Inspect the returned configuration in Xcode. For a local plaintext service, choose `isSecure: false` and that service's port. Selecting `.udp` with security enabled uses DTLS and requires a DTLS-capable peer. Continue with <doc:TransferBytes> to create and connect a socket.
+            }
+        }
+    }
+
+    @Assessments {
+        @MultipleChoice {
+            When does the network connection begin?
+
+            @Choice(isCorrect: true) {
+                When you call connect on a socket.
+
+                @Justification {
+                    The configuration describes the connection. A socket remains idle until connect starts it.
+                }
+            }
+
+            @Choice(isCorrect: false) {
+                When you create RawSocketConfiguration.
+
+                @Justification {
+                    The configuration describes the connection. A socket remains idle until connect starts it.
+                }
+            }
+        }
+    }
+}
