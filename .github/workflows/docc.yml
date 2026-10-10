@@ -1,0 +1,97 @@
+
+name: DocC
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Documentation version
+        required: true
+        type: string
+        default: "0.0.1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docc-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: macos-26
+
+    env:
+      VERSION: ${{ inputs.version }}
+      VPS_HOST: ${{ secrets.VPS_HOST }}
+      VPS_USER: ${{ secrets.VPS_USER }}
+      VPS_PATH: ${{ secrets.VPS_PATH }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check Xcode version
+        run: xcodebuild -version
+
+      - name: Validate version
+        run: |
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || exit 1
+
+      - name: Build documentation
+        run: |
+          xcodebuild docbuild \
+            -scheme NetworkLib \
+            -configuration Release \
+            -destination 'generic/platform=macOS' \
+            -derivedDataPath ./build/docc \
+            DOCC_HOSTING_BASE_PATH="version/$VERSION"
+
+      - name: Configure SSH
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_KNOWN_HOSTS: ${{ vars.VPS_KNOWN_HOSTS }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+
+          printf '%s\n' "$VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Prepare remote directory
+        run: |
+          ssh -i ~/.ssh/id_ed25519 \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            "$VPS_USER@$VPS_HOST" \
+            "mkdir -p '$VPS_PATH/docs/$VERSION'"
+
+      - name: Deploy documentation
+        run: |
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes" \
+            ./build/docc/Build/Products/Release/NetworkLib.doccarchive/ \
+            "$VPS_USER@$VPS_HOST:$VPS_PATH/docs/$VERSION/"
+
+      - name: Update latest version
+        run: |
+          ssh -i ~/.ssh/id_ed25519 \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            "$VPS_USER@$VPS_HOST" \
+            "VERSION='$VERSION' VPS_PATH='$VPS_PATH' bash -se" <<'REMOTE'
+          set -euo pipefail
+
+          TMP_FILE=$(mktemp "$VPS_PATH/conf.d/.latest.conf.XXXXXX")
+
+          printf 'location /documentation/ {\n    return 302 /version/%s$request_uri;\n}\n' \
+            "$VERSION" > "$TMP_FILE"
+
+          mv -f "$TMP_FILE" "$VPS_PATH/conf.d/latest.conf"
+
+          sudo -n /usr/bin/docker exec networklib-docs nginx -t
+          sudo -n /usr/bin/docker exec networklib-docs nginx -s reload
+          REMOTE
