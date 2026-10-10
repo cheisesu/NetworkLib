@@ -122,6 +122,8 @@ public struct RawSocketConfiguration: Sendable {
     public let additionalProtocols: [NWProtocolOptions]
 #if DEBUG
     var disableInBoxProxy: Bool = false
+#else
+    private var disableInBoxProxy: Bool = false
 #endif
 
     var endpoint: NWEndpoint {
