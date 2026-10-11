@@ -1,0 +1,31 @@
+name: Resolve Version
+description: Resolve and validate version from PR milestone
+
+outputs:
+  version:
+    description: Resolved version
+    value: ${{ steps.resolve.outputs.version }}
+
+runs:
+  using: composite
+  steps:
+    - name: Resolve version
+      id: resolve_version
+      shell: bash
+      env:
+        MILESTONE: ${{ github.event.pull_request.milestone.title }}
+      run: |
+        if [[ -z "$MILESTONE" ]]; then
+          echo "::error::Pull request must have a milestone"
+          exit 1
+        fi
+
+        VERSION="${MILESTONE#v}"
+
+        if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          echo "::error::Invalid milestone version: $MILESTONE"
+          exit 1
+        fi
+
+        echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+        echo "VERSION=$VERSION" >> "$GITHUB_ENV"

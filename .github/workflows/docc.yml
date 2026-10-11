@@ -2,6 +2,7 @@ name: DocC
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, milestoned, demilestoned]
     branches:
       - master
       - develop
@@ -15,9 +16,6 @@ jobs:
     name: Build Documentation
     runs-on: macos-26
 
-    env:
-      VERSION: '0.0.1'
-
     steps:
       - name: Install SwiftLint
         run: |
@@ -27,6 +25,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Resolve version
+        uses: ./.github/actions/resolve-version
+        
       - name: Check Xcode version
         run: xcodebuild -version
 
