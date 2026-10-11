@@ -30,6 +30,43 @@ NetworkLib is designed for applications that need direct control over transport,
 
 NetworkLib uses Apple's Network framework and does not currently target Linux.
 
+## Installation
+
+Add NetworkLib to your application or Swift package using Swift Package Manager.
+
+### Xcode
+
+1. Open your project in Xcode and select **File > Add Package Dependencies**.
+2. Enter the repository URL: `https://github.com/cheisesu/NetworkLib.git`.
+3. Under **Dependency Rule**, select **Branch** and enter `develop`. Once a release tag is published, you can switch to a version-based rule.
+4. Select the **NetworkLib** library product and add it to your app target.
+5. Use `import NetworkLib` in the Swift files where you need the library.
+
+### Package.swift
+
+Add NetworkLib to your package's `dependencies` array:
+
+```swift
+dependencies: [
+    .package(url: "https://github.com/cheisesu/NetworkLib.git", branch: "develop")
+],
+```
+
+Then add the library product to the target that uses it:
+
+```swift
+.target(
+    name: "YourTarget",
+    dependencies: [
+        .product(name: "NetworkLib", package: "NetworkLib")
+    ]
+)
+```
+
+Replace `YourTarget` with your target's name. These are snippets to merge into your existing package manifest, not a complete `Package.swift` file.
+
+> **Current integration limitation:** The `develop` manifest contains `unsafeFlags(["-warnings-as-errors"])`, which prevents normal consumption as a versioned Swift Package Manager dependency, and a SwiftLint build plugin that expects the executable at `/opt/homebrew/bin/swiftlint`. These settings must be addressed for reliable integration into other projects.
+
 ## Quick start
 
 This example opens a TLS connection, sends a raw HTTP/1.1 request, and reads the response as bytes:
