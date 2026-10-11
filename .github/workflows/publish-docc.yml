@@ -4,7 +4,6 @@ on:
   pull_request:
     types: [closed]
     branches:
-      - develop
       - master
 
 permissions:
@@ -21,10 +20,7 @@ jobs:
     name: Publish Documentation
     if: >-
       github.event.pull_request.merged == true &&
-      (
-        github.event.pull_request.base.ref == 'develop' ||
-        github.event.pull_request.head.ref == 'develop'
-      )
+      github.event.pull_request.head.ref == 'develop'
     runs-on: ubuntu-latest
     env:
       VPS_PATH: ${{ secrets.VPS_PATH }}
