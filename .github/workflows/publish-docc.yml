@@ -4,11 +4,8 @@ on:
   pull_request:
     types: [closed]
     branches:
+      - develop
       - master
-
-  push:
-    branches:
-      - "66-add-documentation-with-examples"
 
 permissions:
   contents: read
@@ -23,9 +20,9 @@ jobs:
   publish:
     name: Publish Documentation
     if: >-
-      github.event_name == 'push' ||
+      github.event.pull_request.merged == true &&
       (
-        github.event.pull_request.merged == true &&
+        github.event.pull_request.base.ref == 'develop' ||
         github.event.pull_request.head.ref == 'develop'
       )
     runs-on: ubuntu-latest

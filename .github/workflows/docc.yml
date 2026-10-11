@@ -1,10 +1,6 @@
 name: DocC
 
 on:
-  # delete this push
-  push:
-    branches:
-      - '66-add-documentation-with-examples'
   pull_request:
     branches:
       - master
