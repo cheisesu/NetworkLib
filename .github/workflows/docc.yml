@@ -45,7 +45,7 @@ jobs:
 
       - name: Archive documentation
         run: |
-          tar -czf docc-$VERSION.tar.gz \
+          tar -czf networklib-docc-$VERSION.tar.gz \
             -C ./build/docc/Build/Products/Release/NetworkLib.doccarchive \
             .
 
