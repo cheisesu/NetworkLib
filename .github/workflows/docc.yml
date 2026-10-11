@@ -1,0 +1,55 @@
+name: DocC
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, milestoned, demilestoned]
+    branches:
+      - master
+      - develop
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build Documentation
+    runs-on: macos-26
+
+    steps:
+      - name: Install SwiftLint
+        run: |
+          brew install swiftlint
+          echo "SWIFTLINT_PATH=$(which swiftlint)" >> "$GITHUB_ENV"
+          
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve version
+        uses: ./.github/actions/resolve-version
+        
+      - name: Check Xcode version
+        run: xcodebuild -version
+
+      - name: Build documentation
+        run: |
+          xcodebuild docbuild \
+            -scheme NetworkLib \
+            -configuration Release \
+            -destination 'generic/platform=macOS' \
+            -derivedDataPath ./build/docc \
+            DOCC_HOSTING_BASE_PATH="version/$VERSION"
+
+      - name: Archive documentation
+        run: |
+          tar -czf networklib-docc-$VERSION.tar.gz \
+            -C ./build/docc/Build/Products/Release/NetworkLib.doccarchive \
+            .
+
+      - name: Upload documentation artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: networklib-docc-${{ env.VERSION }}
+          path: networklib-docc-${{ env.VERSION }}.tar.gz
+          retention-days: 7
+          if-no-files-found: error

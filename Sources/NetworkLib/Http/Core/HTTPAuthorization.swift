@@ -1,6 +1,6 @@
 import Foundation
 
-/// HTTP authorization credentials that can be rendered as an authentication header value.
+/// HTTP authorization credentials that NetworkLib can apply to an HTTP CONNECT proxy.
 ///
 /// For example, use a basic credential when configuring an HTTP CONNECT proxy:
 ///
@@ -19,6 +19,9 @@ public enum HTTPAuthorization: Sendable, Equatable {
     /// - Parameters:
     ///   - userName: The user name included in the credential.
     ///   - password: The password included in the credential.
+    ///
+    /// Basic authentication encodes credentials but doesn't encrypt them. Use a secure proxy connection when credentials need
+    /// transport confidentiality.
     case basic(userName: String, password: String)
 
     var httpHeader: String {

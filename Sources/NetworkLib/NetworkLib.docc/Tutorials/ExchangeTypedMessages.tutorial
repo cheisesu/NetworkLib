@@ -1,0 +1,50 @@
+@Tutorial(time: 20) {
+    @Intro(title: "Design Typed UDP Messages") {
+        Move from raw bytes to a type that supplies outgoing content and validates incoming messages. Complete <doc:BridgeCallbacks> first. UDP supplies message boundaries for this example.
+    }
+
+    @Section(title: "Encode, decode, and validate datagrams") {
+        Follow the steps in order, then check your understanding below.
+
+        @Steps {
+            @Step {
+                Open `Sources/Examples/TypedMessagesExample.swift`. Define the value's UTF-8 payload and computed content context. The failable receive initializer rejects invalid UTF-8. Returning nil produces a receive error such as NWError.posix(.EBADMSG).
+
+                @Code(name: "TypedMessagesExample.swift", file: "Messages-01.swift")
+            }
+            @Step {
+                Add the runnable exchange. Choose plaintext UDP for the local echo service, send a TextDatagram, request a typed reply, and check the echoed text. Await cleanup on every path.
+
+                @Code(name: "TypedMessagesExample.swift", file: "Messages-02.swift")
+            }
+            @Step {
+                Start the Python UDP echo server shown in <doc:TypedMessages>, then run `swift run Examples udp`. Expect the decoded reply and `Echo matched; socket closed.` Stop the server with Control-C afterward. UDP does not guarantee delivery or ordering; a ready connection does not prove that a server is listening.
+            }
+            @Step {
+                As an exercise, make the echo server reply with invalid UTF-8, then repeat the command and observe the error. For typed messages over TCP, these value protocols alone do not provide framing. Install a suitable Network framework application protocol through additionalProtocols and supply its required metadata. Continue with <doc:ConnectThroughProxy>.
+            }
+        }
+    }
+
+    @Assessments {
+        @MultipleChoice {
+            What gives this example its message boundaries?
+
+            @Choice(isCorrect: true) {
+                UDP datagram boundaries.
+
+                @Justification {
+                    The message protocols encode and decode values; they do not add framing to an unframed TCP stream.
+                }
+            }
+
+            @Choice(isCorrect: false) {
+                Conforming a Swift type automatically frames any transport.
+
+                @Justification {
+                    The message protocols encode and decode values; they do not add framing to an unframed TCP stream.
+                }
+            }
+        }
+    }
+}

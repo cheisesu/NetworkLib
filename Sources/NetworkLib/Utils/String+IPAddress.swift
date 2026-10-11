@@ -3,10 +3,10 @@ import Network
 
 @available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
 extension String {
-    /// An IPv4 address parsed from this string after trimming whitespace, newlines, and leading or trailing square brackets.
+    /// An IPv4 address parsed after removing whitespace, newlines, and square-bracket characters from both ends of this string.
     ///
-    /// The parser uses the trimmed string directly with Network framework's `IPv4Address` initializer, so its IPv4
-    /// normalization rules apply.
+    /// The parser passes the trimmed string directly to the Network framework's `IPv4Address` initializer, so that initializer's
+    /// accepted forms and normalization rules apply.
     /// Host names, IPv6 addresses, malformed input, and IPv4 addresses with out-of-range octets return `nil`.
     ///
     /// For example, parse plain, padded, and normalized IPv4 input:
@@ -35,10 +35,10 @@ extension String {
         return IPv4Address(trimmed)
     }
 
-    /// An IPv6 address parsed from this string after trimming whitespace, newlines, and leading or trailing square brackets.
+    /// An IPv6 address parsed after removing whitespace, newlines, and square-bracket characters from both ends of this string.
     ///
-    /// The parser passes the trimmed value to `IPv6Address`, which makes URL host strings such as `[2001:db8::1]` valid input.
-    /// IPv4 addresses and host names return `nil`.
+    /// Removing brackets makes URL-host literals such as `[2001:db8::1]` valid input. The parser then delegates to the Network
+    /// framework's `IPv6Address` initializer. IPv4 addresses, host names, and malformed input return `nil`.
     ///
     /// For example, parse compressed and bracketed IPv6 input:
     ///

@@ -1,0 +1,50 @@
+@Tutorial(time: 15) {
+    @Intro(title: "Work with Completion Handlers") {
+        Use the callback API while keeping an asynchronous CLI alive until the work finishes. Complete <doc:ManageSocketLifetime> first. This lesson uses a local plaintext TCP listener.
+    }
+
+    @Section(title: "Sequence callback operations") {
+        Follow the steps in order, then check your understanding below.
+
+        @Steps {
+            @Step {
+                In a separate terminal, start `nc -l 9000`. It listens for the connection and displays received bytes. Restart the listener before each run if it exits.
+            }
+            @Step {
+                In `Sources/Examples/CallbackExample.swift`, inspect the connect-only snapshot. A checked continuation suspends the CLI without blocking its executor. Resume it exactly once, after socket cancellation has completed.
+
+                @Code(name: "CallbackExample.swift", file: "Callbacks-01.swift")
+            }
+            @Step {
+                Use the complete snapshot to send only after a successful connection. Both failure and send-completion paths close the socket before resuming. Keep Result typed with NWError to preserve the callback's error information.
+
+                @Code(name: "CallbackExample.swift", file: "Callbacks-02.swift")
+            }
+            @Step {
+                Run `swift run Examples callbacks`. The listener should display `hello from NetworkLib callbacks`; the CLI should report send completion and cleanup. Callbacks are @Sendable and use the socket's callback queue. Protect shared mutable state and explicitly hop to the appropriate actor for UI work. Continue with <doc:ExchangeTypedMessages>.
+            }
+        }
+    }
+
+    @Assessments {
+        @MultipleChoice {
+            What does successful send completion establish?
+
+            @Choice(isCorrect: true) {
+                The connection processed the outgoing bytes.
+
+                @Justification {
+                    Application-level confirmation requires a reply defined by your protocol.
+                }
+            }
+
+            @Choice(isCorrect: false) {
+                The server finished handling the application message.
+
+                @Justification {
+                    Application-level confirmation requires a reply defined by your protocol.
+                }
+            }
+        }
+    }
+}

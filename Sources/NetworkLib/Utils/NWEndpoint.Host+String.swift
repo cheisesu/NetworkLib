@@ -4,7 +4,8 @@ import Network
 extension NWEndpoint.Host {
     /// A textual representation of the host without URL-specific delimiters.
     ///
-    /// Named hosts are returned unchanged, while IPv4 and IPv6 addresses use their canonical string representations.
+    /// Named hosts are returned unchanged. IP-address hosts use their presentation-format strings, and IPv6 results don't include
+    /// square brackets.
     public var asString: String {
         switch self {
         case let .name(name, _): return name
@@ -18,6 +19,8 @@ extension NWEndpoint.Host {
     ///
     /// IPv6 addresses are enclosed in square brackets to keep their colons distinct from a port separator.
     /// Named hosts and IPv4 addresses are returned without additional delimiters.
+    ///
+    /// This property returns only the host representation; it doesn't append a port.
     public var asUrlString: String {
         switch self {
         case let .name(name, _): return name
@@ -29,7 +32,7 @@ extension NWEndpoint.Host {
 
     /// A Boolean value that indicates whether the host is an IPv4 or IPv6 address.
     ///
-    /// This property is `false` for named hosts.
+    /// This property is `false` for named hosts, even when the name's text resembles an IP address.
     public var isIPAddress: Bool {
         switch self {
         case .ipv4, .ipv6: return true

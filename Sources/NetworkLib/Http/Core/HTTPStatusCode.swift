@@ -1,6 +1,9 @@
 import Foundation
 
-/// Common HTTP response status codes grouped by status class.
+/// A known HTTP response status code, with cases grouped by status class.
+///
+/// The type represents the cases declared below rather than every integer permitted by HTTP. Initializing it with an unknown
+/// integer produces ``unrecognized`` and doesn't preserve that integer.
 ///
 /// For example, classify a status returned by an HTTP response:
 ///
@@ -12,7 +15,7 @@ import Foundation
 /// ```
 @available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
 public enum HTTPStatusCode: Int, Sendable, CaseIterable {
-    /// An unrecognized status code. Raw value: `0`.
+    /// A status code not represented by a declared case. Its raw value is `0`.
     case unrecognized = 0
 
     // MARK: INFORMATIONAL
@@ -35,6 +38,8 @@ public enum HTTPStatusCode: Int, Sendable, CaseIterable {
     case accepted = 202
 
     /// The request succeeded but the returned metadata may come from a transformed or non-authoritative source. Raw value: `203`.
+    ///
+    /// The case name is retained for source compatibility; HTTP calls this status “Non-Authoritative Information.”
     case nonAuthorizedInformation = 203
 
     /// The request succeeded and there is no response body. Raw value: `204`.
@@ -169,18 +174,28 @@ public enum HTTPStatusCode: Int, Sendable, CaseIterable {
 
 extension HTTPStatusCode {
     /// A Boolean value indicating whether the status code is in the `1xx` informational range.
+    ///
+    /// This value is `false` for ``unrecognized``.
     public var isInformational: Bool { Self.informationalCodes.contains(rawValue) }
 
     /// A Boolean value indicating whether the status code is in the `2xx` successful range.
+    ///
+    /// This value is `false` for ``unrecognized``.
     public var isSuccessful: Bool { Self.successfulCodes.contains(rawValue) }
 
     /// A Boolean value indicating whether the status code is in the `3xx` redirection range.
+    ///
+    /// This value is `false` for ``unrecognized``.
     public var isRedirection: Bool { Self.redirectionCodes.contains(rawValue) }
 
     /// A Boolean value indicating whether the status code is in the `4xx` client-error range.
+    ///
+    /// This value is `false` for ``unrecognized``.
     public var isClientError: Bool { Self.clientErrorCodes.contains(rawValue) }
 
     /// A Boolean value indicating whether the status code is in the `5xx` server-error range.
+    ///
+    /// This value is `false` for ``unrecognized``.
     public var isServerError: Bool { Self.servertErrorCodes.contains(rawValue) }
 }
 
