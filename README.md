@@ -1,5 +1,13 @@
 # NetworkLib
 
+![Build][BuildStatusBadge]
+[![Documentation][DocumentationBadge]][DocumentationLink]
+[![Swift6 compatible][Swift6Badge]][SwiftLink]
+![Supported platforms][PlatformsBadge]
+![Swift Package Manager][SPMBadge]
+![License][LicenseBadge]
+![GitHub Release][GitHubReleaseBadge]
+
 **NetworkLib** is a Swift networking library built on Apple's Network framework. It provides a configurable socket API for exchanging raw bytes and protocol-framed messages, with both Swift concurrency and completion-handler interfaces.
 
 NetworkLib is designed for applications that need direct control over transport, connection security, proxy routing, and application-level protocols. It is a low-level networking library, not a high-level HTTP client.
@@ -104,3 +112,13 @@ Full API reference and guided tutorials are maintained in the package's [DocC ca
 ## License
 
 NetworkLib is distributed under the [MIT License](LICENSE).
+
+[BuildStatusBadge]: https://img.shields.io/github/actions/workflow/status/cheisesu/NetworkLib/pr-test.yml?branch=master&style=flat-square&label=Build&labelColor=gray
+[SwiftLink]: https://developer.apple.com/swift/
+[Swift6Badge]: https://img.shields.io/badge/Swift-6-F05138?style=flat-square&label=Swift&labelColor=gray&color=F05138
+[GitHubReleaseBadge]: https://img.shields.io/github/v/release/cheisesu/NetworkLib?style=flat-square&labelColor=gray&color=blue&label=Release
+[LicenseBadge]: https://img.shields.io/github/license/cheisesu/NetworkLib?style=flat-square&labelColor=gray&label=License
+[PlatformsBadge]: https://img.shields.io/badge/Platforms-iOS%7CtvOS%7CmacOS-999?style=flat-square&labelColor=gray
+[DocumentationBadge]: https://img.shields.io/github/actions/workflow/status/cheisesu/NetworkLib/docc.yml?branch=13-add-deploying-documentation&style=flat-square&label=Docs&labelColor=gray
+[DocumentationLink]: https://networklib.dmitrii-shelonin.com/documentation/networklib/
+[SPMBadge]: https://img.shields.io/badge/SPM-Compatible-F05138?style=flat-square&label=SPM&labelColor=gray&color=F05138
