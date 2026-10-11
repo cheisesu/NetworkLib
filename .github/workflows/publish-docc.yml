@@ -1,0 +1,78 @@
+name: Publish DocC
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - master
+
+  push:
+    branches:
+      - "66-add-documentation-with-examples"
+
+permissions:
+  contents: read
+  actions: read
+  pull-requests: read
+
+concurrency:
+  group: docc-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish Documentation
+    if: >-
+      github.event_name == 'push' ||
+      (
+        github.event.pull_request.merged == true &&
+        github.event.pull_request.head.ref == 'develop'
+      )
+    runs-on: ubuntu-latest
+    env:
+      VERSION: "0.0.1"
+      VPS_PATH: ${{ secrets.VPS_PATH }}
+
+    steps:
+      - name: Find DocC build
+        id: docc
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+          RUN_URL=$(gh pr checks "$PR_NUMBER" \
+              --repo "$GITHUB_REPOSITORY" \
+              --json name,bucket,link \
+              --jq '.[] | select(.name == "Build Documentation" and .bucket == "pass") | .link' \
+              | head -n 1)
+
+          RUN_ID=$(echo "$RUN_URL" | sed -nE 's|.*/actions/runs/([0-9]+).*|\1|p')
+          else
+          for i in {1..12}; do
+              RUN_ID=$(gh run list \
+              --repo "$GITHUB_REPOSITORY" \
+              --workflow docc.yml \
+              --event push \
+              --commit "$GITHUB_SHA" \
+              --json databaseId \
+              --jq '.[0].databaseId // empty')
+
+              [[ -n "$RUN_ID" ]] && break
+              sleep 5
+          done
+
+          [[ -n "$RUN_ID" ]] && gh run watch "$RUN_ID" \
+              --repo "$GITHUB_REPOSITORY" \
+              --exit-status
+          fi
+
+          [[ -n "$RUN_ID" ]] || exit 1
+          echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
+      - name: Download documentation
+        uses: actions/download-artifact@v4
+        with:
+          name: networklib-docc-${{ env.VERSION }}
+          github-token: ${{ github.token }}
+          run-id: ${{ steps.docc.outputs.run_id }}
+          path: ./artifact
