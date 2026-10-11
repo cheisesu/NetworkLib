@@ -1,11 +1,16 @@
 // swift-tools-version: 6.0
 
+import Foundation
 import PackageDescription
 
-private let commonSettings: [SwiftSetting]? = [
+private let isCI = ProcessInfo.processInfo.environment["CI"] == "true"
+private var commonSettings: [SwiftSetting]? = [
     .unsafeFlags(["-warnings-as-errors"]),
     .enableUpcomingFeature("StrictConcurrency"),
 ]
+if isCI {
+    commonSettings?.append(.define("CI"))
+}
 
 let package = Package(
     name: "NetworkLib",
