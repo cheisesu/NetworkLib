@@ -1,0 +1,48 @@
+
+name: Validate Release
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - edited
+      - milestoned
+      - demilestoned
+      - labeled
+      - unlabeled
+    branches:
+    #   - master
+      - develop
+
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
+
+jobs:
+  validate_pr:
+    name: Validate Release PR
+    runs-on: ubuntu-latest
+
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate release label
+        env:
+          HAS_RELEASE_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'release') }}
+        run: |
+          if [[ "$HAS_RELEASE_LABEL" != "true" ]]; then
+            echo "::error::Release PR must have the 'release' label"
+            exit 1
+          fi
+
+      - name: Resolve version
+        id: version
+        uses: ./.github/actions/resolve-version
+    
