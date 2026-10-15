@@ -1,0 +1,94 @@
+name: Release
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - master
+
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
+
+jobs:
+  changelog:
+    name: Generate Changelog
+    if: >-
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.head.ref == 'develop'
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve version
+        id: version
+        uses: ./.github/actions/resolve-version
+
+      - name: Generate changelog
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const generate = require('./.github/scripts/generate-changelog.js');
+            await generate({ github, context });
+
+      - name: Upload changelog
+        uses: actions/upload-artifact@v4
+        with:
+          name: changelog-${{ steps.version.outputs.version }}
+          path: changelog-${{ steps.version.outputs.version }}.md
+          retention-days: 7
+          if-no-files-found: error
+  
+  publish_release:
+    name: Publish GitHub Release
+    needs: changelog
+    if: >-
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.base.ref == 'master' &&
+      github.event.pull_request.head.ref == 'develop'
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    env:
+      GH_TOKEN: ${{ github.token }}
+      VERSION: ${{ needs.changelog.outputs.version }}
+      MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+
+    steps:
+      - name: Download changelog
+        uses: actions/download-artifact@v4
+        with:
+          name: changelog-${{ needs.changelog.outputs.version }}
+
+      - name: Create release tag
+        run: |
+          TAG="v$VERSION"
+
+          if [[ -z "$MERGE_SHA" ]]; then
+            echo "::error::Merge commit SHA is missing"
+            exit 1
+          fi
+
+          gh api \
+            -X POST \
+            "repos/$GITHUB_REPOSITORY/git/refs" \
+            -f ref="refs/tags/$TAG" \
+            -f sha="$MERGE_SHA"
+
+      - name: Create GitHub Release
+        run: |
+          TAG="v$VERSION"
+
+          gh release create "$TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --verify-tag \
+            --title "$TAG" \
+            --notes-file "changelog-$VERSION.md"

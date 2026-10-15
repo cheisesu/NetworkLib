@@ -1,0 +1,40 @@
+name: Resolve Version
+description: Resolve and validate version from PR milestone
+
+inputs:
+  override-version:
+    description: Override version instead of using PR milestone
+    required: false
+    default: ''
+
+outputs:
+  version:
+    description: Resolved version
+    value: ${{ steps.resolve_version.outputs.version }}
+
+runs:
+  using: composite
+  steps:
+    - name: Resolve version
+      id: resolve_version
+      shell: bash
+      env:
+        MILESTONE: ${{ github.event.pull_request.milestone.title }}
+        OVERRIDE_VERSION: ${{ inputs.override-version }}
+      run: |
+        VERSION="${OVERRIDE_VERSION:-$MILESTONE}"
+
+        if [[ -z "$VERSION" ]]; then
+          echo "::error::Release version is missing"
+          exit 1
+        fi
+
+        VERSION="${VERSION#v}"
+
+        if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          echo "::error::Invalid release version: $VERSION"
+          exit 1
+        fi
+
+        echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+        echo "VERSION=$VERSION" >> "$GITHUB_ENV"

@@ -1,0 +1,50 @@
+@Tutorial(time: 15) {
+    @Intro(title: "Send and Receive over TLS") {
+        Turn a configuration into a TLS connection, send an HTTP/1.1 request, and collect the response. Complete <doc:ConfigureASocket> first. This lesson requires Internet access.
+    }
+
+    @Section(title: "Build an asynchronous request") {
+        Follow the steps in order, then check your understanding below.
+
+        @Steps {
+            @Step {
+                Work in `Sources/Examples/SendingAndReceivingExample.swift`. Compare the connect-only snapshot with the existing implementation. Construct a socket, await readiness, inspect its endpoint, and await cancellation in both success and failure paths.
+
+                @Code(name: "SendingAndReceivingExample.swift", file: "Transfer-01.swift")
+            }
+            @Step {
+                Replace the connect-only implementation with this complete snapshot. Send a UTF-8 HTTP request with CRLF line endings. `Connection: close` asks this server to close the stream after its response. Receive repeatedly until the API returns nil, and impose a 1 MiB total limit independently of the receive block size.
+
+                @Code(name: "SendingAndReceivingExample.swift", file: "Transfer-02.swift")
+            }
+            @Step {
+                Run `swift run Examples async`. Expect connection progress, received byte counts, a raw HTTP response, and a completion message. The HTTP status and body come from the remote server and may vary. A successful socket operation is not the same as an HTTP success status.
+            }
+            @Step {
+                Notice that the example decodes text only after collecting the response. TCP can split a message or a UTF-8 character across receives. For persistent connections, use your application protocol's framing to decide when a response is complete instead of waiting for the server to close. Continue with <doc:ManageSocketLifetime>.
+            }
+        }
+    }
+
+    @Assessments {
+        @MultipleChoice {
+            Does one TCP receive always contain one complete application message?
+
+            @Choice(isCorrect: true) {
+                No; buffer bytes according to the application protocol.
+
+                @Justification {
+                    TCP exposes a stream of bytes, so receive boundaries do not define message boundaries.
+                }
+            }
+
+            @Choice(isCorrect: false) {
+                Yes; every send is matched by one receive.
+
+                @Justification {
+                    TCP exposes a stream of bytes, so receive boundaries do not define message boundaries.
+                }
+            }
+        }
+    }
+}

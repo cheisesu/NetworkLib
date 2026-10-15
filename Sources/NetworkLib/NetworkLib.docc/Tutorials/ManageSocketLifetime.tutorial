@@ -1,0 +1,50 @@
+@Tutorial(time: 15) {
+    @Intro(title: "Handle Errors and Cancellation") {
+        Add cancellation and error reporting around the transfer from <doc:TransferBytes>. Reuse the existing Examples target and its SendingAndReceivingExample implementation.
+    }
+
+    @Section(title: "Own the task and the socket lifetime") {
+        Follow the steps in order, then check your understanding below.
+
+        @Steps {
+            @Step {
+                Add `runTransfer()` in a scratch Swift file in the Examples target. Catch NWError to distinguish inactivity timeouts and cancellation, while keeping a fallback for other failures. Cleanup remains inside SendingAndReceivingExample, so it also happens when this wrapper catches an error.
+
+                @Code(name: "TransferLifecycle.swift", file: "Lifecycle-01.swift")
+            }
+            @Step {
+                Replace the wrapper with this version. Keep the task handle, optionally cancel it, and await its result. Cancelling a task performing an asynchronous socket operation permanently cancels that socket. The API reports NWError; don't assume it throws CancellationError.
+
+                @Code(name: "TransferLifecycle.swift", file: "Lifecycle-02.swift")
+            }
+            @Step {
+                To exercise the wrapper, temporarily replace the existing `async` case in `main.swift` with `case "async": await runTransfer(cancelImmediately: true)`, then run `swift run Examples async`. Expect cancellation or another reported network error, rather than an unhandled failure. This wrapper intentionally catches errors for inspection, so the CLI may still print its normal completion message.
+            }
+            @Step {
+                Repeat with `cancelImmediately: false` to allow the transfer to finish. Restore the original `async` case afterward. A retry must create a new socket; never reconnect a cancelled instance. Inactivity timeouts aren't total deadlines: continuous traffic can keep an operation active. Continue with <doc:BridgeCallbacks>.
+            }
+        }
+    }
+
+    @Assessments {
+        @MultipleChoice {
+            How should you retry after cancelling a socket?
+
+            @Choice(isCorrect: true) {
+                Create a new socket for a new connection attempt.
+
+                @Justification {
+                    A RawSocket represents one connection attempt and cannot be reused after cancellation or closure.
+                }
+            }
+
+            @Choice(isCorrect: false) {
+                Call connect again on the cancelled socket.
+
+                @Justification {
+                    A RawSocket represents one connection attempt and cannot be reused after cancellation or closure.
+                }
+            }
+        }
+    }
+}

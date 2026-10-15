@@ -1,0 +1,129 @@
+name: Publish DocC
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - master
+
+permissions:
+  contents: read
+  actions: read
+  pull-requests: read
+
+concurrency:
+  group: docc-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish Documentation
+    if: >-
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.head.ref == 'develop'
+    runs-on: ubuntu-latest
+    env:
+      VPS_PATH: ${{ secrets.VPS_PATH }}
+      VPS_HOST: ${{ secrets.VPS_HOST }}
+      VPS_USER: ${{ secrets.VPS_USER }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve version
+        uses: ./.github/actions/resolve-version
+
+      - name: Find DocC build
+        id: docc
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+          RUN_URL=$(gh pr checks "$PR_NUMBER" \
+              --repo "$GITHUB_REPOSITORY" \
+              --json name,bucket,link \
+              --jq '.[] | select(.name == "Build Documentation" and .bucket == "pass") | .link' \
+              | head -n 1)
+
+          RUN_ID=$(echo "$RUN_URL" | sed -nE 's|.*/actions/runs/([0-9]+).*|\1|p')
+          else
+          for i in {1..12}; do
+              RUN_ID=$(gh run list \
+              --repo "$GITHUB_REPOSITORY" \
+              --workflow docc.yml \
+              --event push \
+              --commit "$GITHUB_SHA" \
+              --json databaseId \
+              --jq '.[0].databaseId // empty')
+
+              [[ -n "$RUN_ID" ]] && break
+              sleep 5
+          done
+
+          [[ -n "$RUN_ID" ]] && gh run watch "$RUN_ID" \
+              --repo "$GITHUB_REPOSITORY" \
+              --exit-status
+          fi
+
+          [[ -n "$RUN_ID" ]] || exit 1
+          echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
+      - name: Download documentation
+        uses: actions/download-artifact@v4
+        with:
+          name: networklib-docc-${{ env.VERSION }}
+          github-token: ${{ github.token }}
+          run-id: ${{ steps.docc.outputs.run_id }}
+          path: ./artifact
+      - name: Configure SSH
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_KNOWN_HOSTS: ${{ vars.VPS_KNOWN_HOSTS }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+
+          printf '%s\n' "$VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+      - name: Upload documentation archive
+        run: |
+          scp \
+            -i ~/.ssh/id_ed25519 \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            "artifact/networklib-docc-$VERSION.tar.gz" \
+            "$VPS_USER@$VPS_HOST:$VPS_PATH/"
+      - name: Deploy documentation
+        run: |
+          ssh \
+            -i ~/.ssh/id_ed25519 \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            "$VPS_USER@$VPS_HOST" \
+            "VERSION='$VERSION' VPS_PATH='$VPS_PATH' bash -se" <<'REMOTE'
+          set -euo pipefail
+
+          ARCHIVE="$VPS_PATH/networklib-docc-$VERSION.tar.gz"
+          TARGET="$VPS_PATH/$VERSION"
+          CONF_DIR="$(dirname "$VPS_PATH")/conf.d"
+
+          test -f "$ARCHIVE"
+
+          rm -rf -- "$TARGET"
+          mkdir -p "$TARGET"
+
+          tar -xzf "$ARCHIVE" -C "$TARGET"
+          test -f "$TARGET/index.html"
+
+          rm -f "$ARCHIVE"
+
+          printf 'location /documentation/ {\n    return 302 /version/%s$request_uri;\n}\n' \
+            "$VERSION" > "$CONF_DIR/latest.conf"
+
+          sudo -n /usr/bin/docker exec networklib-front nginx -t
+          sudo -n /usr/bin/docker exec networklib-front nginx -s reload
+          REMOTE

@@ -1,0 +1,122 @@
+import Foundation
+import Network
+
+@available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
+extension RawSocket {
+    /// Starts the underlying network connection and returns connection details when it becomes ready.
+    ///
+    /// Cancelling the surrounding task permanently cancels the socket. The operation then throws the `NWError` produced by
+    /// socket cancellation.
+    ///
+    /// For example, connect and inspect the selected endpoint:
+    ///
+    /// ```swift
+    /// let info = try await socket.connect()
+    /// print(info.remoteEndpoint)
+    /// ```
+    ///
+    /// - Returns: Information about the established connection.
+    /// - Throws: The `NWError` reported by the connection attempt or cancellation.
+    @discardableResult
+    public func connect() async throws(NWError) -> ConnectionInfo {
+        try await withSocketCancellation { done in
+            connect(done)
+        }
+    }
+
+    /// Sends raw bytes on the socket.
+    ///
+    /// Cancelling the surrounding task permanently cancels the socket. The operation then throws the `NWError` produced by
+    /// socket cancellation.
+    ///
+    /// For example, send a small payload:
+    ///
+    /// ```swift
+    /// try await socket.send(Data("hello".utf8))
+    /// ```
+    ///
+    /// - Parameter data: The bytes to send.
+    /// - Throws: The `NWError` that prevented the send from completing.
+    public func send(_ data: Data) async throws(NWError) {
+        try await withSocketCancellation { done in
+            send(data, done)
+        }
+    }
+
+    /// Sends a typed message with protocol metadata.
+    ///
+    /// Cancelling the surrounding task permanently cancels the socket. The operation then throws the `NWError` produced by
+    /// socket cancellation.
+    ///
+    /// - Parameter message: The typed message that supplies content and context.
+    /// - Throws: The `NWError` that prevented the message from being sent.
+    public func sendMessage<M: RawSocketSendMessage>(_ message: M) async throws(NWError) {
+        try await withSocketCancellation { done in
+            sendMessage(message, done)
+        }
+    }
+
+    /// Receives the next available raw data block.
+    ///
+    /// Cancelling the surrounding task permanently cancels the socket. The operation then throws the `NWError` produced by
+    /// socket cancellation.
+    ///
+    /// For example, receive one block of data:
+    ///
+    /// ```swift
+    /// if let data = try await socket.receiveNext() {
+    ///     print(data.count)
+    /// }
+    /// ```
+    ///
+    /// - Returns: The next data block, or `nil` when the connection completes cleanly with no more data.
+    /// - Throws: The `NWError` that prevented the receive from completing.
+    public func receiveNext() async throws(NWError) -> Data? {
+        try await withSocketCancellation { done in
+            receiveNext(done)
+        }
+    }
+
+    /// Receives and decodes the next typed message.
+    ///
+    /// Cancelling the surrounding task permanently cancels the socket. The operation then throws the `NWError` produced by
+    /// socket cancellation.
+    ///
+    /// - Parameter type: The typed message to decode. The default is inferred from the return type.
+    /// - Returns: The decoded message.
+    /// - Throws: The `NWError` that prevented receiving or decoding the message.
+    public func receiveNextMessage<M: RawSocketReceiveMessage>(of type: M.Type = M.self) async throws(NWError) -> M {
+        try await withSocketCancellation { done in
+            receiveNextMessage(of: M.self, done)
+        }
+    }
+
+    /// Permanently cancels the socket and suspends until the underlying connection reaches its terminal state.
+    ///
+    /// Calling this method more than once is safe.
+    public func cancel() async {
+        await withCheckedContinuation { continuation in
+            cancel {
+                continuation.resume()
+            }
+        }
+    }
+}
+
+@available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
+private extension RawSocket {
+    func withSocketCancellation<T: Sendable>(
+        _ operation: (@escaping @Sendable (_ done: Result<T, NWError>) -> Void) -> Void
+    ) async throws(NWError) -> T {
+        let result = await withTaskCancellationHandler {
+            await withCheckedContinuation { continuation in
+                operation { result in
+                    continuation.resume(returning: result)
+                }
+            }
+        } onCancel: { [weak self] in
+            self?.cancel(nil)
+        }
+        return try result.get()
+    }
+}

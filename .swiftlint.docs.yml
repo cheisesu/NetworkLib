@@ -1,0 +1,15 @@
+check_for_updates: false
+
+included: 
+  - Sources
+strict: true
+
+only_rules:
+  - missing_docs
+
+missing_docs:
+  error: [open, public]
+  excludes_inherited_types: false
+  excludes_extensions: false
+  excludes_trivial_init: false
+  evaluate_effective_access_control_level: false

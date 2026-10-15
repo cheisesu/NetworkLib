@@ -1,0 +1,23 @@
+@Tutorials(name: "NetworkLib") {
+    @Intro(title: "Build Your NetworkLib Skills") {
+        Learn to configure connections, exchange bytes, manage cancellation, and use typed messages and proxies. Work through six guided lessons using the existing Examples target in a local checkout. You need Swift 6 on macOS and basic familiarity with Swift functions, errors, and async/await. See <doc:RunningExamples> for build requirements. Code snapshots belong to individual steps; don't add all snapshots to a target together.
+    }
+
+    @Chapter(name: "Foundations") {
+        @Image(source: "Foundations.svg", alt: "Configure, connect, exchange data, and close a socket.")
+        Configure a secure socket, transfer bytes, and control connection lifetime.
+
+        @TutorialReference(tutorial: "doc:ConfigureASocket")
+        @TutorialReference(tutorial: "doc:TransferBytes")
+        @TutorialReference(tutorial: "doc:ManageSocketLifetime")
+    }
+
+    @Chapter(name: "Advanced Usage") {
+        @Image(source: "Advanced.svg", alt: "Callbacks, typed messages, proxies, and TLS.")
+        Integrate callbacks, design typed messages, and route connections through an authenticated proxy.
+
+        @TutorialReference(tutorial: "doc:BridgeCallbacks")
+        @TutorialReference(tutorial: "doc:ExchangeTypedMessages")
+        @TutorialReference(tutorial: "doc:ConnectThroughProxy")
+    }
+}

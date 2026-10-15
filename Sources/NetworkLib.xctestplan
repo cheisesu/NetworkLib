@@ -1,0 +1,31 @@
+{
+  "configurations" : [
+    {
+      "id" : "4F47818C-ACFB-45D6-ACD8-322087D12053",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "addressSanitizer" : {
+      "detectStackUseAfterReturn" : true,
+      "enabled" : true
+    },
+    "performanceAntipatternCheckerEnabled" : true,
+    "testExecutionOrdering" : "random",
+    "undefinedBehaviorSanitizerEnabled" : true
+  },
+  "testTargets" : [
+    {
+      "parallelizable" : true,
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "NetworkLibTests",
+        "name" : "NetworkLibTests"
+      }
+    }
+  ],
+  "version" : 2
+}
