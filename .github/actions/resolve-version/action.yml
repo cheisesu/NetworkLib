@@ -10,7 +10,7 @@ inputs:
 outputs:
   version:
     description: Resolved version
-    value: ${{ steps.resolve.outputs.version }}
+    value: ${{ steps.resolve_version.outputs.version }}
 
 runs:
   using: composite
