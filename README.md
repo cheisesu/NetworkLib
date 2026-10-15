@@ -157,6 +157,6 @@ NetworkLib is distributed under the [MIT License](LICENSE).
 [GitHubReleaseBadge]: https://img.shields.io/github/v/release/cheisesu/NetworkLib?style=flat-square&labelColor=gray&color=blue&label=Release
 [LicenseBadge]: https://img.shields.io/github/license/cheisesu/NetworkLib?style=flat-square&labelColor=gray&label=License
 [PlatformsBadge]: https://img.shields.io/badge/Platforms-iOS%7CtvOS%7CmacOS-999?style=flat-square&labelColor=gray
-[DocumentationBadge]: https://img.shields.io/github/actions/workflow/status/cheisesu/NetworkLib/docc.yml?branch=13-add-deploying-documentation&style=flat-square&label=Docs&labelColor=gray
+[DocumentationBadge]: https://img.shields.io/github/actions/workflow/status/cheisesu/NetworkLib/docc.yml?style=flat-square&label=Docs&labelColor=gray
 [DocumentationLink]: https://networklib.dmitrii-shelonin.com/documentation/networklib/
 [SPMBadge]: https://img.shields.io/badge/SPM-Compatible-F05138?style=flat-square&label=SPM&labelColor=gray&color=F05138
