@@ -13,7 +13,6 @@ on:
       - unlabeled
     branches:
       - master
-      - develop
 
 permissions:
   contents: read
