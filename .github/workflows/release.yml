@@ -2,9 +2,10 @@ name: Release
 
 on:
   pull_request:
-    types: [closed]
+    types: [closed, opened, reopened, synchronize]
     branches:
       - master
+      - develop
   push:
     branches:
       - "9-add-github-action-of-release-changelog-constructing"

@@ -9,6 +9,7 @@ const sections = new Map([
 ]);
 
 module.exports = async ({ github, context }) => {
+    console.log(`==>>`, context.payload.pull_request);
     const milestone = context.payload.pull_request.milestone;
     const version = process.env.VERSION;
 
