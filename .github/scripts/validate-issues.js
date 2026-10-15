@@ -69,7 +69,7 @@ module.exports = async ({ github, context, core }) => {
             continue;
         }
 
-        const prefix = `Issue #${issue.number}`;
+        const prefix = `Issue #${issue.number} (${issue.html_url})`;
 
         if (issue.state_reason !== "completed") {
             errors.push(`${prefix}: issue is not completed`);
