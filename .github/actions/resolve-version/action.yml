@@ -1,6 +1,12 @@
 name: Resolve Version
 description: Resolve and validate version from PR milestone
 
+inputs:
+  override-version:
+    description: Override version instead of using PR milestone
+    required: false
+    default: ''
+
 outputs:
   version:
     description: Resolved version
@@ -14,16 +20,19 @@ runs:
       shell: bash
       env:
         MILESTONE: ${{ github.event.pull_request.milestone.title }}
+        OVERRIDE_VERSION: ${{ inputs.override-version }}
       run: |
-        if [[ -z "$MILESTONE" ]]; then
-          echo "::error::Pull request must have a milestone"
+        VERSION="${OVERRIDE_VERSION:-$MILESTONE}"
+
+        if [[ -z "$VERSION" ]]; then
+          echo "::error::Release version is missing"
           exit 1
         fi
 
-        VERSION="${MILESTONE#v}"
+        VERSION="${VERSION#v}"
 
         if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-          echo "::error::Invalid milestone version: $MILESTONE"
+          echo "::error::Invalid release version: $VERSION"
           exit 1
         fi
 
