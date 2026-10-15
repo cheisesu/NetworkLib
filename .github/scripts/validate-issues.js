@@ -78,19 +78,16 @@ module.exports = async ({ github, context, core }) => {
         }
 
         const labels = issue.labels.map(label => label.name);
-
         if (labels.length === 0) {
             errors.push(`${prefix}: missing labels`);
         }
 
         const categories = labels.filter(label => changelogLabels.has(label));
-
         if (categories.length > 1) {
             errors.push(`${prefix}: multiple changelog labels: ${categories.join(", ")}`);
         }
 
         const pullRequests = await getLinkedPullRequests(github, issue);
-
         if (pullRequests.length === 0) {
             errors.push(`${prefix}: no linked pull requests`);
         } else {
