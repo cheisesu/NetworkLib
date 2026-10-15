@@ -63,9 +63,10 @@ module.exports = async ({ github, context, core }) => {
     });
 
     const errors = [];
+    const skip_issue_states = ["not_planned", "duplicate"];
 
     for (const issue of issues) {
-        if (issue.pull_request || issue.state_reason === "not_planned") {
+        if (issue.pull_request || skip_issue_states.includes(issue.state_reason)) {
             continue;
         }
 
