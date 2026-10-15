@@ -1,6 +1,6 @@
 # NetworkLib
 
-![Build][BuildStatusBadge]
+[![Build][BuildBadge]][BuildLink]
 [![Documentation][DocumentationBadge]][DocumentationLink]
 [![Swift6 compatible][Swift6Badge]][SwiftLink]
 ![Supported platforms][PlatformsBadge]
@@ -150,7 +150,8 @@ Full API reference and guided tutorials are maintained in the package's [DocC ca
 
 NetworkLib is distributed under the [MIT License](LICENSE).
 
-[BuildStatusBadge]: https://img.shields.io/github/actions/workflow/status/cheisesu/NetworkLib/pr-test.yml?branch=master&style=flat-square&label=Build&labelColor=gray
+[BuildBadge]: https://img.shields.io/github/actions/workflow/status/cheisesu/NetworkLib/pr-test.yml?style=flat-square&label=Build&labelColor=gray
+[BuildLink]: https://github.com/cheisesu/NetworkLib/actions/workflows/pr-test.yml
 [SwiftLink]: https://developer.apple.com/swift/
 [Swift6Badge]: https://img.shields.io/badge/Swift-6-F05138?style=flat-square&label=Swift&labelColor=gray&color=F05138
 [GitHubReleaseBadge]: https://img.shields.io/github/v/release/cheisesu/NetworkLib?style=flat-square&labelColor=gray&color=blue&label=Release
