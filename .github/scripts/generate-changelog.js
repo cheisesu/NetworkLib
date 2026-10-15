@@ -28,7 +28,7 @@ module.exports = async ({ github, context }) => {
     );
 
     for (const issue of issues) {
-        if (issue.state_reason !== "completed") {
+        if (issue.pull_request || issue.state_reason !== "completed") {
             continue;
         }
 
@@ -60,5 +60,4 @@ module.exports = async ({ github, context }) => {
     writeFileSync(filename, totalChanges);
 
     console.log(`Generated ${filename}`);
-    console.log(`CHANGELOG: ${totalChanges}`);
 };

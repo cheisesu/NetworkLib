@@ -2,10 +2,9 @@ name: Release
 
 on:
   pull_request:
-    types: [closed, opened, reopened, synchronize]
+    types: [closed]
     branches:
       - master
-      - develop
 
 permissions:
   contents: read
@@ -15,9 +14,9 @@ permissions:
 jobs:
   changelog:
     name: Generate Changelog
-    # if: >-
-    #   github.event.pull_request.merged == true &&
-    #   github.event.pull_request.head.ref == 'develop'
+    if: >-
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.head.ref == 'develop'
     runs-on: ubuntu-latest
 
     steps:
@@ -27,8 +26,6 @@ jobs:
       - name: Resolve version
         id: version
         uses: ./.github/actions/resolve-version
-        with:
-          override-version: "0.0.1"
 
       - name: Generate changelog
         uses: actions/github-script@v7
