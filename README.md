@@ -1,6 +1,7 @@
 # NetworkLib
 
 ![Build][BuildStatusBadge]
+[![DocC](https://img.shields.io/github/check-runs/cheisesu/NetworkLib/master?nameFilter=Build%20Documentation&label=DocC)](https://github.com/cheisesu/NetworkLib/actions/workflows/docc.yml)
 [![Documentation][DocumentationBadge]][DocumentationLink]
 [![Swift6 compatible][Swift6Badge]][SwiftLink]
 ![Supported platforms][PlatformsBadge]
