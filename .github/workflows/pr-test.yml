@@ -37,3 +37,87 @@ jobs:
         run: |
           ls ${{ github.workspace }}
       - run: echo "🍏 This job's status is ${{ job.status }}."
+
+  testing:
+    name: Test ${{ matrix.platform }} ${{ matrix.version }}
+    runs-on: ${{ matrix.runner }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: iOS
+            version: "18.5"
+            runner: macos-15
+            xcode: "16.4"
+            destination: "platform=iOS Simulator,name=iPhone 16,OS=18.5"
+
+          - platform: iOS
+            version: "26.2"
+            runner: macos-26
+            xcode: "26.2"
+            destination: "platform=iOS Simulator,name=iPhone 17,OS=26.2"
+
+          - platform: tvOS
+            version: "18.5"
+            runner: macos-15
+            xcode: "16.4"
+            destination: "platform=tvOS Simulator,name=Apple TV 4K (3rd generation),OS=18.5"
+
+          - platform: tvOS
+            version: "26.2"
+            runner: macos-26
+            xcode: "26.2"
+            destination: "platform=tvOS Simulator,name=Apple TV 4K (3rd generation),OS=26.2"
+
+          - platform: macOS
+            version: "15"
+            runner: macos-15
+            xcode: "16.4"
+            destination: "platform=macOS"
+
+          - platform: macOS
+            version: "26"
+            runner: macos-26
+            xcode: "26.2"
+            destination: "platform=macOS"
+
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_${{ matrix.xcode }}.app/Contents/Developer
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install SwiftLint
+        run: |
+          brew install swiftlint
+          echo "SWIFTLINT_PATH=$(which swiftlint)" >> "$GITHUB_ENV"
+
+      - name: Check Xcode and simulators
+        run: |
+          xcodebuild -version
+          xcrun simctl list devices available
+
+      - name: Run tests
+        run: |
+          set -o pipefail
+
+          xcodebuild test \
+            -scheme NetworkLib \
+            -configuration Debug \
+            -destination "${{ matrix.destination }}" \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            -resultBundlePath "$RUNNER_TEMP/TestResults.xcresult" \
+            -enableCodeCoverage YES \
+            -parallel-testing-enabled NO \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.platform }}-${{ matrix.version }}
+          path: ${{ runner.temp }}/TestResults.xcresult
+          retention-days: 7
+          if-no-files-found: warn
