@@ -1,0 +1,30 @@
+{
+  "/Users/dmitrii.shelonin/Development/Own/NetworkLib/Sources/NetworkLib/Core/RawSocket.swift" : {
+    "const-values" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/x86_64/RawSocket.swiftconstvalues",
+    "dependencies" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/x86_64/RawSocket.d",
+    "diagnostics" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/x86_64/RawSocket.dia",
+    "object" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/x86_64/RawSocket.o",
+    "swift-dependencies" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/x86_64/RawSocket.swiftdeps"
+  },
+  "/Users/dmitrii.shelonin/Development/Own/NetworkLib/Sources/NetworkLib/Core/RawSocketReceiveMessage.swift" : {
+    "const-values" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/x86_64/RawSocketReceiveMessage.swiftconstvalues",
+    "dependencies" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/x86_64/RawSocketReceiveMessage.d",
+    "diagnostics" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/x86_64/RawSocketReceiveMessage.dia",
+    "object" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/x86_64/RawSocketReceiveMessage.o",
+    "swift-dependencies" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/x86_64/RawSocketReceiveMessage.swiftdeps"
+  },
+  "/Users/dmitrii.shelonin/Development/Own/NetworkLib/Sources/NetworkLib/Core/RawSocketSendMessage.swift" : {
+    "const-values" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/x86_64/RawSocketSendMessage.swiftconstvalues",
+    "dependencies" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/x86_64/RawSocketSendMessage.d",
+    "diagnostics" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/x86_64/RawSocketSendMessage.dia",
+    "object" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/x86_64/RawSocketSendMessage.o",
+    "swift-dependencies" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/x86_64/RawSocketSendMessage.swiftdeps"
+  },
+  "/Users/dmitrii.shelonin/Development/Own/NetworkLib/Sources/NetworkLib/Core/Transport.swift" : {
+    "const-values" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/x86_64/Transport.swiftconstvalues",
+    "dependencies" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/x86_64/Transport.d",
+    "diagnostics" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/x86_64/Transport.dia",
+    "object" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/x86_64/Transport.o",
+    "swift-dependencies" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/x86_64/Transport.swiftdeps"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "/Users/dmitrii.shelonin/Development/Own/NetworkLib/Sources/NetworkLib/Http/Core/Parser/HTTPResponseParser.swift" : {
+    "const-values" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/x86_64/HTTPResponseParser.swiftconstvalues",
+    "dependencies" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/x86_64/HTTPResponseParser.d",
+    "diagnostics" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/x86_64/HTTPResponseParser.dia",
+    "object" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/x86_64/HTTPResponseParser.o",
+    "swift-dependencies" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/x86_64/HTTPResponseParser.swiftdeps"
+  },
+  "/Users/dmitrii.shelonin/Development/Own/NetworkLib/Sources/NetworkLib/Http/Core/Parser/HTTPVersion.swift" : {
+    "const-values" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/x86_64/HTTPVersion.swiftconstvalues",
+    "dependencies" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/x86_64/HTTPVersion.d",
+    "diagnostics" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/x86_64/HTTPVersion.dia",
+    "object" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/x86_64/HTTPVersion.o",
+    "swift-dependencies" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/x86_64/HTTPVersion.swiftdeps"
+  },
+  "/Users/dmitrii.shelonin/Development/Own/NetworkLib/Sources/NetworkLib/Http/Core/Parser/RawHTTPResponseParser.swift" : {
+    "const-values" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/x86_64/RawHTTPResponseParser.swiftconstvalues",
+    "dependencies" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/x86_64/RawHTTPResponseParser.d",
+    "diagnostics" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/x86_64/RawHTTPResponseParser.dia",
+    "object" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/x86_64/RawHTTPResponseParser.o",
+    "swift-dependencies" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/x86_64/RawHTTPResponseParser.swiftdeps"
+  }
+}

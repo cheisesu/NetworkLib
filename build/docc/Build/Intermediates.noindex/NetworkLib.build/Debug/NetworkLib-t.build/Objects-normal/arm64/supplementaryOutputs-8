@@ -1,0 +1,23 @@
+{
+  "/Users/dmitrii.shelonin/Development/Own/NetworkLib/Sources/NetworkLib/InternalUtils/NWConnection+UnderlyingConnection.swift" : {
+    "const-values" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/arm64/NWConnection+UnderlyingConnection.swiftconstvalues",
+    "dependencies" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/arm64/NWConnection+UnderlyingConnection.d",
+    "diagnostics" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/arm64/NWConnection+UnderlyingConnection.dia",
+    "object" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/arm64/NWConnection+UnderlyingConnection.o",
+    "swift-dependencies" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/arm64/NWConnection+UnderlyingConnection.swiftdeps"
+  },
+  "/Users/dmitrii.shelonin/Development/Own/NetworkLib/Sources/NetworkLib/InternalUtils/ReferencesCounter.swift" : {
+    "const-values" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/arm64/ReferencesCounter.swiftconstvalues",
+    "dependencies" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/arm64/ReferencesCounter.d",
+    "diagnostics" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/arm64/ReferencesCounter.dia",
+    "object" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/arm64/ReferencesCounter.o",
+    "swift-dependencies" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/arm64/ReferencesCounter.swiftdeps"
+  },
+  "/Users/dmitrii.shelonin/Development/Own/NetworkLib/Sources/NetworkLib/InternalUtils/TimeoutRecursiveEvent.swift" : {
+    "const-values" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/arm64/TimeoutRecursiveEvent.swiftconstvalues",
+    "dependencies" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/arm64/TimeoutRecursiveEvent.d",
+    "diagnostics" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/arm64/TimeoutRecursiveEvent.dia",
+    "object" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/arm64/TimeoutRecursiveEvent.o",
+    "swift-dependencies" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/arm64/TimeoutRecursiveEvent.swiftdeps"
+  }
+}

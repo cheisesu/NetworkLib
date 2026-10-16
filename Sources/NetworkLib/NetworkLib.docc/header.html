@@ -1,0 +1,51 @@
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+  .networklib-brand {
+    background-color: var(--color-nav-solid-background, #080a0e);
+    background-image:
+      linear-gradient(to right, rgba(127, 145, 170, .08) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(127, 145, 170, .08) 1px, transparent 1px);
+    background-size: 40px 40px;
+    border-bottom: 1px solid var(--color-grid, #262f40);
+    color: var(--color-text, #e5e7eb);
+    font-family: "Space Grotesk", -apple-system, sans-serif;
+  }
+  .networklib-brand-inner {
+    max-width: 1440px;
+    min-height: 56px;
+    margin: 0 auto;
+    padding: 12px 24px;
+    box-sizing: border-box;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .networklib-brand a.networklib-wordmark {
+    color: inherit;
+    font: 700 16px "Space Grotesk", -apple-system, sans-serif;
+    letter-spacing: .04em;
+    border: 0;
+    padding: 0;
+  }
+  .networklib-mark { color: var(--color-documentation-intro-accent, #ff4a3f); margin-right: 10px; }
+  .networklib-brand a {
+    color: var(--color-link, #00f0ff);
+    font: 500 12px "Fira Code", ui-monospace, monospace;
+    text-decoration: none;
+    border: 1px solid var(--color-grid, #262f40);
+    border-radius: 4px;
+    padding: 8px 12px;
+  }
+  .networklib-brand a:hover { text-decoration: none; border-color: currentColor; }
+  .networklib-brand a:focus-visible { outline: 2px solid currentColor; outline-offset: 4px; }
+  @media print { .networklib-brand { display: none; } }
+</style>
+<div class="networklib-brand">
+  <div class="networklib-brand-inner">
+    <a class="networklib-wordmark" href="https://networklib.dmitrii-shelonin.com/" aria-label="NetworkLib home"><span class="networklib-mark" aria-hidden="true">//</span>NETWORK_LIB</a>
+    <a href="https://github.com/cheisesu/NetworkLib" aria-label="NetworkLib source on GitHub">GITHUB ↗</a>
+  </div>
+</div>
