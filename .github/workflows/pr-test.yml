@@ -126,3 +126,17 @@ jobs:
           path: ${{ runner.temp }}/TestResults.xcresult
           retention-days: 7
           if-no-files-found: warn
+  ci-check:
+    name: Check build and test results
+    runs-on: ubuntu-latest
+    needs: [build, testing]
+    if: always()
+
+    steps:
+      - name: Check results
+        env:
+          BUILD_RESULT: ${{ needs.build.result }}
+          TEST_RESULT: ${{ needs.testing.result }}
+        run: |
+          [[ "$BUILD_RESULT" == "success" ]] &&
+          [[ "$TEST_RESULT" == "success" ]]
