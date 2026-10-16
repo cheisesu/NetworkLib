@@ -1,0 +1,23 @@
+{
+  "/Users/dmitrii.shelonin/Development/Own/NetworkLib/Sources/NetworkLib/Utils/String+IPAddress.swift" : {
+    "const-values" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/x86_64/String+IPAddress.swiftconstvalues",
+    "dependencies" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/x86_64/String+IPAddress.d",
+    "diagnostics" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/x86_64/String+IPAddress.dia",
+    "object" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/x86_64/String+IPAddress.o",
+    "swift-dependencies" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/x86_64/String+IPAddress.swiftdeps"
+  },
+  "/Users/dmitrii.shelonin/Development/Own/NetworkLib/Sources/NetworkLib/Utils/URL+Properties.swift" : {
+    "const-values" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/x86_64/URL+Properties.swiftconstvalues",
+    "dependencies" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/x86_64/URL+Properties.d",
+    "diagnostics" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/x86_64/URL+Properties.dia",
+    "object" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/x86_64/URL+Properties.o",
+    "swift-dependencies" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/x86_64/URL+Properties.swiftdeps"
+  },
+  "/Users/dmitrii.shelonin/Development/Own/NetworkLib/Sources/NetworkLib/Utils/printDebug.swift" : {
+    "const-values" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/x86_64/printDebug.swiftconstvalues",
+    "dependencies" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/x86_64/printDebug.d",
+    "diagnostics" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/x86_64/printDebug.dia",
+    "object" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/x86_64/printDebug.o",
+    "swift-dependencies" : "/Users/dmitrii.shelonin/Development/Own/NetworkLib/build/docc/Build/Intermediates.noindex/NetworkLib.build/Debug/NetworkLib-t.build/Objects-normal/x86_64/printDebug.swiftdeps"
+  }
+}

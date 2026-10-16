@@ -146,6 +146,27 @@ Some examples require a local server, Internet access, or proxy credentials. See
 
 Full API reference and guided tutorials are maintained in the package's [DocC catalog](Sources/NetworkLib/NetworkLib.docc).
 
+### Build the themed documentation locally
+
+The catalog's `theme-settings.json` supplies matching dark and light colors and typography. The custom `header.html` adds the NETWORK_LIB wordmark, grid background, and font loading. Enable custom templates when building to include that header:
+
+```sh
+xcodebuild docbuild \
+  -scheme NetworkLib \
+  -configuration Debug \
+  -destination 'generic/platform=macOS' \
+  -derivedDataPath ./build/docc \
+  OTHER_DOCC_FLAGS="--experimental-enable-custom-templates"
+```
+
+The archive is written to `build/docc/Build/Products/Debug/NetworkLib.doccarchive`. Serve it locally to inspect the website:
+
+```sh
+python3 -m http.server 8080 --directory build/docc/Build/Products/Debug/NetworkLib.doccarchive
+```
+
+Open `http://localhost:8080/documentation/networklib/`. DocC's appearance switch selects the dark or light palette. Fonts load from Google Fonts; offline viewing uses system sans-serif and monospace fallbacks. Custom templates affect the website and may render differently in Xcode's documentation viewer. Keep edits in the source catalog: rebuilding replaces the generated archive.
+
 ## License
 
 NetworkLib is distributed under the [MIT License](LICENSE).
