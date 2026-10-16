@@ -37,7 +37,7 @@ struct RawSocketAsyncReceiveMessageTests {
             try await socket.connect()
             _ = try await socket.receiveNextMessage(of: _ReceiveMessage.self)
             Issue.record("Unexpected entrance")
-        } catch let error where error == expectedError {
+        } catch where (error as any Error) as? NWError == expectedError {
         }
     }
 

@@ -1,4 +1,4 @@
-name: Test package on pull request
+name: Build & Test Package
 on:
   pull_request:
     types: [opened, reopened, synchronize]
@@ -6,8 +6,8 @@ on:
       - 'develop'
       - 'master'
 jobs:
-  pr-test:
-    name: Test package with Swift ${{ matrix.swift }} on ${{ matrix.os }}
+  build:
+    name: Build package with Swift ${{ matrix.swift }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -103,6 +103,8 @@ jobs:
         run: |
           set -o pipefail
 
+          # Test timing APIs require these minimums regardless of the simulator OS.
+          # Keep Package.swift minimums unchanged for library consumers.
           xcodebuild test \
             -scheme NetworkLib \
             -configuration Debug \
@@ -111,6 +113,9 @@ jobs:
             -resultBundlePath "$RUNNER_TEMP/TestResults.xcresult" \
             -enableCodeCoverage YES \
             -parallel-testing-enabled NO \
+            IPHONEOS_DEPLOYMENT_TARGET=16.0 \
+            TVOS_DEPLOYMENT_TARGET=16.0 \
+            MACOSX_DEPLOYMENT_TARGET=13.0 \
             CODE_SIGNING_ALLOWED=NO
 
       - name: Upload test results
