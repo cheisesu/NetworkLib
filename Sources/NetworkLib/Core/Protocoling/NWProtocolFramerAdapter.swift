@@ -61,7 +61,7 @@ struct NWProtocolFramerAdapter: ProtocolFramer {
         framer.markReady()
     }
 
-    @available(macOS 12.3, *)
+    @available(macOS 12.3, iOS 15.4, tvOS 15.4, *)
     subscript(key: String) -> Any? {
         get { framer.options[key] }
         _modify { yield &framer.options[key] }
