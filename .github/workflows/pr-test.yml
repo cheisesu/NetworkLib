@@ -116,7 +116,7 @@ jobs:
             IPHONEOS_DEPLOYMENT_TARGET=16.0 \
             TVOS_DEPLOYMENT_TARGET=16.0 \
             MACOSX_DEPLOYMENT_TARGET=13.0 \
-            CODE_SIGNING_ALLOWED=NO
+            CODE_SIGN_IDENTITY=-
 
       - name: Upload test results
         if: always()
