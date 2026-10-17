@@ -44,41 +44,41 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # - platform: iOS
-          #   version: "18.5"
-          #   runner: macos-15
-          #   xcode: "16.4"
-          #   destination: "platform=iOS Simulator,name=iPhone 16,OS=18.5"
-
-          - platform: iOS
+          - platform: iOS Simulator
             version: "26"
             runner: macos-26
             xcode: "26.6"
-            destination: "platform=iOS Simulator,name=iPhone 17,OS=26.6"
+            device: "iPhone 17"
+
+          - platform: tvOS Simulator
+            version: "26"
+            runner: macos-26
+            xcode: "26.6"
+            device: "Apple TV 4K (3rd generation)"
+
+          - platform: macOS
+            version: "26"
+            runner: macos-26
+            xcode: "26.6"
+            device: "macOS"
+          
+          # - platform: iOS
+          #   version: "18"
+          #   runner: macos-15
+          #   xcode: "16.4"
+          #   device: "iPhone 16"
 
           # - platform: tvOS
-          #   version: "18.5"
+          #   version: "18.7"
           #   runner: macos-15
           #   xcode: "16.4"
-          #   destination: "platform=tvOS Simulator,name=Apple TV 4K (3rd generation),OS=18.5"
-
-          - platform: tvOS
-            version: "26"
-            runner: macos-26
-            xcode: "26.6"
-            destination: "platform=tvOS Simulator,name=Apple TV 4K (3rd generation),OS=26.6"
+          #   destination: "platform=tvOS Simulator,name=Apple TV 4K (3rd generation),OS=18.7"
 
           # - platform: macOS
           #   version: "15"
           #   runner: macos-15
           #   xcode: "16.4"
           #   destination: "platform=macOS"
-
-          - platform: macOS
-            version: "26"
-            runner: macos-26
-            xcode: "26.6"
-            destination: "platform=macOS"
 
     env:
       DEVELOPER_DIR: /Applications/Xcode_${{ matrix.xcode }}.app/Contents/Developer
@@ -95,33 +95,85 @@ jobs:
       - name: Check Xcode and simulators
         run: |
           xcodebuild -version
-          xcrun simctl list devices available
-
-      - name: Run tests
+      
+      - name: Resolve simulator
+        id: simulator
+        env:
+          PLATFORM: ${{ matrix.platform }}
+          VERSION: ${{ matrix.version }}
+          DEVICE: ${{ matrix.device }}
         run: |
-          set -o pipefail
+          python3 <<'PY'
+          import json
+          import os
+          import subprocess
 
-          xcodebuild test \
-            -scheme NetworkLib \
-            -configuration Debug \
-            -destination "${{ matrix.destination }}" \
-            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
-            -resultBundlePath "$RUNNER_TEMP/TestResults.xcresult" \
-            -enableCodeCoverage YES \
-            -parallel-testing-enabled YES \
-            IPHONEOS_DEPLOYMENT_TARGET=16.0 \
-            TVOS_DEPLOYMENT_TARGET=16.0 \
-            MACOSX_DEPLOYMENT_TARGET=13.0 \
-            CODE_SIGN_IDENTITY=-
+          platform = os.environ["PLATFORM"]
+          runtime_platform = platform.removesuffix(" Simulator")
+          major = int(os.environ["VERSION"])
+          device_name = os.environ["DEVICE"]
 
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-${{ matrix.platform }}-${{ matrix.version }}
-          path: ${{ runner.temp }}/TestResults.xcresult
-          retention-days: 7
-          if-no-files-found: warn
+          if platform == "macOS":
+              destination = "platform=macOS"
+          else:
+              output = subprocess.check_output(
+                  ["xcrun", "simctl", "list", "devices", "available", "-j"],
+                  text=True
+              )
+              devices = json.loads(output)["devices"]
+
+              prefix = f"com.apple.CoreSimulator.SimRuntime.{runtime_platform}-"
+              matches = []
+
+              for runtime, simulators in devices.items():
+                  if not runtime.startswith(prefix):
+                      continue
+
+                  version = tuple(map(int, runtime[len(prefix):].split("-")))
+
+                  if version[0] != major:
+                      continue
+
+                  for simulator in simulators:
+                      if simulator["name"] == device_name and simulator.get("isAvailable"):
+                          matches.append((version, simulator["udid"]))
+
+              if not matches:
+                  raise SystemExit(f"No available {platform} {major}.x simulator: {device_name}")
+
+              version, udid = max(matches)
+              destination = f"platform={platform},id={udid}"
+              print(f"Selected {platform} {'.'.join(map(str, version))}: {device_name}")
+
+          with open(os.environ["GITHUB_OUTPUT"], "a") as file:
+              file.write(f"destination={destination}\n")
+          PY
+
+      # - name: Run tests
+      #   run: |
+      #     set -o pipefail
+
+      #     xcodebuild test \
+      #       -scheme NetworkLib \
+      #       -configuration Debug \
+      #       -destination "${{ matrix.destination }}" \
+      #       -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+      #       -resultBundlePath "$RUNNER_TEMP/TestResults.xcresult" \
+      #       -enableCodeCoverage YES \
+      #       -parallel-testing-enabled YES \
+      #       IPHONEOS_DEPLOYMENT_TARGET=16.0 \
+      #       TVOS_DEPLOYMENT_TARGET=16.0 \
+      #       MACOSX_DEPLOYMENT_TARGET=13.0 \
+      #       CODE_SIGN_IDENTITY=-
+
+      # - name: Upload test results
+      #   if: always()
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: coverage-${{ matrix.platform }}-${{ matrix.version }}
+      #     path: ${{ runner.temp }}/TestResults.xcresult
+      #     retention-days: 7
+      #     if-no-files-found: warn
   ci-check:
     name: Check build and test results
     runs-on: ubuntu-latest
