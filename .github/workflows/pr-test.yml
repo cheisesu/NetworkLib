@@ -31,8 +31,6 @@ jobs:
         run: |
           set -o pipefail
           swift build --very-verbose 2>&1
-      # - name: Test
-      #   run: swift test --enable-code-coverage --skip-build --parallel
       - name: List files in the repository
         run: |
           ls ${{ github.workspace }}
@@ -53,10 +51,10 @@ jobs:
             destination: "platform=iOS Simulator,name=iPhone 16,OS=18.5"
 
           - platform: iOS
-            version: "26.2"
+            version: "26"
             runner: macos-26
-            xcode: "26.2"
-            destination: "platform=iOS Simulator,name=iPhone 17,OS=26.2"
+            xcode: "26.6"
+            destination: "platform=iOS Simulator,name=iPhone 17,OS=26.6"
 
           - platform: tvOS
             version: "18.5"
@@ -65,10 +63,10 @@ jobs:
             destination: "platform=tvOS Simulator,name=Apple TV 4K (3rd generation),OS=18.5"
 
           - platform: tvOS
-            version: "26.2"
+            version: "26"
             runner: macos-26
-            xcode: "26.2"
-            destination: "platform=tvOS Simulator,name=Apple TV 4K (3rd generation),OS=26.2"
+            xcode: "26.6"
+            destination: "platform=tvOS Simulator,name=Apple TV 4K (3rd generation),OS=26.6"
 
           - platform: macOS
             version: "15"
@@ -79,7 +77,7 @@ jobs:
           - platform: macOS
             version: "26"
             runner: macos-26
-            xcode: "26.2"
+            xcode: "26.6"
             destination: "platform=macOS"
 
     env:
