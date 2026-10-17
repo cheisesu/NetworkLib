@@ -96,8 +96,8 @@ jobs:
         run: |
           xcodebuild -version
       
-      - name: Resolve simulator
-        id: simulator
+      - name: Resolve platform destination
+        id: platform_destination
         env:
           PLATFORM: ${{ matrix.platform }}
           VERSION: ${{ matrix.version }}
@@ -149,22 +149,22 @@ jobs:
               file.write(f"destination={destination}\n")
           PY
 
-      # - name: Run tests
-      #   run: |
-      #     set -o pipefail
+      - name: Run tests
+        run: |
+          set -o pipefail
 
-      #     xcodebuild test \
-      #       -scheme NetworkLib \
-      #       -configuration Debug \
-      #       -destination "${{ matrix.destination }}" \
-      #       -derivedDataPath "$RUNNER_TEMP/DerivedData" \
-      #       -resultBundlePath "$RUNNER_TEMP/TestResults.xcresult" \
-      #       -enableCodeCoverage YES \
-      #       -parallel-testing-enabled YES \
-      #       IPHONEOS_DEPLOYMENT_TARGET=16.0 \
-      #       TVOS_DEPLOYMENT_TARGET=16.0 \
-      #       MACOSX_DEPLOYMENT_TARGET=13.0 \
-      #       CODE_SIGN_IDENTITY=-
+          xcodebuild test \
+            -scheme NetworkLib \
+            -configuration Debug \
+            -destination "${{ steps.platform_destination.outputs.destination }}" \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            -resultBundlePath "$RUNNER_TEMP/TestResults.xcresult" \
+            -enableCodeCoverage YES \
+            -parallel-testing-enabled YES \
+            IPHONEOS_DEPLOYMENT_TARGET=16.0 \
+            TVOS_DEPLOYMENT_TARGET=16.0 \
+            MACOSX_DEPLOYMENT_TARGET=13.0 \
+            CODE_SIGN_IDENTITY=-
 
       # - name: Upload test results
       #   if: always()
