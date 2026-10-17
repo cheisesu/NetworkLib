@@ -44,41 +44,41 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - platform: iOS Simulator
-            version: "26"
-            runner: macos-26
-            xcode: "26.6"
-            device: "iPhone 17"
+          # - platform: iOS Simulator
+          #   version: "26"
+          #   runner: macos-26
+          #   xcode: "26.6"
+          #   device: "iPhone 17"
 
-          - platform: tvOS Simulator
-            version: "26"
-            runner: macos-26
-            xcode: "26.6"
-            device: "Apple TV 4K (3rd generation)"
+          # - platform: tvOS Simulator
+          #   version: "26"
+          #   runner: macos-26
+          #   xcode: "26.6"
+          #   device: "Apple TV 4K (3rd generation)"
 
-          - platform: macOS
-            version: "26"
-            runner: macos-26
-            xcode: "26.6"
-            device: "macOS"
+          # - platform: macOS
+          #   version: "26"
+          #   runner: macos-26
+          #   xcode: "26.6"
+          #   device: "macOS"
           
-          # - platform: iOS
-          #   version: "18"
-          #   runner: macos-15
-          #   xcode: "16.4"
-          #   device: "iPhone 16"
+          - platform: iOS Simulator
+            version: "18"
+            runner: macos-15
+            xcode: "16.4"
+            device: "iPhone 16"
 
-          # - platform: tvOS
+          # - platform: tvOS Simulator
           #   version: "18.7"
           #   runner: macos-15
           #   xcode: "16.4"
-          #   destination: "platform=tvOS Simulator,name=Apple TV 4K (3rd generation),OS=18.7"
+          #   device: "Apple TV 4K (3rd generation)"
 
           # - platform: macOS
           #   version: "15"
           #   runner: macos-15
           #   xcode: "16.4"
-          #   destination: "platform=macOS"
+          #   device: "macOS"
 
     env:
       DEVELOPER_DIR: /Applications/Xcode_${{ matrix.xcode }}.app/Contents/Developer
