@@ -222,7 +222,7 @@ struct RawSocketConnectTests {
                 }
             }
             Issue.record("Unexpected entrance")
-        } catch let error where error == expectedError {
+        } catch where (error as any Error) as? NWError == expectedError {
         }
     }
 
@@ -246,8 +246,8 @@ struct RawSocketConnectTests {
 
     // MARK: CALLBACK CALLS
 
-#if os(macOS)
-    @available(swift, introduced: 6.2)
+// Exit-test macros are provided by Swift Testing in Swift 6.2 and later.
+#if os(macOS) && compiler(>=6.2)
     @available(iOS, unavailable)
     @available(tvOS, unavailable)
     @Test
