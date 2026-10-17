@@ -112,7 +112,7 @@ jobs:
             -derivedDataPath "$RUNNER_TEMP/DerivedData" \
             -resultBundlePath "$RUNNER_TEMP/TestResults.xcresult" \
             -enableCodeCoverage YES \
-            -parallel-testing-enabled NO \
+            -parallel-testing-enabled YES \
             IPHONEOS_DEPLOYMENT_TARGET=16.0 \
             TVOS_DEPLOYMENT_TARGET=16.0 \
             MACOSX_DEPLOYMENT_TARGET=13.0 \
