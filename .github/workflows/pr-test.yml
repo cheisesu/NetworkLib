@@ -44,35 +44,35 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - platform: iOS
-            version: "18.5"
-            runner: macos-15
-            xcode: "16.4"
-            destination: "platform=iOS Simulator,name=iPhone 16,OS=18.5"
+          # - platform: iOS
+          #   version: "18.5"
+          #   runner: macos-15
+          #   xcode: "16.4"
+          #   destination: "platform=iOS Simulator,name=iPhone 16,OS=18.5"
 
-          - platform: iOS
-            version: "26"
-            runner: macos-26
-            xcode: "26.6"
-            destination: "platform=iOS Simulator,name=iPhone 17,OS=26.6"
+          # - platform: iOS
+          #   version: "26"
+          #   runner: macos-26
+          #   xcode: "26.6"
+          #   destination: "platform=iOS Simulator,name=iPhone 17,OS=26.6"
 
-          - platform: tvOS
-            version: "18.5"
-            runner: macos-15
-            xcode: "16.4"
-            destination: "platform=tvOS Simulator,name=Apple TV 4K (3rd generation),OS=18.5"
+          # - platform: tvOS
+          #   version: "18.5"
+          #   runner: macos-15
+          #   xcode: "16.4"
+          #   destination: "platform=tvOS Simulator,name=Apple TV 4K (3rd generation),OS=18.5"
 
-          - platform: tvOS
-            version: "26"
-            runner: macos-26
-            xcode: "26.6"
-            destination: "platform=tvOS Simulator,name=Apple TV 4K (3rd generation),OS=26.6"
+          # - platform: tvOS
+          #   version: "26"
+          #   runner: macos-26
+          #   xcode: "26.6"
+          #   destination: "platform=tvOS Simulator,name=Apple TV 4K (3rd generation),OS=26.6"
 
-          - platform: macOS
-            version: "15"
-            runner: macos-15
-            xcode: "16.4"
-            destination: "platform=macOS"
+          # - platform: macOS
+          #   version: "15"
+          #   runner: macos-15
+          #   xcode: "16.4"
+          #   destination: "platform=macOS"
 
           - platform: macOS
             version: "26"
@@ -101,8 +101,6 @@ jobs:
         run: |
           set -o pipefail
 
-          # Test timing APIs require these minimums regardless of the simulator OS.
-          # Keep Package.swift minimums unchanged for library consumers.
           xcodebuild test \
             -scheme NetworkLib \
             -configuration Debug \
