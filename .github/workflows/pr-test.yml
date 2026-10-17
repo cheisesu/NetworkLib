@@ -50,11 +50,11 @@ jobs:
           #   xcode: "16.4"
           #   destination: "platform=iOS Simulator,name=iPhone 16,OS=18.5"
 
-          # - platform: iOS
-          #   version: "26"
-          #   runner: macos-26
-          #   xcode: "26.6"
-          #   destination: "platform=iOS Simulator,name=iPhone 17,OS=26.6"
+          - platform: iOS
+            version: "26"
+            runner: macos-26
+            xcode: "26.6"
+            destination: "platform=iOS Simulator,name=iPhone 17,OS=26.6"
 
           # - platform: tvOS
           #   version: "18.5"
@@ -62,11 +62,11 @@ jobs:
           #   xcode: "16.4"
           #   destination: "platform=tvOS Simulator,name=Apple TV 4K (3rd generation),OS=18.5"
 
-          # - platform: tvOS
-          #   version: "26"
-          #   runner: macos-26
-          #   xcode: "26.6"
-          #   destination: "platform=tvOS Simulator,name=Apple TV 4K (3rd generation),OS=26.6"
+          - platform: tvOS
+            version: "26"
+            runner: macos-26
+            xcode: "26.6"
+            destination: "platform=tvOS Simulator,name=Apple TV 4K (3rd generation),OS=26.6"
 
           # - platform: macOS
           #   version: "15"
