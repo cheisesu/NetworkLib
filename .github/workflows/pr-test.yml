@@ -94,9 +94,6 @@ jobs:
 
       - name: Check Xcode
         run: |
-          for xcode in /Applications/Xcode*.app; do
-            echo "==>> $xcode"
-          done
           xcodebuild -version
       
       - name: Resolve platform destination
@@ -163,7 +160,7 @@ jobs:
             -derivedDataPath "$RUNNER_TEMP/DerivedData" \
             -resultBundlePath "$RUNNER_TEMP/TestResults.xcresult" \
             -enableCodeCoverage YES \
-            -parallel-testing-enabled YES \
+            -parallel-testing-enabled ${{ startsWith(matrix.xcode, '16.') && 'NO' || 'YES' }} \
             IPHONEOS_DEPLOYMENT_TARGET=16.0 \
             TVOS_DEPLOYMENT_TARGET=16.0 \
             MACOSX_DEPLOYMENT_TARGET=13.0 \
