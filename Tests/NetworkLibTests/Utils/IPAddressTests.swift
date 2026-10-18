@@ -87,7 +87,7 @@ struct IPAddressTests {
         ("::::", nil),
         ("2001: db8::1", nil),
     ])
-    func asIpV4(_ ip: String, _ expected: IPv6Address?) throws {
+    func asIpV6(_ ip: String, _ expected: IPv6Address?) throws {
         try #require(ip.asIPv6 == expected)
         try #require(ip.isIPv6 == (expected != nil))
     }

@@ -129,10 +129,126 @@ jobs:
           path: ${{ runner.temp }}/TestResults.xcresult
           retention-days: 7
           if-no-files-found: error
+
+  coverage:
+    name: Merge code coverage
+    needs: testing
+    runs-on: macos-latest
+
+    steps:
+      - name: Download test results
+        uses: actions/download-artifact@v4
+        with:
+          pattern: coverage-*
+          path: ${{ runner.temp }}/coverage
+
+      - name: Merge coverage
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          directory="$RUNNER_TEMP/coverage"
+          inputs=()
+          count=0
+
+          for artifact in "$directory"/coverage-*; do
+            [[ -d "$artifact" ]] || continue
+
+            bundle="$artifact.xcresult"
+            mv "$artifact" "$bundle"
+
+            metadata=$(xcrun xcresulttool get object \
+              --legacy --path "$bundle" --format json)
+
+            report_id=$(jq -r \
+              '.actions._values[0].actionResult.coverage.reportRef.id._value // empty' \
+              <<< "$metadata")
+
+            archive_id=$(jq -r \
+              '.actions._values[0].actionResult.coverage.archiveRef.id._value // empty' \
+              <<< "$metadata")
+
+            [[ -n "$report_id" && -n "$archive_id" ]] || {
+              echo "Coverage data missing: $bundle"
+              exit 1
+            }
+
+            report="$bundle.xccovreport"
+            archive="$bundle.xccovarchive"
+
+            xcrun xcresulttool export object \
+              --legacy --path "$bundle" \
+              --id "$report_id" \
+              --type file \
+              --output-path "$report"
+
+            xcrun xcresulttool export object \
+              --legacy --path "$bundle" \
+              --id "$archive_id" \
+              --type directory \
+              --output-path "$archive"
+
+            inputs+=("$report" "$archive")
+            ((count += 1))
+          done
+
+          [[ "$count" -eq 6 ]] || {
+            echo "Expected 6 reports, found $count"
+            exit 1
+          }
+
+          xcrun xccov merge \
+            --outReport "$directory/merged.xccovreport" \
+            --outArchive "$directory/merged.xccovarchive" \
+            "${inputs[@]}"
+
+          xcrun xccov view --json \
+            "$directory/merged.xccovreport" \
+            > "$directory/coverage.json"
+
+          jq -e '.targets[]
+            | select(.name == "NetworkLib")
+            | {name, lineCoverage, coveredLines, executableLines}' \
+            "$directory/coverage.json"
+
+      - name: Generate coverage badge
+        shell: bash
+        run: |
+          jq -e '
+            .targets[]
+            | select(.name == "NetworkLib")
+            | .lineCoverage * 100
+            | round
+            | {
+                schemaVersion: 1,
+                label: "coverage",
+                message: "\(.)%",
+                color: (if . >= 90 then "brightgreen"
+                        elif . >= 80 then "green"
+                        elif . >= 70 then "yellowgreen"
+                        else "red" end)
+              }
+          ' "$RUNNER_TEMP/coverage/coverage.json" \
+            > "$RUNNER_TEMP/coverage/badge.json"
+
+          cat "$RUNNER_TEMP/coverage/badge.json"
+
+      - name: Upload merged coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: merged-coverage
+          path: |
+            ${{ runner.temp }}/coverage/merged.xccovreport
+            ${{ runner.temp }}/coverage/merged.xccovarchive
+            ${{ runner.temp }}/coverage/coverage.json
+            ${{ runner.temp }}/coverage/badge.json
+          retention-days: 7
+          if-no-files-found: error
+
   ci-check:
     name: Check build and test results
     runs-on: ubuntu-latest
-    needs: [build, testing]
+    needs: [build, testing, coverage]
     if: always()
 
     steps:
@@ -140,6 +256,8 @@ jobs:
         env:
           BUILD_RESULT: ${{ needs.build.result }}
           TEST_RESULT: ${{ needs.testing.result }}
+          COVERAGE_RESULT: ${{ needs.coverage.result }}
         run: |
           [[ "$BUILD_RESULT" == "success" ]] &&
-          [[ "$TEST_RESULT" == "success" ]]
+          [[ "$TEST_RESULT" == "success" ]] &&
+          [[ "$COVERAGE_RESULT" == "success" ]]

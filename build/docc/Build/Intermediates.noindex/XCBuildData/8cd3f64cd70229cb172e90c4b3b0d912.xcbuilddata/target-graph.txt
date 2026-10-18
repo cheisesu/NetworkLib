@@ -1,7 +1,0 @@
-Target dependency graph (3 targets)
-Target 'NetworkLib-product' in project 'NetworkLib'
-➜ Explicit dependency on target 'NetworkLib' in project 'NetworkLib'
-➜ Explicit dependency on target 'nl-swiftlint-plugin' in project 'NetworkLib'
-Target 'NetworkLib' in project 'NetworkLib'
-➜ Explicit dependency on target 'nl-swiftlint-plugin' in project 'NetworkLib'
-Target 'nl-swiftlint-plugin' in project 'NetworkLib' (no dependencies)
