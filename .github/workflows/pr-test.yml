@@ -92,8 +92,11 @@ jobs:
           brew install swiftlint
           echo "SWIFTLINT_PATH=$(which swiftlint)" >> "$GITHUB_ENV"
 
-      - name: Check Xcode and simulators
+      - name: Check Xcode
         run: |
+          for xcode in /Applications/Xcode*.app; do
+            echo "==>> $xcode"
+          done
           xcodebuild -version
       
       - name: Resolve platform destination
