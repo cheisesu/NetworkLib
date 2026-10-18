@@ -68,17 +68,17 @@ jobs:
             xcode: "16.4"
             device: "iPhone 16"
 
-          # - platform: tvOS Simulator
-          #   version: "18.7"
-          #   runner: macos-15
-          #   xcode: "16.4"
-          #   device: "Apple TV 4K (3rd generation)"
+          - platform: tvOS Simulator
+            version: "18"
+            runner: macos-15
+            xcode: "16.4"
+            device: "Apple TV 4K (3rd generation)"
 
-          # - platform: macOS
-          #   version: "15"
-          #   runner: macos-15
-          #   xcode: "16.4"
-          #   device: "macOS"
+          - platform: macOS
+            version: "15"
+            runner: macos-15
+            xcode: "16.4"
+            device: "macOS"
 
     env:
       DEVELOPER_DIR: /Applications/Xcode_${{ matrix.xcode }}.app/Contents/Developer
