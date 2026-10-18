@@ -211,6 +211,28 @@ jobs:
             | {name, lineCoverage, coveredLines, executableLines}' \
             "$directory/coverage.json"
 
+      - name: Generate coverage badge
+        shell: bash
+        run: |
+          jq -e '
+            .targets[]
+            | select(.name == "NetworkLib")
+            | .lineCoverage * 100
+            | round
+            | {
+                schemaVersion: 1,
+                label: "coverage",
+                message: "\(.)%",
+                color: (if . >= 90 then "brightgreen"
+                        elif . >= 80 then "green"
+                        elif . >= 70 then "yellowgreen"
+                        else "red" end)
+              }
+          ' "$RUNNER_TEMP/coverage/coverage.json" \
+            > "$RUNNER_TEMP/coverage/badge.json"
+
+          cat "$RUNNER_TEMP/coverage/badge.json"
+
       - name: Upload merged coverage
         uses: actions/upload-artifact@v4
         with:
@@ -219,6 +241,7 @@ jobs:
             ${{ runner.temp }}/coverage/merged.xccovreport
             ${{ runner.temp }}/coverage/merged.xccovarchive
             ${{ runner.temp }}/coverage/coverage.json
+            ${{ runner.temp }}/coverage/badge.json
           retention-days: 7
           if-no-files-found: error
 
