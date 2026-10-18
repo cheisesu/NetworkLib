@@ -76,6 +76,32 @@ jobs:
           github-token: ${{ github.token }}
           run-id: ${{ steps.docc.outputs.run_id }}
           path: ./artifact
+
+      - name: Find coverage build
+        id: coverage
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          RUN_URL=$(gh pr checks "$PR_NUMBER" \
+            --repo "$GITHUB_REPOSITORY" \
+            --json name,bucket,link \
+            --jq '.[] | select(.name == "Merge code coverage" and .bucket == "pass") | .link' \
+            | head -n 1)
+
+          RUN_ID=$(echo "$RUN_URL" | sed -nE 's|.*/actions/runs/([0-9]+).*|\1|p')
+
+          [[ -n "$RUN_ID" ]] || exit 1
+          echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
+
+      - name: Download coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: merged-coverage
+          github-token: ${{ github.token }}
+          run-id: ${{ steps.coverage.outputs.run_id }}
+          path: ./coverage
+
       - name: Configure SSH
         env:
           VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
@@ -89,6 +115,7 @@ jobs:
 
           printf '%s\n' "$VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
+
       - name: Upload documentation archive
         run: |
           scp \
@@ -127,3 +154,27 @@ jobs:
           sudo -n /usr/bin/docker exec networklib-front nginx -t
           sudo -n /usr/bin/docker exec networklib-front nginx -s reload
           REMOTE
+
+      - name: Publish coverage
+        run: |
+          jq -e '
+            .schemaVersion == 1 and
+            .label == "coverage" and
+            (.message | type == "string")
+          ' coverage/badge.json
+
+          FRONT_PATH="$(dirname "$VPS_PATH")/front"
+
+          scp \
+            -i ~/.ssh/id_ed25519 \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            coverage/badge.json \
+            "$VPS_USER@$VPS_HOST:$FRONT_PATH/.coverage-badge.json.tmp"
+
+          ssh \
+            -i ~/.ssh/id_ed25519 \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            "$VPS_USER@$VPS_HOST" \
+            "mv '$FRONT_PATH/.coverage-badge.json.tmp' '$FRONT_PATH/coverage-badge.json'"

@@ -1,6 +1,7 @@
 # NetworkLib
 
 [![Build][BuildBadge]][BuildLink]
+![Coverage][CoverageBadge]
 [![Documentation][DocumentationBadge]][DocumentationLink]
 [![Swift6 compatible][Swift6Badge]][SwiftLink]
 ![Supported platforms][PlatformsBadge]
@@ -181,3 +182,4 @@ NetworkLib is distributed under the [MIT License](LICENSE).
 [DocumentationBadge]: https://img.shields.io/github/actions/workflow/status/cheisesu/NetworkLib/docc.yml?style=flat-square&label=Docs&labelColor=gray
 [DocumentationLink]: https://networklib.dmitrii-shelonin.com/documentation/networklib/
 [SPMBadge]: https://img.shields.io/badge/SPM-Compatible-F05138?style=flat-square&label=SPM&labelColor=gray&color=F05138
+[CoverageBadge]: https://img.shields.io/endpoint?url=https%3A%2F%2Fnetworklib.dmitrii-shelonin.com%2Fcoverage-badge.json&style=flat-square&labelColor=gray
