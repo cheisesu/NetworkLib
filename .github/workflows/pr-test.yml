@@ -98,56 +98,11 @@ jobs:
       
       - name: Resolve platform destination
         id: platform_destination
-        env:
-          PLATFORM: ${{ matrix.platform }}
-          VERSION: ${{ matrix.version }}
-          DEVICE: ${{ matrix.device }}
-        run: |
-          python3 <<'PY'
-          import json
-          import os
-          import subprocess
-
-          platform = os.environ["PLATFORM"]
-          runtime_platform = platform.removesuffix(" Simulator")
-          major = int(os.environ["VERSION"])
-          device_name = os.environ["DEVICE"]
-
-          if platform == "macOS":
-              destination = "platform=macOS"
-          else:
-              output = subprocess.check_output(
-                  ["xcrun", "simctl", "list", "devices", "available", "-j"],
-                  text=True
-              )
-              devices = json.loads(output)["devices"]
-
-              prefix = f"com.apple.CoreSimulator.SimRuntime.{runtime_platform}-"
-              matches = []
-
-              for runtime, simulators in devices.items():
-                  if not runtime.startswith(prefix):
-                      continue
-
-                  version = tuple(map(int, runtime[len(prefix):].split("-")))
-
-                  if version[0] != major:
-                      continue
-
-                  for simulator in simulators:
-                      if simulator["name"] == device_name and simulator.get("isAvailable"):
-                          matches.append((version, simulator["udid"]))
-
-              if not matches:
-                  raise SystemExit(f"No available {platform} {major}.x simulator: {device_name}")
-
-              version, udid = max(matches)
-              destination = f"platform={platform},id={udid}"
-              print(f"Selected {platform} {'.'.join(map(str, version))}: {device_name}")
-
-          with open(os.environ["GITHUB_OUTPUT"], "a") as file:
-              file.write(f"destination={destination}\n")
-          PY
+        uses: ./.github/actions/resolve-destination
+        with:
+          platform: ${{ matrix.platform }}
+          version: ${{ matrix.version }}
+          device: ${{ matrix.device }}
 
       - name: Run tests
         run: |
