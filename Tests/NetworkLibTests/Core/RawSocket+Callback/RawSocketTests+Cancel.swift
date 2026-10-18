@@ -29,14 +29,17 @@ struct RawSocketCancelTests {
     @Test(arguments: [RawSocketTransport.tcp, .udp])
     func whenCancelled_AndSourceReferencesAllNil_NoReferences(_ transport: RawSocketTransport) async throws {
         let underlyingConnection = NWConnectionMock()
-        var tempSocket: RawSocket? = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil,
-                                                   timeout: 0, maxDataBlock: 256, transport: transport)
-        let address = ReferencesCounter.shared.address(of: tempSocket)
+        let accessQueue = DispatchQueue(label: "raw-socket.deallocation")
         let box = _SocketBox()
-        box.set(tempSocket)
-        tempSocket = nil
+        // Keep setup temporaries out of the async test's lifetime.
+        let _: Void = try {
+            let socket = try RawSocket(underlyingConnection, accessQueue: accessQueue, delegateQueue: nil,
+                                       timeout: 0, maxDataBlock: 256, transport: transport)
+            box.set(socket)
+        }()
         defer { box.get()?.cancel(nil) }
-        try #require(ReferencesCounter.shared.count(of: address) == 1)
+        let weakSocket = _WeakSocketBox(box.get())
+        try #require(weakSocket.socket != nil)
         let _: Void = try await withCheckedThrowingContinuation { continuation in
             box.get()?.connect { _ in
                 box.get()?.cancel {
@@ -45,7 +48,14 @@ struct RawSocketCancelTests {
                 box.set(nil)
             }
         }
-        try #require(ReferencesCounter.shared.count(of: address) == 0)
+        // Cancellation callbacks can run before the access queue finishes releasing the socket.
+        await withCheckedContinuation { continuation in
+            accessQueue.async {
+                continuation.resume()
+            }
+        }
+        // A weak reference tracks this instance even if another test reuses its address.
+        try #require(weakSocket.socket == nil)
     }
 
     struct OneCallback {

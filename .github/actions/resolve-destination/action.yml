@@ -1,0 +1,76 @@
+name: Resolve Xcode Build Destination
+description: Resolve the latest available simulator for the specified OS major version
+
+inputs:
+  platform:
+    required: true
+    description: Xcode destination platform
+  version:
+    required: true
+    description: OS major version
+  device:
+    required: false
+    description: Simulator device name
+    default: ""
+
+outputs:
+  destination:
+    description: Resolved xcodebuild destination
+    value: ${{ steps.resolve.outputs.destination }}
+
+runs:
+  using: composite
+  steps:
+    - name: Resolve destination
+      id: resolve
+      shell: bash
+      env:
+        PLATFORM: ${{ inputs.platform }}
+        VERSION: ${{ inputs.version }}
+        DEVICE: ${{ inputs.device }}
+      run: |
+        python3 <<'PY'
+        import json
+        import os
+        import subprocess
+
+        platform = os.environ["PLATFORM"]
+        major = int(os.environ["VERSION"])
+        device_name = os.environ["DEVICE"]
+
+        if platform == "macOS":
+            destination = "platform=macOS"
+        else:
+            output = subprocess.check_output(
+                ["xcrun", "simctl", "list", "devices", "available", "-j"],
+                text=True
+            )
+            devices = json.loads(output)["devices"]
+            prefix = f"com.apple.CoreSimulator.SimRuntime.{platform.split()[0]}-"
+            matches = []
+
+            for runtime, simulators in devices.items():
+                if not runtime.startswith(prefix):
+                    continue
+
+                version = tuple(map(int, runtime[len(prefix):].split("-")))
+
+                if version[0] != major:
+                    continue
+
+                for simulator in simulators:
+                    if simulator["name"] == device_name and simulator.get("isAvailable"):
+                        matches.append((version, simulator["udid"]))
+
+            if not matches:
+                raise SystemExit(f"No available {platform} {major}.x simulator: {device_name}")
+
+            version, udid = max(matches)
+            destination = f"platform={platform},id={udid}"
+            print(f"Selected {platform} {'.'.join(map(str, version))}: {device_name}")
+
+        print(f"Destination: {destination}")
+
+        with open(os.environ["GITHUB_OUTPUT"], "a") as file:
+            file.write(f"destination={destination}\n")
+        PY

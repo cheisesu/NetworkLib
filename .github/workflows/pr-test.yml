@@ -1,4 +1,4 @@
-name: Test package on pull request
+name: Build & Test Package
 on:
   pull_request:
     types: [opened, reopened, synchronize]
@@ -6,8 +6,8 @@ on:
       - 'develop'
       - 'master'
 jobs:
-  pr-test:
-    name: Test package with Swift ${{ matrix.swift }} on ${{ matrix.os }}
+  build:
+    name: Build package with Swift ${{ matrix.swift }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -31,9 +31,115 @@ jobs:
         run: |
           set -o pipefail
           swift build --very-verbose 2>&1
-      # - name: Test
-      #   run: swift test --enable-code-coverage --skip-build --parallel
       - name: List files in the repository
         run: |
           ls ${{ github.workspace }}
       - run: echo "🍏 This job's status is ${{ job.status }}."
+
+  testing:
+    name: Test ${{ matrix.platform }} ${{ matrix.version }}
+    runs-on: ${{ matrix.runner }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: iOS Simulator
+            version: "26"
+            runner: macos-26
+            xcode: "26.6"
+            device: "iPhone 17"
+
+          - platform: tvOS Simulator
+            version: "26"
+            runner: macos-26
+            xcode: "26.6"
+            device: "Apple TV 4K (3rd generation)"
+
+          - platform: macOS
+            version: "26"
+            runner: macos-26
+            xcode: "26.6"
+            device: "macOS"
+          
+          - platform: iOS Simulator
+            version: "18"
+            runner: macos-15
+            xcode: "16.4"
+            device: "iPhone 16"
+
+          - platform: tvOS Simulator
+            version: "18"
+            runner: macos-15
+            xcode: "16.4"
+            device: "Apple TV 4K (3rd generation)"
+
+          - platform: macOS
+            version: "15"
+            runner: macos-15
+            xcode: "16.4"
+            device: "macOS"
+
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_${{ matrix.xcode }}.app/Contents/Developer
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install SwiftLint
+        run: |
+          brew install swiftlint
+          echo "SWIFTLINT_PATH=$(which swiftlint)" >> "$GITHUB_ENV"
+
+      - name: Check Xcode
+        run: |
+          xcodebuild -version
+      
+      - name: Resolve platform destination
+        id: platform_destination
+        uses: ./.github/actions/resolve-destination
+        with:
+          platform: ${{ matrix.platform }}
+          version: ${{ matrix.version }}
+          device: ${{ matrix.device }}
+
+      - name: Run tests
+        run: |
+          set -o pipefail
+
+          xcodebuild test \
+            -scheme NetworkLib \
+            -configuration Debug \
+            -destination "${{ steps.platform_destination.outputs.destination }}" \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            -resultBundlePath "$RUNNER_TEMP/TestResults.xcresult" \
+            -enableCodeCoverage YES \
+            -parallel-testing-enabled ${{ startsWith(matrix.xcode, '16.') && 'NO' || 'YES' }} \
+            IPHONEOS_DEPLOYMENT_TARGET=16.0 \
+            TVOS_DEPLOYMENT_TARGET=16.0 \
+            MACOSX_DEPLOYMENT_TARGET=13.0 \
+            CODE_SIGN_IDENTITY=-
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.platform }}-${{ matrix.version }}
+          path: ${{ runner.temp }}/TestResults.xcresult
+          retention-days: 7
+          if-no-files-found: error
+  ci-check:
+    name: Check build and test results
+    runs-on: ubuntu-latest
+    needs: [build, testing]
+    if: always()
+
+    steps:
+      - name: Check results
+        env:
+          BUILD_RESULT: ${{ needs.build.result }}
+          TEST_RESULT: ${{ needs.testing.result }}
+        run: |
+          [[ "$BUILD_RESULT" == "success" ]] &&
+          [[ "$TEST_RESULT" == "success" ]]

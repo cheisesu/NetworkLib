@@ -27,8 +27,8 @@ struct RawSocketAsyncCancelTests {
         let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: timeout,
                                    maxDataBlock: 256, transport: transport)
         try await socket.connect()
-        async let cancel1 = socket.cancel()
-        async let cancel2 = socket.cancel()
+        async let cancel1: Void = socket.cancel()
+        async let cancel2: Void = socket.cancel()
         _ = await [cancel1, cancel2]
         do {
             try await socket.connect()
