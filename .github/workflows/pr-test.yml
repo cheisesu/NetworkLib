@@ -121,14 +121,14 @@ jobs:
             MACOSX_DEPLOYMENT_TARGET=13.0 \
             CODE_SIGN_IDENTITY=-
 
-      # - name: Upload test results
-      #   if: always()
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: coverage-${{ matrix.platform }}-${{ matrix.version }}
-      #     path: ${{ runner.temp }}/TestResults.xcresult
-      #     retention-days: 7
-      #     if-no-files-found: warn
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.platform }}-${{ matrix.version }}
+          path: ${{ runner.temp }}/TestResults.xcresult
+          retention-days: 7
+          if-no-files-found: error
   ci-check:
     name: Check build and test results
     runs-on: ubuntu-latest
