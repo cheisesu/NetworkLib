@@ -1,6 +1,7 @@
 # NetworkLib
 
-![Build][BuildStatusBadge]
+[![Build][BuildBadge]][BuildLink]
+![Coverage][CoverageBadge]
 [![Documentation][DocumentationBadge]][DocumentationLink]
 [![Swift6 compatible][Swift6Badge]][SwiftLink]
 ![Supported platforms][PlatformsBadge]
@@ -146,16 +147,39 @@ Some examples require a local server, Internet access, or proxy credentials. See
 
 Full API reference and guided tutorials are maintained in the package's [DocC catalog](Sources/NetworkLib/NetworkLib.docc).
 
+### Build the themed documentation locally
+
+The catalog's `theme-settings.json` supplies matching dark and light colors and typography. The custom `header.html` adds the NETWORK_LIB wordmark, grid background, and font loading. Enable custom templates when building to include that header:
+
+```sh
+xcodebuild docbuild \
+  -scheme NetworkLib \
+  -configuration Debug \
+  -destination 'generic/platform=macOS' \
+  -derivedDataPath ./build/docc \
+  OTHER_DOCC_FLAGS="--experimental-enable-custom-templates"
+```
+
+The archive is written to `build/docc/Build/Products/Debug/NetworkLib.doccarchive`. Serve it locally to inspect the website:
+
+```sh
+python3 -m http.server 8080 --directory build/docc/Build/Products/Debug/NetworkLib.doccarchive
+```
+
+Open `http://localhost:8080/documentation/networklib/`. DocC's appearance switch selects the dark or light palette. Fonts load from Google Fonts; offline viewing uses system sans-serif and monospace fallbacks. Custom templates affect the website and may render differently in Xcode's documentation viewer. Keep edits in the source catalog: rebuilding replaces the generated archive.
+
 ## License
 
 NetworkLib is distributed under the [MIT License](LICENSE).
 
-[BuildStatusBadge]: https://img.shields.io/github/actions/workflow/status/cheisesu/NetworkLib/pr-test.yml?branch=master&style=flat-square&label=Build&labelColor=gray
+[BuildBadge]: https://img.shields.io/github/actions/workflow/status/cheisesu/NetworkLib/pr-test.yml?style=flat-square&label=Build&labelColor=gray
+[BuildLink]: https://github.com/cheisesu/NetworkLib/actions/workflows/pr-test.yml
 [SwiftLink]: https://developer.apple.com/swift/
 [Swift6Badge]: https://img.shields.io/badge/Swift-6-F05138?style=flat-square&label=Swift&labelColor=gray&color=F05138
 [GitHubReleaseBadge]: https://img.shields.io/github/v/release/cheisesu/NetworkLib?style=flat-square&labelColor=gray&color=blue&label=Release
 [LicenseBadge]: https://img.shields.io/github/license/cheisesu/NetworkLib?style=flat-square&labelColor=gray&label=License
 [PlatformsBadge]: https://img.shields.io/badge/Platforms-iOS%7CtvOS%7CmacOS-999?style=flat-square&labelColor=gray
-[DocumentationBadge]: https://img.shields.io/github/actions/workflow/status/cheisesu/NetworkLib/docc.yml?branch=13-add-deploying-documentation&style=flat-square&label=Docs&labelColor=gray
+[DocumentationBadge]: https://img.shields.io/github/actions/workflow/status/cheisesu/NetworkLib/docc.yml?style=flat-square&label=Docs&labelColor=gray
 [DocumentationLink]: https://networklib.dmitrii-shelonin.com/documentation/networklib/
 [SPMBadge]: https://img.shields.io/badge/SPM-Compatible-F05138?style=flat-square&label=SPM&labelColor=gray&color=F05138
+[CoverageBadge]: https://img.shields.io/endpoint?url=https%3A%2F%2Fnetworklib.dmitrii-shelonin.com%2Fcoverage-badge.json&style=flat-square&labelColor=gray

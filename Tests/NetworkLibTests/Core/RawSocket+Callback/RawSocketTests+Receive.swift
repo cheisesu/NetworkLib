@@ -228,7 +228,7 @@ struct RawSocketReceiveTests {
                 }
             }
             Issue.record("Unexpected entrance")
-        } catch where error == expectedError {
+        } catch where (error as any Error) as? NWError == expectedError {
         }
     }
 

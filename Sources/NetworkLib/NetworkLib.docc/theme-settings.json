@@ -1,0 +1,455 @@
+{
+  "meta": {
+    "title": "NetworkLib Documentation"
+  },
+  "theme": {
+    "border-radius": "6px",
+    "typography": {
+      "html-font": "\"Space Grotesk\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+      "html-font-mono": "\"Fira Code\", ui-monospace, SFMono-Regular, Menlo, monospace"
+    },
+    "code": {
+      "border-radius": "8px",
+      "border-style": "solid",
+      "border-width": "1px",
+      "indentationWidth": 4
+    },
+    "button": {
+      "border-radius": "4px"
+    },
+    "color": {
+      "fill": {
+        "dark": "#040507",
+        "light": "#FFFFFF"
+      },
+      "fill-secondary": {
+        "dark": "#080A0E",
+        "light": "#F4F7FA"
+      },
+      "fill-tertiary": {
+        "dark": "#0E1117",
+        "light": "#EDF2F7"
+      },
+      "fill-quaternary": {
+        "dark": "#1B212D",
+        "light": "#D8E0E9"
+      },
+      "text": {
+        "dark": "#E5E7EB",
+        "light": "#182333"
+      },
+      "text-background": {
+        "dark": "#040507",
+        "light": "#FFFFFF"
+      },
+      "figure-gray": {
+        "dark": "#E5E7EB",
+        "light": "#182333"
+      },
+      "figure-gray-secondary": {
+        "dark": "#A8B0BE",
+        "light": "#4B5C71"
+      },
+      "figure-gray-secondary-alt": {
+        "dark": "#A8B0BE",
+        "light": "#4B5C71"
+      },
+      "figure-gray-tertiary": {
+        "dark": "#8D98AA",
+        "light": "#54657A"
+      },
+      "figure-light-gray": {
+        "dark": "#E5E7EB",
+        "light": "#182333"
+      },
+      "figure-blue": {
+        "dark": "#00F0FF",
+        "light": "#006B78"
+      },
+      "link": {
+        "dark": "#00F0FF",
+        "light": "#006B78"
+      },
+      "grid": {
+        "dark": "#262F40",
+        "light": "#C3CDDB"
+      },
+      "code-background": {
+        "dark": "#0E1117",
+        "light": "#EDF2F7"
+      },
+      "code-plain": {
+        "dark": "#E5E7EB",
+        "light": "#182333"
+      },
+      "inline-code-background": {
+        "dark": "#131B25",
+        "light": "#E8EFF5"
+      },
+      "code-line-highlight": {
+        "dark": "#16313A",
+        "light": "#D9EFF2"
+      },
+      "code-line-highlight-border": {
+        "dark": "#00F0FF",
+        "light": "#006B78"
+      },
+      "code-collapsible-background": {
+        "dark": "#080A0E",
+        "light": "#F4F7FA"
+      },
+      "code-collapsible-text": {
+        "dark": "#A8B0BE",
+        "light": "#4B5C71"
+      },
+      "documentation-intro-fill": {
+        "dark": "#080A0E",
+        "light": "#F4F7FA"
+      },
+      "documentation-intro-accent": {
+        "dark": "#FF4A3F",
+        "light": "#B52D24"
+      },
+      "documentation-intro-title": {
+        "dark": "#FFFFFF",
+        "light": "#101722"
+      },
+      "documentation-intro-eyebrow": {
+        "dark": "#00F0FF",
+        "light": "#006B78"
+      },
+      "article-background": {
+        "dark": "#040507",
+        "light": "#FFFFFF"
+      },
+      "article-body-background": {
+        "dark": "#040507",
+        "light": "#FFFFFF"
+      },
+      "nav-solid-background": {
+        "dark": "#080A0E",
+        "light": "#F4F7FA"
+      },
+      "nav-color": {
+        "dark": "#E5E7EB",
+        "light": "#182333"
+      },
+      "nav-current-link": {
+        "dark": "#FFFFFF",
+        "light": "#101722"
+      },
+      "nav-link-color": {
+        "dark": "#A8B0BE",
+        "light": "#4B5C71"
+      },
+      "nav-link-color-hover": {
+        "dark": "#00F0FF",
+        "light": "#006B78"
+      },
+      "nav-keyline": {
+        "dark": "#262F40",
+        "light": "#C3CDDB"
+      },
+      "nav-rule": {
+        "dark": "#262F40",
+        "light": "#C3CDDB"
+      },
+      "nav-outlines": {
+        "dark": "#262F40",
+        "light": "#C3CDDB"
+      },
+      "nav-root-title": {
+        "dark": "#FFFFFF",
+        "light": "#101722"
+      },
+      "nav-root-subhead": {
+        "dark": "#A8B0BE",
+        "light": "#4B5C71"
+      },
+      "nav-expanded": {
+        "dark": "#080A0E",
+        "light": "#F4F7FA"
+      },
+      "nav-stuck": {
+        "dark": "#080A0E",
+        "light": "#F4F7FA"
+      },
+      "navigator-item-hover": {
+        "dark": "#152330",
+        "light": "#DFEBF3"
+      },
+      "dropdown-background": {
+        "dark": "#0E1117",
+        "light": "#EDF2F7"
+      },
+      "dropdown-border": {
+        "dark": "#262F40",
+        "light": "#C3CDDB"
+      },
+      "dropdown-text": {
+        "dark": "#E5E7EB",
+        "light": "#182333"
+      },
+      "dropdown-option-text": {
+        "dark": "#E5E7EB",
+        "light": "#182333"
+      },
+      "button-background": {
+        "dark": "#FF4A3F",
+        "light": "#B52D24"
+      },
+      "button-background-hover": {
+        "dark": "#FF7067",
+        "light": "#99251E"
+      },
+      "button-background-active": {
+        "dark": "#FF8D86",
+        "light": "#7E211B"
+      },
+      "button-text": {
+        "dark": "#040507",
+        "light": "#FFFFFF"
+      },
+      "button-border": {
+        "dark": "#FF4A3F",
+        "light": "#B52D24"
+      },
+      "focus-color": {
+        "dark": "#00F0FF",
+        "light": "#006B78"
+      },
+      "focus-border-color": {
+        "dark": "#00F0FF",
+        "light": "#006B78"
+      },
+      "secondary-label": {
+        "dark": "#A8B0BE",
+        "light": "#4B5C71"
+      },
+      "header-text": {
+        "dark": "#FFFFFF",
+        "light": "#101722"
+      },
+      "eyebrow": {
+        "dark": "#00F0FF",
+        "light": "#006B78"
+      },
+      "hero-eyebrow": {
+        "dark": "#00F0FF",
+        "light": "#006B78"
+      },
+      "generic-modal-background": {
+        "dark": "#0E1117",
+        "light": "#EDF2F7"
+      },
+      "loading-placeholder-background": {
+        "dark": "#1B212D",
+        "light": "#D8E0E9"
+      },
+      "syntax-plain-text": {
+        "dark": "#E5E7EB",
+        "light": "#182333"
+      },
+      "syntax-keywords": {
+        "dark": "#FF7B72",
+        "light": "#A12634"
+      },
+      "syntax-strings": {
+        "dark": "#9FE7DD",
+        "light": "#176658"
+      },
+      "syntax-comments": {
+        "dark": "#8D98AA",
+        "light": "#54657A"
+      },
+      "syntax-numbers": {
+        "dark": "#FFBF86",
+        "light": "#87500B"
+      },
+      "syntax-other-type-names": {
+        "dark": "#79E8F2",
+        "light": "#006B78"
+      },
+      "syntax-project-type-names": {
+        "dark": "#79E8F2",
+        "light": "#006B78"
+      },
+      "syntax-other-class-names": {
+        "dark": "#79E8F2",
+        "light": "#006B78"
+      },
+      "syntax-project-class-names": {
+        "dark": "#79E8F2",
+        "light": "#006B78"
+      },
+      "syntax-other-function-and-method-names": {
+        "dark": "#B5C8FF",
+        "light": "#55429B"
+      },
+      "syntax-project-function-and-method-names": {
+        "dark": "#B5C8FF",
+        "light": "#55429B"
+      },
+      "step-background": {
+        "dark": "#0E1117",
+        "light": "#EDF2F7"
+      },
+      "step-focused": {
+        "dark": "#152330",
+        "light": "#DFEBF3"
+      },
+      "step-text": {
+        "dark": "#E5E7EB",
+        "light": "#182333"
+      },
+      "step-caption": {
+        "dark": "#A8B0BE",
+        "light": "#4B5C71"
+      },
+      "tutorial-background": {
+        "dark": "#040507",
+        "light": "#FFFFFF"
+      },
+      "tutorial-assessments-background": {
+        "dark": "#080A0E",
+        "light": "#F4F7FA"
+      },
+      "tutorial-hero-background": {
+        "dark": "#080A0E",
+        "light": "#F4F7FA"
+      },
+      "tutorial-hero-text": {
+        "dark": "#FFFFFF",
+        "light": "#101722"
+      },
+      "tutorial-navbar-dropdown-background": {
+        "dark": "#0E1117",
+        "light": "#EDF2F7"
+      },
+      "tutorial-navbar-dropdown-border": {
+        "dark": "#262F40",
+        "light": "#C3CDDB"
+      },
+      "tutorial-quiz-border-active": {
+        "dark": "#00F0FF",
+        "light": "#006B78"
+      },
+      "tutorials-overview-background": {
+        "dark": "#040507",
+        "light": "#FFFFFF"
+      },
+      "tutorials-overview-fill": {
+        "dark": "#080A0E",
+        "light": "#F4F7FA"
+      },
+      "tutorials-overview-fill-secondary": {
+        "dark": "#0E1117",
+        "light": "#EDF2F7"
+      },
+      "tutorials-overview-content": {
+        "dark": "#E5E7EB",
+        "light": "#182333"
+      },
+      "tutorials-overview-content-alt": {
+        "dark": "#A8B0BE",
+        "light": "#4B5C71"
+      },
+      "tutorials-overview-header-text": {
+        "dark": "#FFFFFF",
+        "light": "#101722"
+      },
+      "tutorials-overview-eyebrow": {
+        "dark": "#00F0FF",
+        "light": "#006B78"
+      },
+      "tutorials-overview-link": {
+        "dark": "#00F0FF",
+        "light": "#006B78"
+      },
+      "tutorials-overview-navigation-link": {
+        "dark": "#A8B0BE",
+        "light": "#4B5C71"
+      },
+      "tutorials-overview-navigation-link-active": {
+        "dark": "#00F0FF",
+        "light": "#006B78"
+      },
+      "tutorials-overview-navigation-link-hover": {
+        "dark": "#FFFFFF",
+        "light": "#101722"
+      },
+      "aside-note": {
+        "dark": "#E5E7EB",
+        "light": "#182333"
+      },
+      "aside-note-background": {
+        "dark": "#0E1117",
+        "light": "#EDF2F7"
+      },
+      "aside-note-border": {
+        "dark": "#00F0FF",
+        "light": "#006B78"
+      },
+      "aside-tip": {
+        "dark": "#E5E7EB",
+        "light": "#182333"
+      },
+      "aside-tip-background": {
+        "dark": "#0E1117",
+        "light": "#EDF2F7"
+      },
+      "aside-tip-border": {
+        "dark": "#00F0FF",
+        "light": "#006B78"
+      },
+      "aside-experiment": {
+        "dark": "#E5E7EB",
+        "light": "#182333"
+      },
+      "aside-experiment-background": {
+        "dark": "#0E1117",
+        "light": "#EDF2F7"
+      },
+      "aside-experiment-border": {
+        "dark": "#00F0FF",
+        "light": "#006B78"
+      },
+      "aside-important": {
+        "dark": "#E5E7EB",
+        "light": "#182333"
+      },
+      "aside-important-background": {
+        "dark": "#0E1117",
+        "light": "#EDF2F7"
+      },
+      "aside-important-border": {
+        "dark": "#FF4A3F",
+        "light": "#B52D24"
+      },
+      "aside-warning": {
+        "dark": "#E5E7EB",
+        "light": "#182333"
+      },
+      "aside-warning-background": {
+        "dark": "#0E1117",
+        "light": "#EDF2F7"
+      },
+      "aside-warning-border": {
+        "dark": "#FF4A3F",
+        "light": "#B52D24"
+      },
+      "aside-deprecated": {
+        "dark": "#E5E7EB",
+        "light": "#182333"
+      },
+      "aside-deprecated-background": {
+        "dark": "#0E1117",
+        "light": "#EDF2F7"
+      },
+      "aside-deprecated-border": {
+        "dark": "#FF4A3F",
+        "light": "#B52D24"
+      }
+    }
+  }
+}

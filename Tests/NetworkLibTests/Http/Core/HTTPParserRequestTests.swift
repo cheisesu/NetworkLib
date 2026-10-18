@@ -243,7 +243,7 @@ extension HTTPParserRequestTests {
             let expectedData = Data(expectedLines.joined(separator: "\r\n").utf8)
             try #require(parser.parsedData == expectedData)
         }
-        
+
         @Test
         func containsHostHeader() throws {
             let host: NWEndpoint.Host = .name("example.com", nil)

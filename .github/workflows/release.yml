@@ -44,7 +44,7 @@ jobs:
           path: changelog-${{ steps.version.outputs.version }}.md
           retention-days: 7
           if-no-files-found: error
-  
+
   publish_release:
     name: Publish GitHub Release
     needs: changelog
@@ -53,9 +53,9 @@ jobs:
       github.event.pull_request.base.ref == 'master' &&
       github.event.pull_request.head.ref == 'develop'
     runs-on: ubuntu-latest
-
     permissions:
       contents: write
+      issues: write
 
     env:
       GH_TOKEN: ${{ github.token }}
@@ -92,3 +92,14 @@ jobs:
             --verify-tag \
             --title "$TAG" \
             --notes-file "changelog-$VERSION.md"
+
+      - name: Close milestone
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MILESTONE_NUMBER: ${{ github.event.pull_request.milestone.number }}
+        run: |
+          gh api \
+            -X PATCH \
+            "repos/$GITHUB_REPOSITORY/milestones/$MILESTONE_NUMBER" \
+            -f state=closed \
+            --silent
