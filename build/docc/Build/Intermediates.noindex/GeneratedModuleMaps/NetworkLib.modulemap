@@ -1,4 +1,0 @@
-module NetworkLib {
-header "NetworkLib-Swift.h"
-export *
-}
