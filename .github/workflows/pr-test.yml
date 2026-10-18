@@ -64,8 +64,8 @@ jobs:
           
           - platform: iOS Simulator
             version: "18"
-            runner: macos-15
-            xcode: "16.4"
+            runner: macos-26
+            xcode: "26.6"
             device: "iPhone 16"
 
           # - platform: tvOS Simulator
@@ -121,6 +121,7 @@ jobs:
                   text=True
               )
               devices = json.loads(output)["devices"]
+              print(json.dumps(devices, indent=2))
 
               prefix = f"com.apple.CoreSimulator.SimRuntime.{runtime_platform}-"
               matches = []
