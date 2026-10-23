@@ -53,7 +53,6 @@ enum WebSocketExample {
         ExampleCLI.log("Connecting.")
         try await socket.connect()
         defer { ExampleCLI.log("Disconnected.") }
-        defer { await socket.cancel() }
         ExampleCLI.log("Connected.")
         _ = try await socket.receiveNextMessage(of: WSReceiveMessage.self)
         ExampleCLI.log("Type `exit` to close connection.")
@@ -82,7 +81,7 @@ enum WebSocketExample {
                 } while true
             }
             try await group.waitForAll()
-
+            await socket.cancel()
         }
     }
 }
