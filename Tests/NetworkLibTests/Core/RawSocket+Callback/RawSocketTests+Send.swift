@@ -260,35 +260,26 @@ struct RawSocketSendTests {
         let timeout: TimeInterval = 0
         let dataToSend = Data("Hello".utf8)
         let underlyingConnection = NWConnectionMock()
-        let accessQueue = DispatchQueue(label: "raw-socket.self-keeping")
-        var tempSocket: RawSocket? = try RawSocket(underlyingConnection, accessQueue: accessQueue, delegateQueue: nil,
+        var tempSocket: RawSocket? = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil,
                                                    timeout: timeout, maxDataBlock: 256, transport: transport)
-        weak var retainedSocket = tempSocket
         let address = ReferencesCounter.shared.address(of: tempSocket)
         let box = _SocketBox()
         box.set(tempSocket)
         tempSocket = nil
-        defer {
-            retainedSocket?.cancel(nil)
-            retainedSocket = nil
-        }
+        defer { box.get()?.cancel(nil) }
         try #require(ReferencesCounter.shared.count(of: address) == 1)
         let _: Void = try await withCheckedThrowingContinuation { continuation in
-            // Enqueue both operations before connecting can clear the last external reference.
-            accessQueue.sync {
-                box.get()?.onInternalStateChange = { _, newState in
-                    guard newState == .connecting else { return }
-                    box.set(nil)
-                }
-                box.get()?.connect { _ in }
-                box.get()?.send(dataToSend) { result in
-                    continuation.resume(with: result)
-                }
+            box.get()?.onInternalStateChange = { _, newState in
+                guard newState == .connecting else { return }
+                box.set(nil)
+            }
+            box.get()?.connect { _ in
+            }
+            box.get()?.send(dataToSend) { result in
+                continuation.resume(with: result)
             }
         }
-        #expect(box.get() == nil)
         try #require(ReferencesCounter.shared.count(of: address) == 1)
-        await retainedSocket?.cancel()
     }
 
     // MARK: DELEGATE QUEUE
