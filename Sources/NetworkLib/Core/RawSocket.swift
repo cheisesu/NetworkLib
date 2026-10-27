@@ -441,6 +441,7 @@ extension RawSocket {
     private func callAllCancelsUnsafe() {
         let callbacks = cancellingCallbacks
         cancellingCallbacks = []
+        printDebug("[socket] cancel callbacs call (\(callbacks.count))")
         for callback in callbacks {
             callbackDelivery.call(callback)
         }
