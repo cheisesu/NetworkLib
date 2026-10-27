@@ -103,7 +103,7 @@ public class RawSocket: @unchecked Sendable {
 
         // - after init
         afterInitSetup()
-        printDebug("[socket] DEINIT", Unmanaged.passUnretained(self).toOpaque())
+        printDebug("[socket] INIT", Unmanaged.passUnretained(self).toOpaque())
     }
 
     deinit {
