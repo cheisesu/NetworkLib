@@ -31,6 +31,7 @@ public class RawSocket: @unchecked Sendable {
 
     var onInternalStateChange: (@Sendable (_ oldState: _InternalState, _ newState: _InternalState) -> Void)?
 
+    let diagnosticsID = UUID().uuidString
     private let id: String
     private let connection: UnderlyingConnection
     private let accessQueue: DispatchQueue
@@ -41,6 +42,7 @@ public class RawSocket: @unchecked Sendable {
     private var selfKeeper: RawSocket?
     private var internalState: _InternalState {
         didSet {
+            SocketDiagnostics.record(diagnosticsID, "state \(oldValue) -> \(internalState)")
             printDebug("[socket] internal state changed", oldValue, "->" , internalState)
             onInternalStateChange?(oldValue, internalState)
         }
@@ -102,11 +104,13 @@ public class RawSocket: @unchecked Sendable {
         ReferencesCounter.shared.increment(self)
 
         // - after init
+        SocketDiagnostics.record(diagnosticsID, "init")
         afterInitSetup()
         printDebug("[socket] DEINIT", Unmanaged.passUnretained(self).toOpaque())
     }
 
     deinit {
+        SocketDiagnostics.record(diagnosticsID, "deinit")
         ReferencesCounter.shared.decrement(self)
         printDebug("[socket] DEINIT", Unmanaged.passUnretained(self).toOpaque())
     }
@@ -146,12 +150,21 @@ public class RawSocket: @unchecked Sendable {
     /// - Parameter handler: A closure invoked on the socket's callback queue after the underlying connection reaches its terminal
     ///   state. Pass `nil` when no notification is needed.
     public func cancel(_ handler: (@Sendable () -> Void)?) { // done
+        let traceID = diagnosticsID
+        let requestID = UUID().uuidString
+        SocketDiagnostics.record(traceID, "cancel \(requestID) requested callback=\(handler != nil)")
         accessQueue.async { [weak self] in
+            SocketDiagnostics.record(traceID, "cancel \(requestID) access.begin alive=\(self != nil)")
             printDebug("[socket] queue async close")
             if let handler {
-                self?.cancellingCallbacks.append(handler)
+                self?.cancellingCallbacks.append {
+                    SocketDiagnostics.record(traceID, "cancel \(requestID) delegate.callback")
+                    handler()
+                }
+                SocketDiagnostics.record(traceID, "cancel \(requestID) registration.attempted")
             }
             self?.cancelUnsafe(manually: true)
+            SocketDiagnostics.record(traceID, "cancel \(requestID) access.end")
         }
     }
 
@@ -256,6 +269,7 @@ public class RawSocket: @unchecked Sendable {
     public func receiveNext(_ completion: @escaping @Sendable (_ result: Result<Data?, NWError>) -> Void) {
         let completion = delivered(completion)
         accessQueue.async { [weak self, maxDataBlock] in
+            SocketDiagnostics.record(self?.diagnosticsID ?? "released", "receive.access.begin")
             printDebug("[socket] receive next")
 
             if let error = self?.activeOperationCheckErrorUnsafe() {
@@ -273,6 +287,7 @@ public class RawSocket: @unchecked Sendable {
     private func receiveNextHandler(_ content: Data?, _ isComplete: Bool, _ error: NWError?,
                                     completion: @escaping @Sendable (_ result: Result<Data?, NWError>) -> Void)
     {
+        SocketDiagnostics.record(diagnosticsID, "receive.completion complete=\(isComplete) error=\(String(describing: error))")
         timeoutEvent?.detouch()
         if let content {
             completion(.success(content))
@@ -366,6 +381,7 @@ extension RawSocket {
     }
 
     private func connectUnsafe(_ block: @escaping @Sendable (Result<ConnectionInfo, NWError>) -> Void) { // done
+        SocketDiagnostics.record(diagnosticsID, "connect.access.begin")
         printDebug("[socket] connect unsafe")
         guard internalState < .closed else { return callbackDelivery.call(.failure(.posix(.ECANCELED)), block) }
         guard internalState < .cancelling else { return callbackDelivery.call(.failure(.posix(.ECANCELED)), block) }
@@ -383,6 +399,8 @@ extension RawSocket {
     }
 
     private func cancelUnsafe(manually: Bool) { // done
+        SocketDiagnostics.record(diagnosticsID,
+                                 "cancelUnsafe state=\(internalState) manual=\(manually) callbacks=\(cancellingCallbacks.count)")
         printDebug("[socket] cancel unsafe")
         timeoutEvent?.cancel()
         if internalState == .initial { // cause state update may not be called
@@ -403,10 +421,13 @@ extension RawSocket {
         if manually {
             operationCancelError = .posix(.ECANCELED)
         }
+        SocketDiagnostics.record(diagnosticsID, "underlying.cancel.begin")
         connection.cancel()
+        SocketDiagnostics.record(diagnosticsID, "underlying.cancel.end")
     }
 
     private func stateUpdateHandler(_ newState: NWConnection.State) {
+        SocketDiagnostics.record(diagnosticsID, "connection.state \(newState)")
         printDebug("[socket] new state", newState)
         switch newState {
         case .setup: break
@@ -439,6 +460,7 @@ extension RawSocket {
     }
 
     private func callAllCancelsUnsafe() {
+        SocketDiagnostics.record(diagnosticsID, "cancelCallbacks.enqueue count=\(cancellingCallbacks.count)")
         let callbacks = cancellingCallbacks
         cancellingCallbacks = []
         printDebug("[socket] cancel callbacs call (\(callbacks.count))")
@@ -474,6 +496,7 @@ extension RawSocket {
     private func clearResourcesUnsafe() {
         timeoutEvent?.cancel()
         connection.stateUpdateHandler = nil
+        SocketDiagnostics.record(diagnosticsID, "selfKeeper.release")
         selfKeeper = nil
     }
 }

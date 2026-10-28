@@ -10,10 +10,13 @@ final class NWConnectionMock: @unchecked Sendable, UnderlyingConnection {
         static let methodSend: Mode = .init(rawValue: 0x01 << 1)
         static let methodReceive: Mode = .init(rawValue: 0x01 << 2)
     }
+    let diagnosticsID = UUID().uuidString
     private let lock: NSLock
     private var _state: NWConnection.State {
         didSet {
+            SocketDiagnostics.record(diagnosticsID, "mock.state.enqueue \(_state)")
             eventsQueue?.async { [_state] in
+                SocketDiagnostics.record(self.diagnosticsID, "mock.state.deliver \(_state)")
                 if oldValue != _state {
                     self.stateUpdateHandler?(_state)
                 }
@@ -103,6 +106,7 @@ final class NWConnectionMock: @unchecked Sendable, UnderlyingConnection {
     }
 
     func cancel() {
+        SocketDiagnostics.record(diagnosticsID, "mock.cancel")
         callPendingCallbacks()
         state = .cancelled
     }
@@ -117,6 +121,7 @@ final class NWConnectionMock: @unchecked Sendable, UnderlyingConnection {
         maximumLength: Int,
         completion: @escaping @Sendable (Data?, NWConnection.ContentContext?, Bool, NWError?) -> Void
     ) {
+        SocketDiagnostics.record(diagnosticsID, "mock.receive entered")
         if mode.contains(.methodReceive) {
             if mode.contains(.dontCallCallback) {
                 lock.withLock {
@@ -183,13 +188,19 @@ final class NWConnectionMock: @unchecked Sendable, UnderlyingConnection {
     }
 
     private func callPendingCallbacks() {
+        SocketDiagnostics.record(diagnosticsID, "mock.pending.drain.begin")
         let pending = lock.withLock {
             let result = _pendingCallbacks
             _pendingCallbacks = []
             return result
         }
+        SocketDiagnostics.record(diagnosticsID, "mock.pending.enqueue count=\(pending.count)")
         for callback in pending {
-            eventsQueue?.async(execute: callback)
+            let traceID = diagnosticsID
+            eventsQueue?.async {
+                SocketDiagnostics.record(traceID, "mock.pending.deliver")
+                callback()
+            }
         }
     }
 }

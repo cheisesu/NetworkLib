@@ -9,6 +9,13 @@
     }
   ],
   "defaultOptions" : {
+    "environmentVariableEntries" : [
+      {
+        "key" : "NETWORKLIB_DIAGNOSTICS",
+        "value" : "1",
+        "isEnabled" : true
+      }
+    ],
     "addressSanitizer" : {
       "detectStackUseAfterReturn" : true,
       "enabled" : true
