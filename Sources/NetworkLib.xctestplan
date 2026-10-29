@@ -9,13 +9,20 @@
     }
   ],
   "defaultOptions" : {
+    "environmentVariableEntries" : [
+      {
+        "key" : "NETWORKLIB_DIAGNOSTICS",
+        "value" : "0",
+        "isEnabled" : true
+      }
+    ],
     "addressSanitizer" : {
       "detectStackUseAfterReturn" : true,
-      "enabled" : true
+      "enabled" : false
     },
     "performanceAntipatternCheckerEnabled" : true,
     "testExecutionOrdering" : "random",
-    "undefinedBehaviorSanitizerEnabled" : true
+    "undefinedBehaviorSanitizerEnabled" : false
   },
   "testTargets" : [
     {

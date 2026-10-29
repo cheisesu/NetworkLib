@@ -38,6 +38,9 @@ struct RawSocketCancelTests {
             box.set(socket)
         }()
         defer { box.get()?.cancel(nil) }
+        if let traceID = box.get()?.diagnosticsID {
+            SocketDiagnostics.record(traceID, "test \(#function) transport=\(transport) mock=\(underlyingConnection.diagnosticsID)")
+        }
         let weakSocket = _WeakSocketBox(box.get())
         try #require(weakSocket.socket != nil)
         let _: Void = try await withCheckedThrowingContinuation { continuation in

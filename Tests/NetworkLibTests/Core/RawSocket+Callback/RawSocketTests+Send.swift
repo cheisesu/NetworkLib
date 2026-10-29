@@ -263,6 +263,9 @@ struct RawSocketSendTests {
         let accessQueue = DispatchQueue(label: "raw-socket.self-keeping")
         var tempSocket: RawSocket? = try RawSocket(underlyingConnection, accessQueue: accessQueue, delegateQueue: nil,
                                                    timeout: timeout, maxDataBlock: 256, transport: transport)
+        if let traceID = tempSocket?.diagnosticsID {
+            SocketDiagnostics.record(traceID, "test \(#function) transport=\(transport) mock=\(underlyingConnection.diagnosticsID)")
+        }
         let address = ReferencesCounter.shared.address(of: tempSocket)
         let weakSocket = _WeakSocketBox(tempSocket)
         let box = _SocketBox()
