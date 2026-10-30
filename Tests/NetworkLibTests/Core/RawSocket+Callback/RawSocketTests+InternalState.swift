@@ -31,7 +31,7 @@ struct RawSocketInternalStateTests {
         let pairs = await sequence.values
         let states = pairs.map(\.1)
         try #require(states == [.connecting, .connected, .cancelling, .closed])
-        try await #require(sequence.allSatisfy { $0.0 < $0.1 })
+        try #require(pairs.allSatisfy { $0.0 < $0.1 })
     }
 
 

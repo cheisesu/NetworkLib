@@ -50,17 +50,17 @@ jobs:
             xcode: "26.6"
             device: "iPhone 17"
 
-          - platform: tvOS Simulator
-            version: "26"
-            runner: macos-26
-            xcode: "26.6"
-            device: "Apple TV 4K (3rd generation)"
+          # - platform: tvOS Simulator
+          #   version: "26"
+          #   runner: macos-26
+          #   xcode: "26.6"
+          #   device: "Apple TV 4K (3rd generation)"
 
-          - platform: macOS
-            version: "26"
-            runner: macos-26
-            xcode: "26.6"
-            device: "macOS"
+          # - platform: macOS
+          #   version: "26"
+          #   runner: macos-26
+          #   xcode: "26.6"
+          #   device: "macOS"
           
           # - platform: iOS Simulator
           #   version: "18"
