@@ -260,26 +260,35 @@ struct RawSocketSendTests {
         let timeout: TimeInterval = 0
         let dataToSend = Data("Hello".utf8)
         let underlyingConnection = NWConnectionMock()
-        var tempSocket: RawSocket? = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil,
+        let accessQueue = DispatchQueue(label: "raw-socket.self-keeping")
+        var tempSocket: RawSocket? = try RawSocket(underlyingConnection, accessQueue: accessQueue, delegateQueue: nil,
                                                    timeout: timeout, maxDataBlock: 256, transport: transport)
+        if let traceID = tempSocket?.diagnosticsID {
+            SocketDiagnostics.record(traceID, "test \(#function) transport=\(transport) mock=\(underlyingConnection.diagnosticsID)")
+        }
         let address = ReferencesCounter.shared.address(of: tempSocket)
+        let weakSocket = _WeakSocketBox(tempSocket)
         let box = _SocketBox()
         box.set(tempSocket)
         tempSocket = nil
-        defer { box.get()?.cancel(nil) }
+        defer { weakSocket.socket?.cancel(nil) }
         try #require(ReferencesCounter.shared.count(of: address) == 1)
         let _: Void = try await withCheckedThrowingContinuation { continuation in
-            box.get()?.onInternalStateChange = { _, newState in
-                guard newState == .connecting else { return }
-                box.set(nil)
-            }
-            box.get()?.connect { _ in
-            }
-            box.get()?.send(dataToSend) { result in
-                continuation.resume(with: result)
+            // Enqueue both operations before connecting can clear the last external reference.
+            accessQueue.sync {
+                box.get()?.onInternalStateChange = { _, newState in
+                    guard newState == .connecting else { return }
+                    box.set(nil)
+                }
+                box.get()?.connect { _ in }
+                box.get()?.send(dataToSend) { result in
+                    continuation.resume(with: result)
+                }
             }
         }
+        #expect(box.get() == nil)
         try #require(ReferencesCounter.shared.count(of: address) == 1)
+        await weakSocket.socket?.cancel()
     }
 
     // MARK: DELEGATE QUEUE

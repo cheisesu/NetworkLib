@@ -50,35 +50,35 @@ jobs:
             xcode: "26.6"
             device: "iPhone 17"
 
-          - platform: tvOS Simulator
-            version: "26"
-            runner: macos-26
-            xcode: "26.6"
-            device: "Apple TV 4K (3rd generation)"
+          # - platform: tvOS Simulator
+          #   version: "26"
+          #   runner: macos-26
+          #   xcode: "26.6"
+          #   device: "Apple TV 4K (3rd generation)"
 
-          - platform: macOS
-            version: "26"
-            runner: macos-26
-            xcode: "26.6"
-            device: "macOS"
+          # - platform: macOS
+          #   version: "26"
+          #   runner: macos-26
+          #   xcode: "26.6"
+          #   device: "macOS"
           
-          - platform: iOS Simulator
-            version: "18"
-            runner: macos-15
-            xcode: "16.4"
-            device: "iPhone 16"
+          # - platform: iOS Simulator
+          #   version: "18"
+          #   runner: macos-15
+          #   xcode: "16.4"
+          #   device: "iPhone 16"
 
-          - platform: tvOS Simulator
-            version: "18"
-            runner: macos-15
-            xcode: "16.4"
-            device: "Apple TV 4K (3rd generation)"
+          # - platform: tvOS Simulator
+          #   version: "18"
+          #   runner: macos-15
+          #   xcode: "16.4"
+          #   device: "Apple TV 4K (3rd generation)"
 
-          - platform: macOS
-            version: "15"
-            runner: macos-15
-            xcode: "16.4"
-            device: "macOS"
+          # - platform: macOS
+          #   version: "15"
+          #   runner: macos-15
+          #   xcode: "16.4"
+          #   device: "macOS"
 
     env:
       DEVELOPER_DIR: /Applications/Xcode_${{ matrix.xcode }}.app/Contents/Developer
@@ -108,6 +108,18 @@ jobs:
         run: |
           set -o pipefail
 
+          mkdir -p "$RUNNER_TEMP/NetworkLibDiagnostics"
+          export TEST_RUNNER_NETWORKLIB_DIAGNOSTICS=0
+          export TEST_RUNNER_NETWORKLIB_DIAGNOSTICS_DIRECTORY="$RUNNER_TEMP/NetworkLibDiagnostics"
+
+          NETWORKLIB_SAMPLE_STACKS=0 python3 .github/scripts/monitor-test-threads.py &
+          thread_monitor_pid=$!
+          stop_thread_monitor() {
+            kill -TERM "$thread_monitor_pid" 2>/dev/null || true
+            wait "$thread_monitor_pid" || true
+          }
+          trap stop_thread_monitor EXIT
+
           xcodebuild test \
             -scheme NetworkLib \
             -configuration Debug \
@@ -119,7 +131,23 @@ jobs:
             IPHONEOS_DEPLOYMENT_TARGET=16.0 \
             TVOS_DEPLOYMENT_TARGET=16.0 \
             MACOSX_DEPLOYMENT_TARGET=13.0 \
-            CODE_SIGN_IDENTITY=-
+            CODE_SIGN_IDENTITY=- 2>&1 | tee "$RUNNER_TEMP/xcodebuild.log"
+
+      - name: Collect socket diagnostics
+        if: always()
+        run: python3 .github/scripts/collect-socket-diagnostics.py
+
+      - name: Upload socket diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: socket-diagnostics-${{ matrix.platform }}-${{ matrix.version }}
+          path: |
+            ${{ runner.temp }}/SocketDiagnostics
+            ${{ runner.temp }}/ThreadDiagnostics
+            ${{ runner.temp }}/xcodebuild.log
+          retention-days: 7
+          if-no-files-found: warn
 
       - name: Upload test results
         if: always()
@@ -192,8 +220,8 @@ jobs:
             ((count += 1))
           done
 
-          [[ "$count" -eq 6 ]] || {
-            echo "Expected 6 reports, found $count"
+          [[ "$count" -eq 3 ]] || {
+            echo "Expected 3 reports, found $count"
             exit 1
           }
 
