@@ -7,7 +7,7 @@ on:
       - 'master'
 jobs:
   build:
-    name: Build package with Swift ${{ matrix.swift }} on ${{ matrix.os }}
+    name: Build package with Swift ${{ matrix.swift }} on ${{ matrix.os }}.
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
