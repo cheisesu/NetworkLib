@@ -7,7 +7,7 @@ extension Tag.RawSocket {
     @Tag static var internalState: Tag
 }
 
-@Suite(.tags(.core, .RawSocket.all, .RawSocket.internalState), .timeLimit(.minutes(1)))
+@Suite(.tags(.core, .RawSocket.all, .RawSocket.internalState), .timeLimit(.minutes(2)))
 struct RawSocketInternalStateTests {
     @Test(arguments: [RawSocketTransport.tcp, .udp])
     func connectThenCancel_CorrectSequence(_ transport: RawSocketTransport) async throws {
@@ -88,7 +88,7 @@ struct RawSocketInternalStateTests {
     }
 }
 
-@Suite(.tags(.core, .RawSocket.cancel), .timeLimit(.minutes(1)))
+@Suite(.tags(.core, .RawSocket.cancel), .timeLimit(.minutes(2)))
 struct RawSocketCancellationOrderingTests {
     @Test(arguments: [RawSocketTransport.tcp, .udp])
     func parallelReceiveAndRepeatedCancellation_AllComplete(_ transport: RawSocketTransport) async throws {

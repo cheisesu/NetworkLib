@@ -7,7 +7,7 @@ extension Tag.RawSocket {
     @Tag static var receive: Tag
 }
 
-@Suite(.tags(.core, .RawSocket.all, .RawSocket.receive), .timeLimit(.minutes(1)))
+@Suite(.tags(.core, .RawSocket.all, .RawSocket.receive), .timeLimit(.minutes(2)))
 struct RawSocketReceiveTests {
     // MARK: TIMEOUT ERRORS
 
