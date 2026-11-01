@@ -11,11 +11,15 @@ final class NWConnectionMock: @unchecked Sendable, UnderlyingConnection {
         static let methodReceive: Mode = .init(rawValue: 0x01 << 2)
     }
     let diagnosticsID = UUID().uuidString
+    // Assigned during setup, before start(queue:).
+    var connectionTrace: (@Sendable (String) -> Void)?
     private let lock: NSLock
     private var _state: NWConnection.State {
         didSet {
+            connectionTrace?("mock.state.enqueue \(_state)")
             SocketDiagnostics.record(diagnosticsID, "mock.state.enqueue \(_state)")
             eventsQueue?.async { [_state] in
+                self.connectionTrace?("mock.state.deliver \(_state)")
                 SocketDiagnostics.record(self.diagnosticsID, "mock.state.deliver \(_state)")
                 if oldValue != _state {
                     self.stateUpdateHandler?(_state)
@@ -94,6 +98,7 @@ final class NWConnectionMock: @unchecked Sendable, UnderlyingConnection {
     }
 
     func start(queue: DispatchQueue) {
+        connectionTrace?("mock.start")
         lock.withLock { eventsQueue = queue }
         if overridedStates.isEmpty {
             state = .preparing

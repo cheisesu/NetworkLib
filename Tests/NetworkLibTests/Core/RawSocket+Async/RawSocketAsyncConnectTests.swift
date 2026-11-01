@@ -12,7 +12,19 @@ struct RawSocketAsyncConnectTests {
         let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: timeout,
                                    maxDataBlock: 256, transport: transport)
         defer { socket.cancel(nil) }
+        let trace = ConnectTimingTrace(test: "onSuccess", transport: transport)
+        socket.connectionTrace = { trace.record($0) }
+        underlyingConnection.connectionTrace = { trace.record($0) }
+        trace.record("test.beforeConnect")
+        let snapshot = DispatchWorkItem { trace.export(phase: "pending-90s") }
+        DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + 90, execute: snapshot)
+        defer {
+            snapshot.cancel()
+            trace.record("test.finished")
+            trace.export(phase: "finished")
+        }
         let info = try await socket.connect()
+        trace.record("test.afterConnect")
         try #require(info == underlyingConnection.connectionInfo(with: transport))
     }
 
@@ -57,6 +69,64 @@ struct RawSocketAsyncConnectTests {
             task.cancel()
             _ = try await task.value
         } catch NWError.posix(.ECANCELED) {
+        }
+    }
+}
+
+// One buffer and lock per connection; disk I/O happens only when exporting a snapshot.
+private final class ConnectTimingTrace: @unchecked Sendable {
+    private struct Entry: Codable {
+        let event: String
+        let elapsedMilliseconds: Double
+    }
+
+    private struct Report: Codable {
+        let id: String
+        let pid: Int32
+        let test: String
+        let transport: String
+        let phase: String
+        let startedAt: Date
+        let events: [Entry]
+    }
+
+    private let lock = NSLock()
+    private var entries: [Entry] = []
+    private let start = DispatchTime.now().uptimeNanoseconds
+    private let startedAt = Date()
+    private let id = UUID().uuidString
+    private let test: String
+    private let transport: String
+
+    init(test: String, transport: RawSocketTransport) {
+        self.test = test
+        self.transport = String(describing: transport)
+    }
+
+    func record(_ event: String) {
+        lock.withLock {
+            let elapsed = Double(DispatchTime.now().uptimeNanoseconds - start) / 1_000_000
+            entries.append(Entry(event: event, elapsedMilliseconds: elapsed))
+        }
+    }
+
+    func export(phase: String) {
+        let events = lock.withLock { entries }
+        let report = Report(id: id, pid: ProcessInfo.processInfo.processIdentifier,
+                            test: test, transport: transport, phase: phase,
+                            startedAt: startedAt, events: events)
+        let directory = ProcessInfo.processInfo.environment["NETWORKLIB_CONNECT_TRACE_DIRECTORY"]
+            ?? NSTemporaryDirectory() + "NetworkLibConnectTraces"
+        let root = URL(fileURLWithPath: directory, isDirectory: true)
+        do {
+            try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+            encoder.dateEncodingStrategy = .iso8601
+            let data = try encoder.encode(report)
+            try data.write(to: root.appendingPathComponent("\(id)-\(phase).json"), options: .atomic)
+        } catch {
+            FileHandle.standardError.write(Data("Connect trace export failed: \(error)\n".utf8))
         }
     }
 }

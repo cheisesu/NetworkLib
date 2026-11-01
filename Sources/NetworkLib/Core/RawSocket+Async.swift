@@ -19,7 +19,9 @@ extension RawSocket {
     /// - Throws: The `NWError` reported by the connection attempt or cancellation.
     @discardableResult
     public func connect() async throws(NWError) -> ConnectionInfo {
-        try await withSocketCancellation { done in
+        let trace = connectionTrace
+        trace?("connect.async.enter")
+        return try await withSocketCancellation(trace: trace) { done in
             connect(done)
         }
     }
@@ -112,6 +114,7 @@ extension RawSocket {
 private extension RawSocket {
     func withSocketCancellation<T: Sendable>(
         name: String = #function,
+        trace: (@Sendable (String) -> Void)? = nil,
         _ operation: (@escaping @Sendable (_ done: Result<T, NWError>) -> Void) -> Void
     ) async throws(NWError) -> T {
         let traceID = diagnosticsID
@@ -119,17 +122,21 @@ private extension RawSocket {
         SocketDiagnostics.record(traceID, "async \(name) \(operationID) begin cancelled=\(Task.isCancelled)")
         let result = await withTaskCancellationHandler {
             await withCheckedContinuation { continuation in
+                trace?("continuation.register")
                 SocketDiagnostics.record(traceID, "async \(name) \(operationID) register")
                 operation { result in
+                    trace?("continuation.resume")
                     SocketDiagnostics.record(traceID, "async \(name) \(operationID) continuation.resume")
                     continuation.resume(returning: result)
                 }
             }
         } onCancel: { [weak self] in
+            trace?("connect.task.cancel")
             SocketDiagnostics.record(traceID, "async \(name) \(operationID) task.cancel alive=\(self != nil)")
             self?.cancel(nil)
         }
         SocketDiagnostics.record(traceID, "async \(name) \(operationID) returned")
+        trace?("connect.async.resumed")
         return try result.get()
     }
 }

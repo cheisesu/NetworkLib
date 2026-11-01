@@ -32,6 +32,8 @@ public class RawSocket: @unchecked Sendable {
     var onInternalStateChange: (@Sendable (_ oldState: _InternalState, _ newState: _InternalState) -> Void)?
 
     let diagnosticsID = UUID().uuidString
+    // Install before starting operations; the observer must not retain the socket.
+    var connectionTrace: (@Sendable (String) -> Void)?
     private let id: String
     private let connection: UnderlyingConnection
     private let accessQueue: DispatchQueue
@@ -135,8 +137,12 @@ public class RawSocket: @unchecked Sendable {
     ///
     /// - Parameter block: A callback invoked when the connection succeeds or fails.
     public func connect(_ block: @escaping @Sendable (_ result: Result<ConnectionInfo, NWError>) -> Void) { // done
+        let trace = connectionTrace
+        trace?("connect.enqueue")
         accessQueue.async { [weak self] in
+            trace?("connect.access.begin alive=\(self != nil)")
             self?.connectUnsafe { result in
+                trace?("connect.callback")
                 block(result)
             }
         }
@@ -427,6 +433,7 @@ extension RawSocket {
     }
 
     private func stateUpdateHandler(_ newState: NWConnection.State) {
+        connectionTrace?("socket.state \(newState)")
         SocketDiagnostics.record(diagnosticsID, "connection.state \(newState)")
         printDebug("[socket] new state", newState)
         switch newState {
@@ -475,6 +482,7 @@ extension RawSocket {
         let callback = connectingCallback
         connectingCallback = nil
         if let callback {
+            connectionTrace?("connect.callback.enqueue")
             callbackDelivery.call(result, callback)
         }
     }
