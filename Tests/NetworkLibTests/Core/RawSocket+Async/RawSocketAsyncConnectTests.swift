@@ -12,19 +12,29 @@ struct RawSocketAsyncConnectTests {
         let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: timeout,
                                    maxDataBlock: 256, transport: transport)
         defer { socket.cancel(nil) }
-        let trace = ConnectTimingTrace(test: "onSuccess", transport: transport)
-        socket.connectionTrace = { trace.record($0) }
-        underlyingConnection.connectionTrace = { trace.record($0) }
-        trace.record("test.beforeConnect")
-        let snapshot = DispatchWorkItem { trace.export(phase: "pending-90s") }
-        DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + 90, execute: snapshot)
+        // Opt in explicitly so comparison runs perform no trace recording or snapshot scheduling.
+        let trace: ConnectTimingTrace?
+        let snapshot: DispatchWorkItem?
+        if ProcessInfo.processInfo.environment["NETWORKLIB_CONNECT_TRACE"] == "1" {
+            let recorder = ConnectTimingTrace(test: "onSuccess", transport: transport)
+            trace = recorder
+            socket.connectionTrace = { recorder.record($0) }
+            underlyingConnection.connectionTrace = { recorder.record($0) }
+            recorder.record("test.beforeConnect")
+            let work = DispatchWorkItem { recorder.export(phase: "pending-90s") }
+            snapshot = work
+            DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + 90, execute: work)
+        } else {
+            trace = nil
+            snapshot = nil
+        }
         defer {
-            snapshot.cancel()
-            trace.record("test.finished")
-            trace.export(phase: "finished")
+            snapshot?.cancel()
+            trace?.record("test.finished")
+            trace?.export(phase: "finished")
         }
         let info = try await socket.connect()
-        trace.record("test.afterConnect")
+        trace?.record("test.afterConnect")
         try #require(info == underlyingConnection.connectionInfo(with: transport))
     }
 

@@ -113,6 +113,7 @@ jobs:
           export TEST_RUNNER_NETWORKLIB_DIAGNOSTICS_DIRECTORY="$RUNNER_TEMP/NetworkLibDiagnostics"
           mkdir -p "$RUNNER_TEMP/ConnectTraces"
           export TEST_RUNNER_NETWORKLIB_CONNECT_TRACE_DIRECTORY="$RUNNER_TEMP/ConnectTraces"
+          export TEST_RUNNER_NETWORKLIB_CONNECT_TRACE=0
 
           NETWORKLIB_SAMPLE_STACKS=0 python3 .github/scripts/monitor-test-threads.py &
           thread_monitor_pid=$!
@@ -158,7 +159,7 @@ jobs:
           name: connect-traces-${{ matrix.platform }}-${{ matrix.version }}
           path: ${{ runner.temp }}/ConnectTraces
           retention-days: 7
-          if-no-files-found: warn
+          if-no-files-found: ignore
 
       - name: Upload test results
         if: always()
