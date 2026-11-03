@@ -11,8 +11,6 @@ struct RawSocketAsyncCancelTests {
         let underlyingConnection = NWConnectionMock()
         let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: timeout,
                                    maxDataBlock: 256, transport: transport)
-        SocketDiagnostics.record(socket.diagnosticsID,
-                                 "test \(#function) transport=\(transport) mock=\(underlyingConnection.diagnosticsID)")
         try await socket.connect()
         await socket.cancel()
         do {
@@ -28,13 +26,10 @@ struct RawSocketAsyncCancelTests {
         let underlyingConnection = NWConnectionMock()
         let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: timeout,
                                    maxDataBlock: 256, transport: transport)
-        SocketDiagnostics.record(socket.diagnosticsID,
-                                 "test \(#function) transport=\(transport) mock=\(underlyingConnection.diagnosticsID)")
         try await socket.connect()
         async let cancel1: Void = socket.cancel()
         async let cancel2: Void = socket.cancel()
         _ = await [cancel1, cancel2]
-        SocketDiagnostics.record(socket.diagnosticsID, "test both cancels completed")
         do {
             try await socket.connect()
             Issue.record("Unexpected entrance")

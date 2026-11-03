@@ -48,8 +48,6 @@ struct RawSocketInternalStateTests {
             box.set(socket)
         }()
         defer { box.get()?.cancel(nil) }
-        let traceID = try #require(box.get()?.diagnosticsID)
-        SocketDiagnostics.record(traceID, "test notDeinitsUntilClosed begin mock=\(underlyingConnection.diagnosticsID)")
         let weakSocket = _WeakSocketBox(box.get())
         try #require(weakSocket.socket != nil)
 
@@ -61,16 +59,12 @@ struct RawSocketInternalStateTests {
             }
         }()
         let _: Void = try await withCheckedThrowingContinuation { continuation in
-            SocketDiagnostics.record(traceID, "test connect.request")
-            box.get()?.connect { result in
-                SocketDiagnostics.record(traceID, "test connect.callback result=\(result)")
+            box.get()?.connect { _ in
                 box.get()?.cancel {
-                    SocketDiagnostics.record(traceID, "test cancel.callback")
                     seqContinuation.finish()
                     continuation.resume()
                 }
                 box.set(nil)
-                SocketDiagnostics.record(traceID, "test source.released")
             }
         }
         let pairs = await sequence.values
@@ -83,7 +77,6 @@ struct RawSocketInternalStateTests {
             }
         }
         // A weak reference tracks this instance even if another test reuses its address.
-        SocketDiagnostics.record(traceID, "test accessQueue.barrier.completed")
         try #require(weakSocket.socket == nil)
     }
 }

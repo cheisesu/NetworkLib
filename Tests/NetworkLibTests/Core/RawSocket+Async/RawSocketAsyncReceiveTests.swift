@@ -12,8 +12,6 @@ struct RawSocketAsyncReceiveTests {
         let underlyingConnection = NWConnectionMock(dataForReceive: expectedData)
         let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: timeout,
                                    maxDataBlock: 256, transport: transport)
-        SocketDiagnostics.record(socket.diagnosticsID,
-                                 "test \(#function) transport=\(transport) mock=\(underlyingConnection.diagnosticsID)")
         defer { socket.cancel(nil) }
         try await socket.connect()
         let data = try await socket.receiveNext()
@@ -27,8 +25,6 @@ struct RawSocketAsyncReceiveTests {
         let underlyingConnection = NWConnectionMock(overridedReceiveError: expectedError)
         let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: timeout,
                                    maxDataBlock: 256, transport: transport)
-        SocketDiagnostics.record(socket.diagnosticsID,
-                                 "test \(#function) transport=\(transport) mock=\(underlyingConnection.diagnosticsID)")
         defer { socket.cancel(nil) }
         do {
             try await socket.connect()
@@ -47,8 +43,6 @@ struct RawSocketAsyncReceiveTests {
         let underlyingConnection = NWConnectionMock(mode: [.methodReceive, .dontCallCallback])
         let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: timeout,
                                    maxDataBlock: 256, transport: transport)
-        SocketDiagnostics.record(socket.diagnosticsID,
-                                 "test \(#function) transport=\(transport) mock=\(underlyingConnection.diagnosticsID)")
         defer { socket.cancel(nil) }
         do {
             try await socket.connect()
