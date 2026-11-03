@@ -108,18 +108,40 @@ jobs:
         run: |
           set -o pipefail
 
-          xcodebuild test \
-            -scheme NetworkLib \
-            -configuration Debug \
-            -destination "${{ steps.platform_destination.outputs.destination }}" \
-            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
-            -resultBundlePath "$RUNNER_TEMP/TestResults.xcresult" \
-            -enableCodeCoverage YES \
-            -parallel-testing-enabled ${{ startsWith(matrix.xcode, '16.') && 'NO' || 'YES' }} \
-            IPHONEOS_DEPLOYMENT_TARGET=16.0 \
-            TVOS_DEPLOYMENT_TARGET=16.0 \
-            MACOSX_DEPLOYMENT_TARGET=13.0 \
+          test_arguments=(
+            -scheme NetworkLib
+            -configuration Debug
+            -destination "${{ steps.platform_destination.outputs.destination }}"
+            -derivedDataPath "$RUNNER_TEMP/DerivedData"
+            -enableCodeCoverage YES
+            -parallel-testing-enabled ${{ startsWith(matrix.xcode, '16.') && 'NO' || 'YES' }}
+            IPHONEOS_DEPLOYMENT_TARGET=16.0
+            TVOS_DEPLOYMENT_TARGET=16.0
+            MACOSX_DEPLOYMENT_TARGET=13.0
             CODE_SIGN_IDENTITY=-
+          )
+
+          if [[ "${{ matrix.platform }}" == "iOS Simulator" && "${{ matrix.version }}" == "26" ]]; then
+            # Compile before recording so the trace covers test execution, not the build.
+            xcodebuild build-for-testing "${test_arguments[@]}"
+            python3 .github/scripts/record-test-trace.py \
+              xcodebuild test-without-building "${test_arguments[@]}" \
+              -resultBundlePath "$RUNNER_TEMP/TestResults.xcresult"
+          else
+            xcodebuild test "${test_arguments[@]}" \
+              -resultBundlePath "$RUNNER_TEMP/TestResults.xcresult"
+          fi
+
+      - name: Upload System Trace
+        if: always() && matrix.platform == 'iOS Simulator' && matrix.version == '26'
+        uses: actions/upload-artifact@v4
+        with:
+          name: system-trace-${{ matrix.platform }}-${{ matrix.version }}
+          path: ${{ runner.temp }}/SystemTrace
+          include-hidden-files: true
+          retention-days: 7
+          if-no-files-found: warn
+          compression-level: 0
 
       - name: Upload test results
         if: always()
