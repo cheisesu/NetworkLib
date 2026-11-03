@@ -9,6 +9,9 @@ extension Tag.RawSocket {
 
 @Suite(.tags(.core, .RawSocket.all, .RawSocket.cancel), .timeLimit(.minutes(1)))
 struct RawSocketCancelTests {
+    init() {
+        print("==>> SWIFT_CONCURRENCY_POOL_SIZE", ProcessInfo.processInfo.environment["SWIFT_CONCURRENCY_POOL_SIZE"] ?? "-")
+    }
     @Test(arguments: [RawSocketTransport.tcp, .udp])
     func callbackCalledOnDelegateQueue(_ transport: RawSocketTransport) async throws {
         let delegateQueue = DispatchQueue(label: "raw-socket.delegate.cancel")

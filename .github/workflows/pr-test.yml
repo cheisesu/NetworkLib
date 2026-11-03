@@ -108,18 +108,21 @@ jobs:
         run: |
           set -o pipefail
 
-          xcodebuild test \
-            -scheme NetworkLib \
-            -configuration Debug \
-            -destination "${{ steps.platform_destination.outputs.destination }}" \
-            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
-            -resultBundlePath "$RUNNER_TEMP/TestResults.xcresult" \
-            -enableCodeCoverage YES \
-            -parallel-testing-enabled ${{ startsWith(matrix.xcode, '16.') && 'NO' || 'YES' }} \
-            IPHONEOS_DEPLOYMENT_TARGET=16.0 \
-            TVOS_DEPLOYMENT_TARGET=16.0 \
-            MACOSX_DEPLOYMENT_TARGET=13.0 \
+          test_arguments=(
+            -scheme NetworkLib
+            -configuration Debug
+            -destination "${{ steps.platform_destination.outputs.destination }}"
+            -derivedDataPath "$RUNNER_TEMP/DerivedData"
+            -enableCodeCoverage YES
+            -parallel-testing-enabled ${{ startsWith(matrix.xcode, '16.') && 'NO' || 'YES' }}
+            IPHONEOS_DEPLOYMENT_TARGET=16.0
+            TVOS_DEPLOYMENT_TARGET=16.0
+            MACOSX_DEPLOYMENT_TARGET=13.0
             CODE_SIGN_IDENTITY=-
+          )
+
+          xcodebuild test "${test_arguments[@]}" \
+            -resultBundlePath "$RUNNER_TEMP/TestResults.xcresult"
 
       - name: Upload test results
         if: always()
