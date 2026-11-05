@@ -38,17 +38,23 @@ struct RawSocketAsyncConnectTests {
         let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: timeout,
                                    maxDataBlock: 256, transport: transport)
         defer { socket.cancel(nil) }
+        // Subscribe before starting connect; the stream buffers an early transition.
+        let (connecting, continuation) = AsyncStream.makeStream(of: Void.self)
+        socket.onInternalStateChange = { _, newState in
+            guard newState == .connecting else { return }
+            continuation.yield(())
+            continuation.finish()
+        }
+        defer { continuation.finish() }
         do {
             let task = Task {
                 try await socket.connect()
             }
-            await withCheckedContinuation { continuation in
-                socket.onInternalStateChange = { _, newState in
-                    guard newState == .connecting else { return }
-                    task.cancel()
-                    continuation.resume()
-                }
+            defer { task.cancel() }
+            for await _ in connecting {
+                break
             }
+            task.cancel()
             _ = try await task.value
         } catch NWError.posix(.ECANCELED) {
         }

@@ -30,7 +30,10 @@ struct RawSocketAsyncReceiveTests {
             try await socket.connect()
             _ = try await socket.receiveNext()
             Issue.record("Unexpected entrance")
-        } catch where (error as any Error) as? NWError == expectedError {
+        } catch {
+            guard error == expectedError else {
+                throw error
+            }
         }
     }
 
