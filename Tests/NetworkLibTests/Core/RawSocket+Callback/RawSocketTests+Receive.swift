@@ -165,6 +165,64 @@ struct RawSocketReceiveTests {
         }
     }
 
+    @Test(arguments: [false, true], [false, true])
+    func cancelledReceive_CompletesWithControlledQueueOrdering(
+        _ sharedQueue: Bool, _ receiveFromCancelCallback: Bool
+    ) async throws {
+        let accessQueue = DispatchQueue(label: "raw-socket.cancel-receive.access")
+        let delegateQueue = sharedQueue ? accessQueue : DispatchQueue(label: "raw-socket.cancel-receive.delegate")
+        let socket = try RawSocket(NWConnectionMock(), accessQueue: accessQueue, delegateQueue: delegateQueue,
+                                   timeout: 0, maxDataBlock: 256, transport: .tcp)
+        defer { socket.cancel(nil) }
+        let (events, continuation) = AsyncStream.makeStream(of: String.self)
+        defer { continuation.finish() }
+
+        let receive: @Sendable () -> Void = {
+            socket.receiveNext { result in
+                switch result {
+                case .success:
+                    Issue.record("Receive after cancellation unexpectedly succeeded")
+                case .failure(let error):
+                    #expect(error == .posix(.ECANCELED))
+                }
+                continuation.yield("receive")
+            }
+        }
+
+        // Hold callback delivery until cancellation and any immediately queued receive have run.
+        // Never suspend the access queue: its progress is checked with independent markers below.
+        if !sharedQueue {
+            delegateQueue.suspend()
+        }
+        socket.cancel {
+            continuation.yield("cancel")
+            if receiveFromCancelCallback {
+                receive()
+            }
+        }
+        if !receiveFromCancelCallback {
+            receive()
+        }
+        await queueMarker(accessQueue)
+        if !sharedQueue {
+            delegateQueue.resume()
+        }
+
+        // A cancel callback can enqueue receive behind an earlier access-queue marker.
+        await queueMarker(delegateQueue)
+        await queueMarker(accessQueue)
+        await queueMarker(delegateQueue)
+        continuation.finish()
+        let observed = await events.values
+        #expect(observed == ["cancel", "receive"])
+    }
+
+    private func queueMarker(_ queue: DispatchQueue) async {
+        await withCheckedContinuation { continuation in
+            queue.async { continuation.resume() }
+        }
+    }
+
     @Test
     func whenCancelled_ThrowsCancelledError() async throws {
         let transport = RawSocketTransport.tcp
