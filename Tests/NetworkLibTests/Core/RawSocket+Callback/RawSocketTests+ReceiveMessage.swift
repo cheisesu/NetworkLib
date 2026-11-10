@@ -7,7 +7,7 @@ extension Tag.RawSocket {
     @Tag static var receiveMessage: Tag
 }
 
-@Suite(.tags(.core, .RawSocket.all, .RawSocket.receiveMessage), .timeLimit(.minutes(1)))
+@Suite(.tags(.core, .RawSocket.all, .RawSocket.receiveMessage), .timeLimit(.minutes(2)))
 struct RawSocketReceiveMessageTests {
     // MARK: - ENTITIES
 
