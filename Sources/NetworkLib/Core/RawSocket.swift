@@ -474,7 +474,6 @@ extension RawSocket {
 
     private func clearResourcesUnsafe() {
         timeoutEvent?.cancel()
-        connection.stateUpdateHandler = nil
         selfKeeper = nil
     }
 }
