@@ -416,6 +416,8 @@ extension RawSocket {
             cancelUnsafe(manually: false)
         case .preparing: break
         case .ready:
+            // A ready event queued before cancel() may arrive after cancellation has begun.
+            guard internalState == .connecting else { return }
             timeoutEvent?.detouch()
             internalState = .connected
             let info = connection.connectionInfo(with: transport)

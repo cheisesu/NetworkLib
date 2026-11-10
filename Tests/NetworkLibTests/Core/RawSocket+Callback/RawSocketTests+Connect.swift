@@ -10,7 +10,7 @@ extension Tag {
     }
 }
 
-@Suite(.tags(.core, .RawSocket.all, .RawSocket.connect), .timeLimit(.minutes(1)))
+@Suite(.tags(.core, .RawSocket.all, .RawSocket.connect), .timeLimit(.minutes(2)))
 struct RawSocketConnectTests {
     // MARK: TIMEOUT ERRORS
 

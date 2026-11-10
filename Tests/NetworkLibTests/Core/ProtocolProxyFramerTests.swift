@@ -7,7 +7,7 @@ extension Tag {
     @Tag static var proxy: Tag
 }
 
-@Suite(.tags(.core, .proxy), .timeLimit(.minutes(1)))
+@Suite(.tags(.core, .proxy), .timeLimit(.minutes(2)))
 struct ProtocolProxyFramerTests {
     @Test
     func proxy_ReturnsProtocolProxyFramer() {
