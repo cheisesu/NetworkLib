@@ -143,7 +143,7 @@ final class NWConnectionMock: @unchecked Sendable, UnderlyingConnection {
             if mode.contains(.dontCallCallback) {
                 lock.withLock {
                     _pendingCallbacks.append {
-                        completion(nil, nil, true, self.overridedReceiveError)
+                        completion(nil, self.overridedReceiveContext, true, self.overridedReceiveError)
                     }
                 }
             } else {

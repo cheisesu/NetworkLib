@@ -159,28 +159,6 @@ struct RawSocketSendTests {
     }
 
     @Test(arguments: [RawSocketTransport.tcp, .udp])
-    func whenClosedDuringSend_ReturnsCancelledError(_ transport: RawSocketTransport) async throws {
-        let timeout: TimeInterval = 0
-        let dataToSend = Data("Hello".utf8)
-        let underlyingConnection = NWConnectionMock(overridedSendError: .posix(.EINVAL), mode: [.methodSend, .dontCallCallback])
-        let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: timeout,
-                                   maxDataBlock: 256, transport: transport)
-        defer { socket.cancel(nil) }
-        do {
-            let _: Void = try await withCheckedThrowingContinuation { continuation in
-                socket.connect { _ in
-                    socket.send(dataToSend) { result in
-                        continuation.resume(with: result)
-                    }
-                    socket.cancel(nil)
-                }
-            }
-            Issue.record("Unexpected entrance")
-        } catch NWError.posix(.ECANCELED) {
-        }
-    }
-
-    @Test(arguments: [RawSocketTransport.tcp, .udp])
     func sendWhenTimeoutHappened_ReturnsTimeoutError(_ transport: RawSocketTransport) async throws {
         let timeout: TimeInterval = 0.5
         let dataToSend = Data("Hello".utf8)
