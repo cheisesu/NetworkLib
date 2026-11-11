@@ -20,6 +20,7 @@ do {
     case "proxy": try await ProxyExample.run()
     case "udp": try await TypedMessagesExample.run()
     case "headers": try HTTPHeadersExample.run()
+    case "websocket": try await WebSocketExample.run()
     default: throw ExampleError.message("Unknown example '\(command)'. Use --help to list examples.")
     }
     ExampleCLI.log("Completed successfully.")
