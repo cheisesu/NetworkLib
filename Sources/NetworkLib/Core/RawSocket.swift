@@ -186,8 +186,6 @@ public class RawSocket: @unchecked Sendable {
                 self?.timeoutEvent?.detouch()
                 if let error = self?.pendingError {
                     completion?(.failure(error))
-                } else if let error = self?.operationCancelError {
-                    completion?(.failure(error))
                 } else if let error {
                     completion?(.failure(error))
                 } else {
@@ -227,8 +225,6 @@ public class RawSocket: @unchecked Sendable {
     private func sendMessageHandler(_ error: NWError?, _ completion: (@Sendable (_ result: Result<Void, NWError>) -> Void)?) {
         timeoutEvent?.detouch()
         if let error = pendingError {
-            completion?(.failure(error))
-        } else if let error = operationCancelError {
             completion?(.failure(error))
         } else if let error {
             completion?(.failure(error))
@@ -273,6 +269,7 @@ public class RawSocket: @unchecked Sendable {
     private func receiveNextHandler(_ content: Data?, _ isComplete: Bool, _ error: NWError?,
                                     completion: @escaping @Sendable (_ result: Result<Data?, NWError>) -> Void)
     {
+        printDebug("[socket] receive next handler", error, content, isComplete)
         timeoutEvent?.detouch()
         if let content {
             completion(.success(content))
@@ -281,8 +278,6 @@ public class RawSocket: @unchecked Sendable {
             completion(.failure(error))
         } else if isComplete {
             if let error = pendingError {
-                completion(.failure(error))
-            } else if let error = operationCancelError {
                 completion(.failure(error))
             } else {
                 completion(.success(nil))
@@ -333,16 +328,12 @@ public class RawSocket: @unchecked Sendable {
             completion(.failure(error))
         } else if let error = pendingError {
             completion(.failure(error))
-        } else if let error = operationCancelError {
-            completion(.failure(error))
         } else if let contentContext {
             if !isComplete {
                 return completion(.failure(.posix(.EIO)))
             }
             if let message = M.init(from: contentContext, with: content) {
                 completion(.success(message))
-            } else if contentContext.isFinal {
-                completion(.failure(.posix(.EBADMSG)))
             } else {
                 completion(.failure(.posix(.EBADMSG)))
             }
