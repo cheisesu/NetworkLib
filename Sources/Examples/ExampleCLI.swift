@@ -24,10 +24,13 @@ enum ExampleCLI {
           callbacks   Send UTF-8 bytes to a local TCP listener on port 9000.
           proxy       Fetch https://example.com through your HTTP CONNECT proxy.
           udp         Exchange a typed message with a local UDP echo server on port 9001.
+          websocket   Send interactive text to echo.websocket.org over TLS; type exit to close.
           headers     Build and inspect HTTP headers locally; no server needed.
 
         Setup:
           async: Internet access is required.
+          websocket: Internet access and an interactive terminal are required.
+            Wait for the > prompt, type a message, and press Return. Type exit to close.
           callbacks: In another terminal, run: nc -l 9000
           udp: In another terminal, run:
         python3 -u - <<'PYTHON'
