@@ -1,6 +1,6 @@
 import Foundation
 
-final class TimeoutRecursiveEvent: @unchecked Sendable {
+final nonisolated class TimeoutRecursiveEvent: @unchecked Sendable {
     private let syncLock: NSLock
     private let timer: DispatchSourceTimer
     private var token: Int64

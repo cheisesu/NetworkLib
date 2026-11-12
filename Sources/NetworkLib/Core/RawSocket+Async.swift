@@ -1,7 +1,6 @@
 import Foundation
 import Network
 
-@available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
 extension RawSocket {
     /// Starts the underlying network connection and returns connection details when it becomes ready.
     ///
@@ -103,7 +102,6 @@ extension RawSocket {
     }
 }
 
-@available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
 private extension RawSocket {
     func withSocketCancellation<T: Sendable>(
         _ operation: (@escaping @Sendable (_ done: Result<T, NWError>) -> Void) -> Void

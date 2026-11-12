@@ -5,8 +5,7 @@ import Network
 ///
 /// Conforming types inspect both the content context and the optional payload. Use a conformance with
 /// ``RawSocket/receiveNextMessage(of:_:)`` or ``RawSocket/receiveNextMessage(of:)``.
-@available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
-public protocol RawSocketReceiveMessage: Sendable {
+public nonisolated protocol RawSocketReceiveMessage: Sendable {
     /// Creates a typed message from received protocol metadata and optional payload bytes.
     ///
     /// Return `nil` when the context or payload doesn't describe a valid message of this type. NetworkLib reports that rejection

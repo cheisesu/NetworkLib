@@ -1,7 +1,7 @@
 import Foundation
 
 extension HTTPResponseParser {
-    enum Event: Sendable {
+    nonisolated enum Event: Sendable {
         case response(HTTPParserResponseResult)
         case data(Data)
         case end
@@ -24,15 +24,15 @@ extension HTTPResponseParser {
         }
     }
 
-    enum Error: Swift.Error, Sendable {
+    nonisolated enum Error: Swift.Error, Sendable {
         case invalidChunkSize
         case invalidChunkTerminator
         case parsingCompleted
     }
 }
 
-final class HTTPResponseParser: @unchecked Sendable {
-    private enum BodyKind {
+final nonisolated class HTTPResponseParser: @unchecked Sendable {
+    private nonisolated enum BodyKind {
         case none
         case plain
         case chunked

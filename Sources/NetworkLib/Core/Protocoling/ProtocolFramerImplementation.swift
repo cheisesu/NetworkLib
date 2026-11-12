@@ -1,7 +1,7 @@
 import Foundation
 import Network
 
-protocol ProtocolFramerImplementation {
+nonisolated protocol ProtocolFramerImplementation {
     init()
 
     func start(framer: any ProtocolFramer) -> NWProtocolFramer.StartResult

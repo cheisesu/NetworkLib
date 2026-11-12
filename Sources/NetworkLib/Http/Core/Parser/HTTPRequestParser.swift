@@ -1,7 +1,7 @@
 import Foundation
 import Network
 
-final class HTTPRequestParser: Sendable {
+final nonisolated class HTTPRequestParser: Sendable {
     let parsedData: Data
 
     init(_ urlRequest: URLRequest, version: HTTPVersion = .v1_1) {

@@ -2,7 +2,7 @@ import Foundation
 import Network
 
 @available(iOS 15.4, tvOS 15.4, macOS 12.3, *)
-enum ProxyOptions: Sendable {
+nonisolated enum ProxyOptions: Sendable {
     static let kOptionsEndpointHost = "kOptionsEndpointHost"
     static let kOptionsEndpointPort = "kOptionsEndpointPort"
     static let kOptionsIsSecure = "kOptionsIsSecure"
@@ -38,7 +38,7 @@ extension NWProtocolFramer.Options {
 }
 
 @available(iOS 15.4, tvOS 15.4, macOS 12.3, *)
-private final class ProtocolProxy: NWProtocolFramerImplementation, @unchecked Sendable {
+private nonisolated final class ProtocolProxy: NWProtocolFramerImplementation, @unchecked Sendable {
     static let definition = NWProtocolFramer.Definition(implementation: ProtocolProxy.self)
     static let label: String = "ProtocolProxy"
 

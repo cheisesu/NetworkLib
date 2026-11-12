@@ -1,11 +1,11 @@
 import Foundation
 
 extension DispatchQueue {
-    enum RawSocket: Sendable {
+    nonisolated enum RawSocket: Sendable {
         static var access: DispatchQueue { .init(label: .queueId(with: .rawSocket)) }
         static var delegate: DispatchQueue { .init(label: .queueId(with: .rawSocket, .delegate)) }
     }
-    enum HTTPTask: Sendable {
+    nonisolated enum HTTPTask: Sendable {
         static var access: DispatchQueue { .init(label: .queueId(with: .httpTask)) }
         static var delegate: DispatchQueue { .init(label: .queueId(with: .httpTask, .delegate)) }
     }

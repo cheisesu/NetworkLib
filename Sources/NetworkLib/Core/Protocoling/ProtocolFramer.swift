@@ -1,7 +1,7 @@
 import Foundation
 import Network
 
-protocol ProtocolFramer: Sendable {
+nonisolated protocol ProtocolFramer: Sendable {
     func makeMessage() -> NWProtocolFramer.Message
     func parseInput(minimumIncompleteLength: Int, maximumLength: Int,
                     parse: (UnsafeMutableRawBufferPointer?, Bool) -> Int) -> Bool

@@ -7,7 +7,7 @@ extension ProtocolFramer where Self == NWProtocolFramerAdapter {
     }
 }
 
-struct NWProtocolFramerAdapter: ProtocolFramer {
+nonisolated struct NWProtocolFramerAdapter: ProtocolFramer {
     private let framer: NWProtocolFramer.Instance
     private let definition: NWProtocolFramer.Definition
 
