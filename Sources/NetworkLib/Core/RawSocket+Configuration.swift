@@ -1,7 +1,6 @@
 import Foundation
 @preconcurrency import Network
 
-@available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
 extension RawSocketConfiguration {
     /// The default upper bound for a data block returned by a single raw receive operation.
     ///
@@ -9,7 +8,6 @@ extension RawSocketConfiguration {
     public static let maxDataLength: Int = Int.bitWidth * 1024
 }
 
-@available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
 extension RawSocketConfiguration {
     /// HTTP CONNECT proxy settings used when creating a proxied socket connection.
     ///
@@ -80,7 +78,6 @@ extension RawSocketConfiguration {
 /// )
 /// let socket = try RawSocket(configuration)
 /// ```
-@available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
 public nonisolated struct RawSocketConfiguration: Sendable {
     /// The remote host name or IP address to connect to.
     public let host: NWEndpoint.Host

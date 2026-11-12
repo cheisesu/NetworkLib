@@ -12,7 +12,6 @@ import Foundation
 ///     authorization: authorization
 /// )
 /// ```
-@available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
 public nonisolated enum HTTPAuthorization: Sendable, Equatable {
     /// Basic authentication credentials rendered as `Basic ` followed by Base64-encoded `userName:password` bytes.
     ///

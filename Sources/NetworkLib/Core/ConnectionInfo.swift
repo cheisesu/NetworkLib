@@ -5,7 +5,6 @@ import Network
 ///
 /// NetworkLib creates this value when the underlying Network framework connection enters the ready state. Optional path
 /// information can be unavailable when the current path doesn't expose a local endpoint or interface.
-@available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
 public nonisolated struct ConnectionInfo: Sendable, Equatable {
     /// The transport protocol used by the socket.
     public let transport: RawSocketTransport

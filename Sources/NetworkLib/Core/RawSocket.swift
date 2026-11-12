@@ -15,7 +15,6 @@ import Network
 /// print(info.remoteEndpoint, data?.count ?? 0)
 /// await socket.cancel()
 /// ```
-@available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
 public nonisolated class RawSocket: @unchecked Sendable {
     nonisolated enum _InternalState: Int, Sendable, Equatable, Comparable {
         case initial
@@ -469,7 +468,6 @@ extension RawSocket {
     }
 }
 
-@available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
 private extension RawSocket {
     func delivered<Value: Sendable>(
         _ callback: @Sendable @escaping (_ value: Value) -> Void
