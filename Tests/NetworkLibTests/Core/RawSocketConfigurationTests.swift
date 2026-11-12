@@ -641,6 +641,18 @@ struct RawSocketConfigurationTests {
             let parameters = connection.parameters
             try #require(parameters.requiredInterface == interface)
         }
+
+        @Test(arguments: [RawSocketTransport.tcp, .udp], try await _InterfacesRetriever().retrieve())
+        func usingProxy_DisapledInBox_ReturnsCorrectInterface(_ transport: RawSocketTransport, _ interface: NWInterface?) throws {
+            let proxy = RawSocketConfiguration.Proxy(host: "some.proxy", port: 8888)
+            var config = RawSocketConfiguration("some.host", 9999, transport: transport, interface: interface)
+                .using(proxy: proxy)
+            config.disableInBoxProxy = true
+            let connection = try config.makeNWConnection()
+            try #require(connection.endpoint == proxy.endpoint)
+            let parameters = connection.parameters
+            try #require(parameters.requiredInterface == interface)
+        }
     }
 }
 
