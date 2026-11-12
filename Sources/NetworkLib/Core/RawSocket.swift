@@ -16,8 +16,8 @@ import Network
 /// await socket.cancel()
 /// ```
 @available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
-public class RawSocket: @unchecked Sendable {
-    enum _InternalState: Int, Sendable, Equatable, Comparable {
+public nonisolated class RawSocket: @unchecked Sendable {
+    nonisolated enum _InternalState: Int, Sendable, Equatable, Comparable {
         case initial
         case connecting
         case connected

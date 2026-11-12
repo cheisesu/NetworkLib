@@ -14,7 +14,7 @@ import Foundation
 /// }
 /// ```
 @available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
-public enum HTTPStatusCode: Int, Sendable, CaseIterable {
+public nonisolated enum HTTPStatusCode: Int, Sendable, CaseIterable {
     /// A status code not represented by a declared case. Its raw value is `0`.
     case unrecognized = 0
 

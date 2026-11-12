@@ -25,7 +25,7 @@ extension RawSocketConfiguration {
     /// let proxy = RawSocketConfiguration.Proxy(host: "proxy.example.com", port: 8080)
     /// let proxied = configuration.using(proxy: proxy)
     /// ```
-    public struct Proxy: Sendable, Equatable {
+    public nonisolated struct Proxy: Sendable, Equatable {
         /// The proxy server host name or IP address.
         public let host: NWEndpoint.Host
 
@@ -81,7 +81,7 @@ extension RawSocketConfiguration {
 /// let socket = try RawSocket(configuration)
 /// ```
 @available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
-public struct RawSocketConfiguration: Sendable {
+public nonisolated struct RawSocketConfiguration: Sendable {
     /// The remote host name or IP address to connect to.
     public let host: NWEndpoint.Host
 

@@ -1,6 +1,6 @@
 import Foundation
 
-final class ReferencesCounter: @unchecked Sendable {
+final nonisolated class ReferencesCounter: @unchecked Sendable {
     static let shared = ReferencesCounter()
 
     private let instancesLock: NSLock

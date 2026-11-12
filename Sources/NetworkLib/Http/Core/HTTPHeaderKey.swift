@@ -17,7 +17,7 @@ import Foundation
 /// request.addValue("NetworkLib", forHTTPHeaderField: .userAgent)
 /// ```
 @available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
-public struct HTTPHeaderKey: RawRepresentable {
+public nonisolated struct HTTPHeaderKey: RawRepresentable {
     /// The header field name as it appears on the HTTP wire, such as `"Content-Length"`.
     public let rawValue: String
 

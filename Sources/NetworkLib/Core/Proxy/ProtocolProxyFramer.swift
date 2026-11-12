@@ -7,7 +7,7 @@ extension ProtocolFramerImplementation where Self == ProtocolProxyFramer {
 }
 
 @available(iOS 15.4, tvOS 15.4, macOS 12.3, *)
-final class ProtocolProxyFramer: ProtocolFramerImplementation, @unchecked Sendable {
+final nonisolated class ProtocolProxyFramer: ProtocolFramerImplementation, @unchecked Sendable {
     private let parserLock: NSLock
     private var parser: RawHTTPResponseParser
     private var isCompleted: Bool {

@@ -3,7 +3,7 @@ import Network
 
 // swiftlint:disable line_length
 
-protocol UnderlyingConnection: AnyObject {
+nonisolated protocol UnderlyingConnection: AnyObject {
     var state: NWConnection.State { get }
     var stateUpdateHandler: (@Sendable (_ state: NWConnection.State) -> Void)? { get set }
 
