@@ -100,6 +100,8 @@ public nonisolated struct RawSocketConfiguration: Sendable {
     /// The default `.any` permits the Network framework to select IPv4 or IPv6.
     public let overrideIpVersion: NWProtocolIP.Options.Version
 
+    public let interface: NWInterface?
+
     /// The upper bound for a data block returned by each raw receive operation.
     ///
     /// This value applies to ``RawSocket/receiveNext(_:)`` and ``RawSocket/receiveNext()``.
@@ -140,9 +142,9 @@ public nonisolated struct RawSocketConfiguration: Sendable {
     ///   - timeout: The socket operation timeout in seconds.
     ///   - additionalProtocols: Application protocols to insert above the transport protocol stack.
     public init(_ host: NWEndpoint.Host, _ port: NWEndpoint.Port, ipVersion: NWProtocolIP.Options.Version = .any,
-                isSecure: Bool = true, sni: String? = nil,
-                transport: RawSocketTransport = .tcp, maxDataBlock: Int = Self.maxDataLength,
-                timeout: TimeInterval = 30, additionalProtocols: [NWProtocolOptions] = [])
+                isSecure: Bool = true, sni: String? = nil, transport: RawSocketTransport = .tcp,
+                maxDataBlock: Int = Self.maxDataLength, timeout: TimeInterval = 30,
+                additionalProtocols: [NWProtocolOptions] = [], interface: NWInterface? = nil)
     {
         self.host = host
         self.port = port
@@ -154,6 +156,7 @@ public nonisolated struct RawSocketConfiguration: Sendable {
         self.timeout = timeout
         proxy = nil
         self.additionalProtocols = additionalProtocols
+        self.interface = interface
     }
 
     /// Creates a configuration for a socket connection through an HTTP CONNECT proxy.
@@ -171,9 +174,9 @@ public nonisolated struct RawSocketConfiguration: Sendable {
     ///   - additionalProtocols: Application protocols to insert above the final remote connection.
     @available(iOS 15.4, tvOS 15.4, macOS 12.3, *)
     public init(_ host: NWEndpoint.Host, _ port: NWEndpoint.Port, ipVersion: NWProtocolIP.Options.Version = .any,
-                isSecure: Bool = true, sni: String? = nil,
-                proxy: Proxy, transport: RawSocketTransport = .tcp, maxDataBlock: Int = Self.maxDataLength,
-                timeout: TimeInterval = 30, additionalProtocols: [NWProtocolOptions] = [])
+                isSecure: Bool = true, sni: String? = nil, proxy: Proxy, transport: RawSocketTransport = .tcp,
+                maxDataBlock: Int = Self.maxDataLength, timeout: TimeInterval = 30,
+                additionalProtocols: [NWProtocolOptions] = [], interface: NWInterface? = nil)
     {
         self.host = host
         self.port = port
@@ -185,6 +188,7 @@ public nonisolated struct RawSocketConfiguration: Sendable {
         self.timeout = timeout
         self.proxy = proxy
         self.additionalProtocols = additionalProtocols
+        self.interface = interface
     }
 
     /// Returns a copy of this configuration that connects through the specified HTTP CONNECT proxy.
@@ -205,7 +209,8 @@ public nonisolated struct RawSocketConfiguration: Sendable {
             transport: transport,
             maxDataBlock: maxDataBlock,
             timeout: timeout,
-            additionalProtocols: additionalProtocols
+            additionalProtocols: additionalProtocols,
+            interface: interface
         )
     }
 
@@ -249,6 +254,7 @@ public nonisolated struct RawSocketConfiguration: Sendable {
                 return NWParameters(dtls: tls, udp: udp)
             }
         }()
+        parameters.requiredInterface = interface
         let ipProtocol = parameters.defaultProtocolStack.internetProtocol as? NWProtocolIP.Options
         ipProtocol?.version = ipVersion
         return parameters
