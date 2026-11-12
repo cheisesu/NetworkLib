@@ -624,7 +624,7 @@ struct RawSocketConfigurationTests {
 
         @Test(arguments: [RawSocketTransport.tcp, .udp], try await _InterfacesRetriever().retrieve())
         func noProxy_ReturnsCorrectInterface(_ transport: RawSocketTransport, _ interface: NWInterface?) throws {
-            let config = RawSocketConfiguration("some.host", 9999, interface: interface)
+            let config = RawSocketConfiguration("some.host", 9999, transport: transport, interface: interface)
             let connection = try config.makeNWConnection()
             try #require(connection.endpoint == config.endpoint)
             let parameters = connection.parameters
@@ -634,7 +634,7 @@ struct RawSocketConfigurationTests {
         @Test(arguments: [RawSocketTransport.tcp, .udp], try await _InterfacesRetriever().retrieve())
         func usingProxy_ReturnsCorrectInterface(_ transport: RawSocketTransport, _ interface: NWInterface?) throws {
             let proxy = RawSocketConfiguration.Proxy(host: "some.host", port: 9999)
-            let config = RawSocketConfiguration("some.host", 9999, interface: interface)
+            let config = RawSocketConfiguration("some.host", 9999, transport: transport, interface: interface)
                 .using(proxy: proxy)
             let connection = try config.makeNWConnection()
             try #require(connection.endpoint == config.endpoint)
