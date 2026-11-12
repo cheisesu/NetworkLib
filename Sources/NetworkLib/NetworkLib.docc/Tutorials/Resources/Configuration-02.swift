@@ -9,6 +9,7 @@ func makeConfiguration() -> RawSocketConfiguration {
         sni: "example.com",
         transport: .tcp,
         maxDataBlock: 16 * 1024,
-        timeout: 15
+        timeout: 15,
+        interface: nil
     )
 }

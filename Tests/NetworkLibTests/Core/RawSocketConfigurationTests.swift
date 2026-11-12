@@ -50,11 +50,11 @@ struct RawSocketConfigurationTests {
             try #require(RawSocketConfiguration.maxDataLength == Int.bitWidth * 1024)
         }
 
-        @Test(arguments: [RawSocketTransport.tcp, .udp])
-        func init_NoProxy_AssignsProperties(_ transport: RawSocketTransport) throws {
+        @Test(arguments: [RawSocketTransport.tcp, .udp], try await _InterfacesRetriever().retrieve())
+        func init_NoProxy_AssignsProperties(_ transport: RawSocketTransport, _ interface: NWInterface?) throws {
             let config = RawSocketConfiguration("some.host", 9999, ipVersion: .v6, isSecure: true, sni: "sni-value",
                                                 transport: transport, maxDataBlock: 256, timeout: 20,
-                                                additionalProtocols: [.mock()])
+                                                additionalProtocols: [.mock()], interface: interface)
             try #require(config.proxy == nil)
             try #require(config.host == "some.host")
             try #require(config.port == 9999)
@@ -65,6 +65,7 @@ struct RawSocketConfigurationTests {
             try #require(config.maxDataBlock == 256)
             try #require(config.timeout == 20)
             try #require(config.additionalProtocols.count == 1)
+            try #require(config.interface == interface)
         }
 
         @Test
@@ -80,16 +81,17 @@ struct RawSocketConfigurationTests {
             try #require(config.maxDataBlock == RawSocketConfiguration.maxDataLength)
             try #require(config.timeout == 30)
             try #require(config.additionalProtocols.isEmpty)
+            try #require(config.interface == nil)
         }
 
-        @Test(arguments: [RawSocketTransport.tcp, .udp])
-        func usingProxy_AssignsProperties(_ transport: RawSocketTransport) throws {
+        @Test(arguments: [RawSocketTransport.tcp, .udp], try await _InterfacesRetriever().retrieve())
+        func usingProxy_AssignsProperties(_ transport: RawSocketTransport, _ interface: NWInterface?) throws {
             let auth = HTTPAuthorization.basic(userName: "foo", password: "pas)01")
             let proxy = RawSocketConfiguration.Proxy(host: "some.host", port: 9999, isSecure: true, sni: "sni-value",
                                                      authorization: auth)
             let config = RawSocketConfiguration("some.host", 9999, ipVersion: .v6, isSecure: true, sni: "sni-value",
                                                 transport: transport, maxDataBlock: 256, timeout: 20,
-                                                additionalProtocols: [.mock()])
+                                                additionalProtocols: [.mock()], interface: interface)
                 .using(proxy: proxy)
             try #require(config.proxy == proxy)
             try #require(config.host == "some.host")
@@ -101,16 +103,17 @@ struct RawSocketConfigurationTests {
             try #require(config.maxDataBlock == 256)
             try #require(config.timeout == 20)
             try #require(config.additionalProtocols.count == 1)
+            try #require(config.interface == interface)
         }
 
-        @Test(arguments: [RawSocketTransport.tcp, .udp])
-        func init_WithProxy_AssignsProperties(_ transport: RawSocketTransport) throws {
+        @Test(arguments: [RawSocketTransport.tcp, .udp], try await _InterfacesRetriever().retrieve())
+        func init_WithProxy_AssignsProperties(_ transport: RawSocketTransport, _ interface: NWInterface?) throws {
             let auth = HTTPAuthorization.basic(userName: "foo", password: "pas)01")
             let proxy = RawSocketConfiguration.Proxy(host: "some.host", port: 9999, isSecure: true, sni: "sni-value",
                                                      authorization: auth)
             let config = RawSocketConfiguration("some.host", 9999, ipVersion: .v6, isSecure: true, sni: "sni-value", proxy: proxy,
                                                 transport: transport, maxDataBlock: 256, timeout: 20,
-                                                additionalProtocols: [.mock()])
+                                                additionalProtocols: [.mock()], interface: interface)
             try #require(config.proxy == proxy)
             try #require(config.host == "some.host")
             try #require(config.port == 9999)
@@ -121,6 +124,7 @@ struct RawSocketConfigurationTests {
             try #require(config.maxDataBlock == 256)
             try #require(config.timeout == 20)
             try #require(config.additionalProtocols.count == 1)
+            try #require(config.interface == interface)
         }
 
         @Test
@@ -139,6 +143,7 @@ struct RawSocketConfigurationTests {
             try #require(config.maxDataBlock == RawSocketConfiguration.maxDataLength)
             try #require(config.timeout == 30)
             try #require(config.additionalProtocols.isEmpty)
+            try #require(config.interface == nil)
         }
 
         @Test
@@ -614,6 +619,70 @@ struct RawSocketConfigurationTests {
             try #require(optTopProtocols.count == additionalProtocols.count)
             try #require(ip.version == ipVersion)
         }
+
+        // MARK: ASSIGNS NETWORK INTERFACE
+
+        @Test(arguments: [RawSocketTransport.tcp, .udp], try await _InterfacesRetriever().retrieve())
+        func noProxy_ReturnsCorrectInterface(_ transport: RawSocketTransport, _ interface: NWInterface?) throws {
+            let config = RawSocketConfiguration("some.host", 9999, transport: transport, interface: interface)
+            let connection = try config.makeNWConnection()
+            try #require(connection.endpoint == config.endpoint)
+            let parameters = connection.parameters
+            try #require(parameters.requiredInterface == interface)
+        }
+
+        @Test(arguments: [RawSocketTransport.tcp, .udp], try await _InterfacesRetriever().retrieve())
+        func usingProxy_ReturnsCorrectInterface(_ transport: RawSocketTransport, _ interface: NWInterface?) throws {
+            let proxy = RawSocketConfiguration.Proxy(host: "some.host", port: 9999)
+            let config = RawSocketConfiguration("some.host", 9999, transport: transport, interface: interface)
+                .using(proxy: proxy)
+            let connection = try config.makeNWConnection()
+            try #require(connection.endpoint == config.endpoint)
+            let parameters = connection.parameters
+            try #require(parameters.requiredInterface == interface)
+        }
+
+        @Test(arguments: [RawSocketTransport.tcp, .udp], try await _InterfacesRetriever().retrieve())
+        func usingProxy_DisapledInBox_ReturnsCorrectInterface(_ transport: RawSocketTransport, _ interface: NWInterface?) throws {
+            let proxy = RawSocketConfiguration.Proxy(host: "some.proxy", port: 8888)
+            var config = RawSocketConfiguration("some.host", 9999, transport: transport, interface: interface)
+                .using(proxy: proxy)
+            config.disableInBoxProxy = true
+            let connection = try config.makeNWConnection()
+            try #require(connection.endpoint == proxy.endpoint)
+            let parameters = connection.parameters
+            try #require(parameters.requiredInterface == interface)
+        }
     }
 }
 
+// MARK: - INTERFACES GETTER
+
+private nonisolated final class _InterfacesRetriever: Sendable {
+    enum _Error: Error {
+        case networkUnreachable
+        case noNetworkInterfaces
+    }
+
+    func retrieve(caller: String = #function) async throws -> [NWInterface?] {
+        let monitor = NWPathMonitor()
+        let queue = DispatchQueue(label: "interface_retriever.\(caller)")
+        return try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { continuation in
+                monitor.pathUpdateHandler = { path in
+                    guard path.status == .satisfied else { return continuation.resume(throwing: _Error.networkUnreachable) }
+                    guard let first = path.availableInterfaces.first else {
+                        return continuation.resume(throwing: _Error.noNetworkInterfaces)
+                    }
+                    let result = [nil, first]
+                    monitor.cancel()
+                    monitor.pathUpdateHandler = nil
+                    continuation.resume(returning: result)
+                }
+                monitor.start(queue: queue)
+            }
+        } onCancel: {
+            monitor.cancel()
+        }
+    }
+}
