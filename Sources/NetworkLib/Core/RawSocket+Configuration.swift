@@ -100,6 +100,11 @@ public nonisolated struct RawSocketConfiguration: Sendable {
     /// The default `.any` permits the Network framework to select IPv4 or IPv6.
     public let overrideIpVersion: NWProtocolIP.Options.Version
 
+    /// The specific local network interface required for the connection, or `nil` for system selection.
+    ///
+    /// NetworkLib applies this value to `NWParameters.requiredInterface` for direct and proxied connections.
+    /// A non-`nil` value requires that interface; the connection cannot fall back to another interface.
+    /// Obtain an `NWInterface` from a network path's `availableInterfaces`, such as in an `NWPathMonitor` update.
     public let interface: NWInterface?
 
     /// The upper bound for a data block returned by each raw receive operation.
@@ -141,6 +146,7 @@ public nonisolated struct RawSocketConfiguration: Sendable {
     ///   - maxDataBlock: The maximum byte count requested by each raw receive operation.
     ///   - timeout: The socket operation timeout in seconds.
     ///   - additionalProtocols: Application protocols to insert above the transport protocol stack.
+    ///   - interface: The specific local network interface to require, or `nil` to let the system select one.
     public init(_ host: NWEndpoint.Host, _ port: NWEndpoint.Port, ipVersion: NWProtocolIP.Options.Version = .any,
                 isSecure: Bool = true, sni: String? = nil, transport: RawSocketTransport = .tcp,
                 maxDataBlock: Int = Self.maxDataLength, timeout: TimeInterval = 30,
@@ -172,6 +178,7 @@ public nonisolated struct RawSocketConfiguration: Sendable {
     ///   - maxDataBlock: The maximum byte count requested by each raw receive operation.
     ///   - timeout: The socket operation timeout in seconds.
     ///   - additionalProtocols: Application protocols to insert above the final remote connection.
+    ///   - interface: The specific local network interface to require, or `nil` to let the system select one.
     @available(iOS 15.4, tvOS 15.4, macOS 12.3, *)
     public init(_ host: NWEndpoint.Host, _ port: NWEndpoint.Port, ipVersion: NWProtocolIP.Options.Version = .any,
                 isSecure: Bool = true, sni: String? = nil, proxy: Proxy, transport: RawSocketTransport = .tcp,
@@ -194,6 +201,7 @@ public nonisolated struct RawSocketConfiguration: Sendable {
     /// Returns a copy of this configuration that connects through the specified HTTP CONNECT proxy.
     ///
     /// All destination, transport, security, receive-size, timeout, and application-protocol settings remain unchanged.
+    /// The local network interface requirement in ``interface`` is also preserved.
     ///
     /// - Parameter proxy: The proxy server configuration to use.
     /// - Returns: A new configuration with the same destination and socket settings, plus the supplied proxy.

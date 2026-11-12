@@ -8,7 +8,7 @@
 
         @Steps {
             @Step {
-                Inspect this helper in a scratch file in the Examples target. The destination remains example.com over TLS. The proxy has its own host, port, and security settings. Applying using(proxy:) returns a new destination configuration.
+                Inspect this helper in a scratch file in the Examples target. The destination remains example.com over TLS. The proxy has its own host, port, and security settings. Applying using(proxy:) returns a new destination configuration and preserves its interface requirement. Both direct and proxy initializers accept interface; leave it nil for system selection or pass the NWInterface chosen in <doc:ConfigureASocket>. This selects a local interface, not an interface on the proxy server.
 
                 @Code(name: "ProxyConfiguration.swift", file: "Proxy-01.swift")
             }
