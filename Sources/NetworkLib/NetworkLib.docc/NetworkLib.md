@@ -14,6 +14,7 @@ Use NetworkLib when you need control over the transport, connection security, pr
 - **Secure connections:** Use TLS over TCP or DTLS over UDP, with configurable Server Name Indication (SNI).
 - **Swift concurrency and callbacks:** Connect, send, receive, and cancel with async/await or completion handlers.
 - **Typed messages:** Exchange protocol-framed messages through ``RawSocketSendMessage`` and ``RawSocketReceiveMessage``.
+- **WebSocket messages:** Add Network framework WebSocket options and exchange typed text and close messages over TLS.
 - **HTTP CONNECT proxies:** Configure a proxy with optional Basic authentication and independent security settings for the proxy and destination.
 - **Connection configuration:** Choose IPv4 or IPv6 preferences, inactivity timeouts, receive block sizes, and additional application protocols.
 - **Connection details:** Inspect the established connection through ``ConnectionInfo``.
@@ -25,7 +26,7 @@ See <doc:Installation> to add NetworkLib to an Xcode project or Swift package. T
 
 ### Learn step by step
 
-Follow <doc:NetworkLibTutorials> to progress from configuring your first socket to cancellation, callbacks, typed messages, and authenticated proxies.
+Follow <doc:NetworkLibTutorials> to progress from configuring your first socket to cancellation, callbacks, typed messages, WebSockets, and authenticated proxies.
 
 ### Run the examples
 
@@ -88,6 +89,7 @@ The package uses Swift 6 and supports iOS 13 or later, tvOS 13 or later, and mac
 - <doc:UsingCallbacks>
 - <doc:UsingProxies>
 - <doc:TypedMessages>
+- <doc:UsingWebSockets>
 - <doc:HTTPHeaders>
 
 ### Socket connections

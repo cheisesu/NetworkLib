@@ -19,6 +19,7 @@ NetworkLib is designed for applications that need direct control over transport,
 - **TLS and DTLS** support, including configurable Server Name Indication (SNI).
 - **Async/await and callbacks** for connecting, sending, receiving, and cancelling.
 - **Raw data and typed messages** using custom message protocols and Network framework content contexts.
+- **WebSocket messages** over TLS using Network framework protocol options and typed message metadata.
 - **HTTP CONNECT proxies**, with optional Basic authentication and independent TLS settings for the proxy and destination.
 - **Connection configuration** for IP version preferences, inactivity timeouts, receive block sizes, and additional application protocols.
 - **HTTP utilities** for header names, status codes, and authorization, plus helpers for addresses, hosts, and URLs.
@@ -130,6 +131,7 @@ swift run Examples async     # Send and receive raw bytes over TLS
 swift run Examples callbacks # Use completion handlers
 swift run Examples udp       # Exchange typed UDP datagrams
 swift run Examples proxy     # Connect through an HTTP CONNECT proxy
+swift run Examples websocket # Send interactive WebSocket text messages over TLS
 ```
 
 Some examples require a local server, Internet access, or proxy credentials. See [Running the Examples](Sources/NetworkLib/NetworkLib.docc/Examples/RunningExamples.md) for setup instructions.
@@ -143,6 +145,7 @@ Some examples require a local server, Internet access, or proxy credentials. See
 - [Sending and receiving data](Sources/NetworkLib/NetworkLib.docc/Examples/SendingAndReceiving.md)
 - [Using completion handlers](Sources/NetworkLib/NetworkLib.docc/Examples/UsingCallbacks.md)
 - [Typed messages](Sources/NetworkLib/NetworkLib.docc/Examples/TypedMessages.md)
+- [WebSocket messages](Sources/NetworkLib/NetworkLib.docc/Examples/UsingWebSockets.md)
 - [Connecting through a proxy](Sources/NetworkLib/NetworkLib.docc/Examples/UsingProxies.md)
 
 Full API reference and guided tutorials are maintained in the package's [DocC catalog](Sources/NetworkLib/NetworkLib.docc).

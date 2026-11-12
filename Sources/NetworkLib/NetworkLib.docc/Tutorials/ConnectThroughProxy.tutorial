@@ -1,6 +1,6 @@
 @Tutorial(time: 20) {
     @Intro(title: "Configure Authenticated Proxy Connections") {
-        Combine configuration, TLS, validation, and the existing asynchronous transfer to connect through an HTTP CONNECT proxy. Complete <doc:ExchangeTypedMessages> first. You must supply a running proxy; the CLI does not create one. Requires macOS 12.3 or later.
+        Combine configuration, TLS, validation, and the existing asynchronous transfer to connect through an HTTP CONNECT proxy. Complete <doc:ExchangeWebSocketMessages> first. You must supply a running proxy; the CLI does not create one. Requires macOS 12.3 or later.
     }
 
     @Section(title: "Separate proxy and destination settings") {
