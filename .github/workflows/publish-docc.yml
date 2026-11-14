@@ -38,36 +38,22 @@ jobs:
         id: docc
         env:
           GH_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
-          RUN_URL=$(gh pr checks "$PR_NUMBER" \
-              --repo "$GITHUB_REPOSITORY" \
-              --json name,bucket,link \
-              --jq '.[] | select(.name == "Build Documentation" and .bucket == "pass") | .link' \
-              | head -n 1)
+          RUN_ID=$(gh run list \
+            --repo "$GITHUB_REPOSITORY" \
+            --workflow docc.yml \
+            --event pull_request \
+            --commit "$PR_HEAD_SHA" \
+            --status success \
+            --json databaseId,conclusion \
+            --jq '.[0] | select(.conclusion == "success") | .databaseId'
 
-          RUN_ID=$(echo "$RUN_URL" | sed -nE 's|.*/actions/runs/([0-9]+).*|\1|p')
-          else
-          for i in {1..12}; do
-              RUN_ID=$(gh run list \
-              --repo "$GITHUB_REPOSITORY" \
-              --workflow docc.yml \
-              --event push \
-              --commit "$GITHUB_SHA" \
-              --json databaseId \
-              --jq '.[0].databaseId // empty')
+          [[ -n "$RUN_ID" ]] || {
+            echo "Successful DocC workflow not found for $PR_HEAD_SHA"
+            exit 1
+          }
 
-              [[ -n "$RUN_ID" ]] && break
-              sleep 5
-          done
-
-          [[ -n "$RUN_ID" ]] && gh run watch "$RUN_ID" \
-              --repo "$GITHUB_REPOSITORY" \
-              --exit-status
-          fi
-
-          [[ -n "$RUN_ID" ]] || exit 1
           echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
       - name: Download documentation
         uses: actions/download-artifact@v4
@@ -81,15 +67,15 @@ jobs:
         id: coverage
         env:
           GH_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          RUN_URL=$(gh pr checks "$PR_NUMBER" \
+          RUN_ID=$(gh run list \
             --repo "$GITHUB_REPOSITORY" \
-            --json name,bucket,link \
-            --jq '.[] | select(.name == "Merge code coverage" and .bucket == "pass") | .link' \
-            | head -n 1)
-
-          RUN_ID=$(echo "$RUN_URL" | sed -nE 's|.*/actions/runs/([0-9]+).*|\1|p')
+            --workflow pr-test.yml \
+            --event pull_request \
+            --commit "$PR_HEAD_SHA" \
+            --json databaseId,conclusion \
+            --jq '.[0] | select(.conclusion == "success") | .databaseId')
 
           [[ -n "$RUN_ID" ]] || exit 1
           echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
