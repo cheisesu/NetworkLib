@@ -53,6 +53,8 @@ extension HTTPHeaderKey: ExpressibleByStringLiteral {
     /// ```swift
     /// let key: HTTPHeaderKey = "X-Request-ID"
     /// ```
+    ///
+    /// - Parameter value: The header field name to preserve without validation or case normalization.
     public init(stringLiteral value: StringLiteralType) {
         self.init(rawValue: value)
     }

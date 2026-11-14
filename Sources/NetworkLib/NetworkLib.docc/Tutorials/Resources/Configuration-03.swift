@@ -14,3 +14,10 @@ func makeConfiguration(interface: NWInterface) -> RawSocketConfiguration {
         interface: interface
     )
 }
+
+func makeConfiguration(path: NWPath, interfaceName: String) throws -> RawSocketConfiguration {
+    guard let interface = path.availableInterfaces.first(where: { $0.name == interfaceName }) else {
+        throw NWError.posix(.ENODEV)
+    }
+    return makeConfiguration(interface: interface)
+}

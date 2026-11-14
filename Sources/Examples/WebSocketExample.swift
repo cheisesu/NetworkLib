@@ -43,12 +43,13 @@ enum WebSocketExample {
         }
     }
 
-    static func run() async throws {
+    // Pass an interface from NWPath.availableInterfaces to require it; nil uses system selection.
+    static func run(interface: NWInterface? = nil) async throws {
         ExampleCLI.log("Example of echo WebSocket.")
         let proto = NWProtocolWebSocket.Options()
         proto.autoReplyPing = true
         let configuration = RawSocketConfiguration("echo.websocket.org", 443, isSecure: true, timeout: 0,
-                                                   additionalProtocols: [proto])
+                                                   additionalProtocols: [proto], interface: interface)
         let socket = try RawSocket(configuration)
         ExampleCLI.log("Connecting.")
         try await socket.connect()

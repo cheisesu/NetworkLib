@@ -13,7 +13,7 @@
                 @Code(name: "ProxyConfiguration.swift", file: "Proxy-01.swift")
             }
             @Step {
-                Open `Sources/Examples/ProxyExample.swift`. Read the environment settings, validate the port and TLS flag, and require both credential fields when authentication is used. Pass the resulting configuration to the shared transfer implementation. Credentials aren't included in the example's progress messages.
+                Open `Sources/Examples/ProxyExample.swift`. Read the environment settings, validate the port and TLS flag, and require both credential fields when authentication is used. Pass the resulting configuration to SendingAndReceivingExample.exchange(using:) from the final snapshot in <doc:TransferBytes>. Keep that helper alongside this snapshot when using it outside the Examples target. The run(interface:) argument is applied to the destination configuration and preserved when adding the proxy. Credentials aren't included in the example's progress messages.
 
                 @Code(name: "ProxyExample.swift", file: "Proxy-02.swift")
             }

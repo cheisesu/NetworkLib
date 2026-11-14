@@ -58,7 +58,8 @@ public nonisolated class RawSocket: @unchecked Sendable {
     /// `delegateQueue`, or on NetworkLib's shared socket delegate queue when `delegateQueue` is `nil`.
     ///
     /// - Parameters:
-    ///   - configuration: The destination, transport, security, proxy, receive-size, and timeout settings.
+    ///   - configuration: The destination, transport, security, proxy, interface, application-protocol,
+    ///     receive-size, and timeout settings.
     ///   - delegateQueue: The queue on which callback-based completions run, or `nil` to use the shared default queue.
     ///   - id: A diagnostic identifier included in debug logging. The default identifies this initializer.
     /// - Throws: An `NWError` if a connection can't be created from `configuration`. In particular, unsupported proxy
@@ -233,6 +234,9 @@ public nonisolated class RawSocket: @unchecked Sendable {
     }
 
     /// Receives the next available raw data block.
+    ///
+    /// For TCP, a block isn't necessarily a complete application message. Its size is bounded by
+    /// ``RawSocketConfiguration/maxDataBlock``. Use an application protocol when you need message framing.
     ///
     /// The result is `.success(data)` when bytes are received, `.success(nil)` when the connection completes cleanly with no
     /// more data, or `.failure` when the receive fails.

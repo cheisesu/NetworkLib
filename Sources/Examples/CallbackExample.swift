@@ -3,9 +3,10 @@ import Network
 import NetworkLib
 
 enum CallbackExample {
-    static func run() async throws {
+    // Pass an interface from NWPath.availableInterfaces to require it; nil uses system selection.
+    static func run(interface: NWInterface? = nil) async throws {
         ExampleCLI.log("First run 'nc -l 9000' in another terminal. It will display the payload.")
-        let configuration = RawSocketConfiguration("127.0.0.1", 9000, isSecure: false, timeout: 5)
+        let configuration = RawSocketConfiguration("127.0.0.1", 9000, isSecure: false, timeout: 5, interface: interface)
         let socket = try RawSocket(configuration)
         // Keep the CLI alive until the callback chain and socket cleanup have finished.
         let result: Result<Void, NWError> = await withCheckedContinuation { continuation in

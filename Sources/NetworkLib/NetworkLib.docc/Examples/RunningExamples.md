@@ -29,6 +29,25 @@ With no arguments, the CLI displays the available example types and their setup 
 
 Start with `headers` for an example that needs no network connection. The `async` and `websocket` examples need Internet access. The WebSocket example also needs an interactive terminal; type `exit` to close the connection. The `callbacks` and `udp` examples need local servers, and `proxy` needs an HTTP CONNECT proxy. Each guide includes setup instructions.
 
+### Choose a network interface in code
+
+Each network example exposes `run(interface: NWInterface? = nil)`. Existing CLI commands call `run()` and let the system select the interface. To require a specific interface when adapting an example, pass an `NWInterface` obtained from a path update:
+
+```swift
+import Network
+
+func fetchExample(using path: NWPath, interfaceName: String) async throws {
+    guard let interface = path.availableInterfaces.first(where: { $0.name == interfaceName }) else {
+        throw NWError.posix(.ENODEV)
+    }
+    try await SendingAndReceivingExample.run(interface: interface)
+}
+```
+
+Call this helper with a path delivered by your path monitor and an interface name chosen from that path. This helper belongs alongside the example sources; it is not a NetworkLib library API. The requirement does not fall back to another interface. For the localhost callback and UDP examples, leave the argument nil or choose a suitable loopback interface. Proxy examples apply the requirement locally and preserve it through `using(proxy:)`.
+
+See <doc:ConfigureASocket> for configuration snapshots. The CLI does not accept an interface-name argument.
+
 ### Read the output
 
 The CLI logs progress with an `[example]` prefix, prints results, and reports successful completion. The WebSocket example sends a normal close message when you type `exit`, waits for the peer's close reply, then cancels its socket. See <doc:UsingWebSockets> for its timeout and interactive-input behavior.
