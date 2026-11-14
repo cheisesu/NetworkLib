@@ -16,7 +16,7 @@ Use NetworkLib when you need control over the transport, connection security, pr
 - **Typed messages:** Exchange protocol-framed messages through ``RawSocketSendMessage`` and ``RawSocketReceiveMessage``.
 - **WebSocket messages:** Add Network framework WebSocket options and exchange typed text and close messages over TLS.
 - **HTTP CONNECT proxies:** Configure a proxy with optional Basic authentication and independent security settings for the proxy and destination.
-- **Connection configuration:** Choose IPv4 or IPv6 preferences, inactivity timeouts, receive block sizes, and additional application protocols.
+- **Connection configuration:** Choose a required local interface, IPv4 or IPv6 preferences, inactivity timeouts, receive block sizes, and additional application protocols.
 - **Connection details:** Inspect the established connection through ``ConnectionInfo``.
 - **HTTP and address utilities:** Work with HTTP headers, status codes, authorization, IP addresses, network hosts, and URLs.
 
@@ -34,7 +34,7 @@ The repository includes an `Examples` CLI with runnable versions of the API exam
 
 ### Configure a connection
 
-Start with ``RawSocketConfiguration`` to choose a destination and transport. You can also configure the IP version, server name, inactivity timeout, receive block size, and additional Network framework application protocols. Secure connections are enabled by default.
+Start with ``RawSocketConfiguration`` to choose a destination and transport. You can also configure the IP version, required local interface, server name, inactivity timeout, receive block size, and additional Network framework application protocols. Secure connections are enabled by default. The optional ``RawSocketConfiguration/interface`` requires a specific local interface; leave it nil for system selection. See <doc:ConfigureASocket> for an example.
 
 Create a ``RawSocket`` from the configuration, then connect asynchronously:
 

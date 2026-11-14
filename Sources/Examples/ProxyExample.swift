@@ -3,7 +3,8 @@ import Network
 import NetworkLib
 
 enum ProxyExample {
-    static func run() async throws {
+    // Pass an interface from NWPath.availableInterfaces to require it; nil uses system selection.
+    static func run(interface: NWInterface? = nil) async throws {
         ExampleCLI.log("Requires an HTTP CONNECT proxy. See --help for environment variables.")
         guard #available(macOS 12.3, iOS 15.4, tvOS 15.4, *) else {
             throw ExampleError.message("Proxy connections require macOS 12.3 or later.")
@@ -36,7 +37,7 @@ enum ProxyExample {
             authorization: authorization
         )
         ExampleCLI.log("Proxy configured (TLS: \(tlsText), authentication: \(authorization != nil)).")
-        let destination = RawSocketConfiguration("example.com", .https, sni: "example.com", timeout: 15)
+        let destination = RawSocketConfiguration("example.com", .https, sni: "example.com", timeout: 15, interface: interface)
         try await SendingAndReceivingExample.exchange(using: destination.using(proxy: proxy))
     }
 }

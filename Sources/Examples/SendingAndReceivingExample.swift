@@ -1,10 +1,12 @@
 import Foundation
+import Network
 import NetworkLib
 
 enum SendingAndReceivingExample {
-    static func run() async throws {
+    // Pass an interface from NWPath.availableInterfaces to require it; nil uses system selection.
+    static func run(interface: NWInterface? = nil) async throws {
         ExampleCLI.log("Requires Internet access. Fetching https://example.com over TLS.")
-        let configuration = RawSocketConfiguration("example.com", .https, sni: "example.com", timeout: 15)
+        let configuration = RawSocketConfiguration("example.com", .https, sni: "example.com", timeout: 15, interface: interface)
         try await exchange(using: configuration)
     }
 

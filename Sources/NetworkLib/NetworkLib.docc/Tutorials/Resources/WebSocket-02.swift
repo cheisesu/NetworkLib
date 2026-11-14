@@ -43,19 +43,20 @@ enum WebSocketExample {
         }
     }
 
-    static func run() async throws {
-        ExampleCLI.log("Example of echo WebSocket.")
+    // Pass an interface from NWPath.availableInterfaces to require it; nil uses system selection.
+    static func run(interface: NWInterface? = nil) async throws {
+        print("Example of echo WebSocket.")
         let proto = NWProtocolWebSocket.Options()
         proto.autoReplyPing = true
         let configuration = RawSocketConfiguration("echo.websocket.org", 443, isSecure: true, timeout: 0,
-                                                   additionalProtocols: [proto])
+                                                   additionalProtocols: [proto], interface: interface)
         let socket = try RawSocket(configuration)
-        ExampleCLI.log("Connecting.")
+        print("Connecting.")
         try await socket.connect()
-        defer { ExampleCLI.log("Disconnected.") }
-        ExampleCLI.log("Connected.")
+        defer { print("Disconnected.") }
+        print("Connected.")
         _ = try await socket.receiveNextMessage(of: WSReceiveMessage.self)
-        ExampleCLI.log("Type `exit` to close connection.")
+        print("Type `exit` to close connection.")
 
         try await withThrowingTaskGroup { group in
             group.addTask(name: "send_events") {

@@ -114,6 +114,7 @@ public nonisolated struct RawSocketConfiguration: Sendable {
 
     /// The inactivity timeout, in seconds, for connection, send, and receive operations.
     ///
+    /// Values less than or equal to zero disable the timeout. The default is 30 seconds.
     /// Network activity refreshes the timeout. When it expires, the socket fails pending work with `NWError.posix(.ETIMEDOUT)`.
     public let timeout: TimeInterval
 
@@ -144,7 +145,7 @@ public nonisolated struct RawSocketConfiguration: Sendable {
     ///   - sni: The TLS or DTLS server name, or `nil` for the system default behavior.
     ///   - transport: The transport protocol to use.
     ///   - maxDataBlock: The maximum byte count requested by each raw receive operation.
-    ///   - timeout: The socket operation timeout in seconds.
+    ///   - timeout: The inactivity timeout in seconds. Values less than or equal to zero disable it; the default is 30.
     ///   - additionalProtocols: Application protocols to insert above the transport protocol stack.
     ///   - interface: The specific local network interface to require, or `nil` to let the system select one.
     public init(_ host: NWEndpoint.Host, _ port: NWEndpoint.Port, ipVersion: NWProtocolIP.Options.Version = .any,
@@ -176,7 +177,7 @@ public nonisolated struct RawSocketConfiguration: Sendable {
     ///   - proxy: The proxy server configuration.
     ///   - transport: The transport protocol to use for the final connection.
     ///   - maxDataBlock: The maximum byte count requested by each raw receive operation.
-    ///   - timeout: The socket operation timeout in seconds.
+    ///   - timeout: The inactivity timeout in seconds. Values less than or equal to zero disable it; the default is 30.
     ///   - additionalProtocols: Application protocols to insert above the final remote connection.
     ///   - interface: The specific local network interface to require, or `nil` to let the system select one.
     @available(iOS 15.4, tvOS 15.4, macOS 12.3, *)
