@@ -45,9 +45,8 @@ jobs:
             --workflow docc.yml \
             --event pull_request \
             --commit "$PR_HEAD_SHA" \
-            --status success \
             --json databaseId,conclusion \
-            --jq '.[0] | select(.conclusion == "success") | .databaseId'
+            --jq '.[0] | select(.conclusion == "success") | .databaseId')
 
           [[ -n "$RUN_ID" ]] || {
             echo "Successful DocC workflow not found for $PR_HEAD_SHA"
