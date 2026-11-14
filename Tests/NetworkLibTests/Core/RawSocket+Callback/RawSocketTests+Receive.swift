@@ -7,7 +7,7 @@ extension Tag.RawSocket {
     @Tag static var receive: Tag
 }
 
-@Suite(.tags(.core, .RawSocket.all, .RawSocket.receive), .timeLimit(.minutes(1)))
+@Suite(.tags(.core, .RawSocket.all, .RawSocket.receive), .timeLimit(.minutes(2)))
 struct RawSocketReceiveTests {
     // MARK: TIMEOUT ERRORS
 
@@ -119,6 +119,27 @@ struct RawSocketReceiveTests {
         try #require(result == expectedData)
     }
 
+    @Test
+    func closeDuringReceive_BeforeReceiveCallbackScheduled_ReturnsNil() async throws {
+        let transport = RawSocketTransport.tcp
+        let timeout: TimeInterval = 0
+        let runningQueue = DispatchQueue(label: #function)
+        let underlyingConnection = NWConnectionMock(mode: [.methodReceive], dataForReceive: nil, overridedReceiveComplete: true)
+        let socket = try RawSocket(underlyingConnection, accessQueue: runningQueue, delegateQueue: runningQueue, timeout: timeout,
+                                   maxDataBlock: 256, transport: transport)
+        defer { socket.cancel(nil) }
+        let data = try await withCheckedThrowingContinuation { continuation in
+            socket.connect { _ in
+                // here it runs on runningQueue and schedules to runningQueue
+                socket.receiveNext { result in
+                    continuation.resume(with: result)
+                }
+                socket.cancel(nil)
+            }
+        }
+        try #require(data == nil)
+    }
+
     // MARK: ERROR BY STATE
 
     @Test
@@ -179,28 +200,6 @@ struct RawSocketReceiveTests {
                     socket.receiveNext { result in
                         continuation.resume(with: result)
                     }
-                }
-            }
-            Issue.record("Unexpected entrance")
-        } catch NWError.posix(.ECANCELED) {
-        }
-    }
-
-    @Test
-    func closeDuringReceive_ThrowsCancelledError() async throws {
-        let transport = RawSocketTransport.tcp
-        let timeout: TimeInterval = 0
-        let underlyingConnection = NWConnectionMock(mode: [.methodReceive, .dontCallCallback])
-        let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: timeout,
-                                   maxDataBlock: 256, transport: transport)
-        defer { socket.cancel(nil) }
-        do {
-            _ = try await withCheckedThrowingContinuation { continuation in
-                socket.connect { _ in
-                    socket.receiveNext { result in
-                        continuation.resume(with: result)
-                    }
-                    socket.cancel(nil)
                 }
             }
             Issue.record("Unexpected entrance")

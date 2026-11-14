@@ -19,11 +19,12 @@ struct TextDatagram: RawSocketSendMessage, RawSocketReceiveMessage {
 }
 
 enum TypedMessagesExample {
-    static func run() async throws {
+    // Pass an interface from NWPath.availableInterfaces to require it; nil uses system selection.
+    static func run(interface: NWInterface? = nil) async throws {
         ExampleCLI.log("First start the UDP echo server from --help in another terminal.")
         ExampleCLI.log("Using plaintext UDP at 127.0.0.1:9001; waiting up to 5 seconds of inactivity.")
         let configuration = RawSocketConfiguration(
-            "127.0.0.1", 9001, isSecure: false, transport: .udp, timeout: 5
+            "127.0.0.1", 9001, isSecure: false, transport: .udp, timeout: 5, interface: interface
         )
         let socket = try RawSocket(configuration)
         do {

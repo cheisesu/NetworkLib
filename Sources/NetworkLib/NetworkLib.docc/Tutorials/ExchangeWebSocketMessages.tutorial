@@ -1,0 +1,56 @@
+@Tutorial(time: 20) {
+    @Intro(title: "Exchange WebSocket Messages over TLS") {
+        Apply typed messages to a framed TCP protocol and run an interactive echo session. Complete <doc:ExchangeTypedMessages> first. Use an interactive terminal with Internet access and the build setup in <doc:RunningExamples>.
+    }
+
+    @Section(title: "Configure framing and exchange text") {
+        Open the existing WebSocket example and follow its message flow.
+
+        @Steps {
+            @Step {
+                Open `Sources/Examples/WebSocketExample.swift`. Inspect WSReceiveMessage and WSSendMessage. The receive initializer extracts WebSocket metadata and keeps the opcode and payload. The send initializers attach text or close metadata to a content context; the close message uses normalClosure.
+
+                @Code(name: "WebSocketExample.swift", file: "WebSocket-01.swift")
+            }
+            @Step {
+                Inspect run(). Add NWProtocolWebSocket.Options through additionalProtocols, enable autoReplyPing, and use TLS on port 443. The WebSocket protocol supplies message boundaries over TCP. A timeout of zero disables the socket's inactivity timeout for this interactive session.
+
+                @Code(name: "WebSocketExample.swift", file: "WebSocket-02.swift")
+            }
+            @Step {
+                Follow the initial receive and the two tasks. The example discards one server message before accepting input. One task sends text from readLine(); the other receives typed messages until the close opcode arrives. This initial-message assumption is specific to the example and must be revisited when changing servers.
+            }
+            @Step {
+                Run `swift run Examples websocket`. Wait for the > prompt, type a short message, and press Return. Look for the echoed payload after <. Repeat with another message. The public service must be reachable; if the session stalls, use Control-C because no inactivity timeout is configured.
+            }
+            @Step {
+                Type `exit` and press Return. The sender sends a normal close message, the receiver waits for the peer's close message, and run() cancels the socket after both tasks finish. Use an interactive terminal: EOF becomes an empty message, and blocking readLine() is not a cancellable app input source. See <doc:UsingWebSockets> for lifetime details.
+            }
+            @Step {
+                As an exercise, identify where you would branch on the binary opcode to handle Data without decoding it as text. Explain why the deferred Disconnected log does not replace explicit cleanup on error. Continue with <doc:ConnectThroughProxy>.
+            }
+        }
+    }
+
+    @Assessments {
+        @MultipleChoice {
+            What supplies WebSocket framing and identifies the outgoing message type?
+
+            @Choice(isCorrect: true) {
+                WebSocket options in additionalProtocols and WebSocket metadata in the content context.
+
+                @Justification {
+                    The configured application protocol frames messages, while metadata selects text or close behavior.
+                }
+            }
+
+            @Choice(isCorrect: false) {
+                Conforming to RawSocketSendMessage automatically turns TCP bytes into WebSocket messages.
+
+                @Justification {
+                    The value protocol supplies content and context; the connection still needs WebSocket options and matching metadata.
+                }
+            }
+        }
+    }
+}

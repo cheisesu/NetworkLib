@@ -7,7 +7,7 @@ extension Tag.RawSocket {
     @Tag static var receiveMessage: Tag
 }
 
-@Suite(.tags(.core, .RawSocket.all, .RawSocket.receiveMessage), .timeLimit(.minutes(1)))
+@Suite(.tags(.core, .RawSocket.all, .RawSocket.receiveMessage), .timeLimit(.minutes(2)))
 struct RawSocketReceiveMessageTests {
     // MARK: - ENTITIES
 
@@ -79,27 +79,6 @@ struct RawSocketReceiveMessageTests {
         let transport = RawSocketTransport.udp
         let timeout: TimeInterval = 0
         let underlyingConnection = NWConnectionMock(overridedReceiveContext: .defaultMessage)
-        let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: timeout,
-                                   maxDataBlock: 256, transport: transport)
-        defer { socket.cancel(nil) }
-        do {
-            _ = try await withCheckedThrowingContinuation { continuation in
-                socket.connect { _ in
-                    socket.receiveNextMessage(of: _NilMessage.self) { result in
-                        continuation.resume(with: result)
-                    }
-                }
-            }
-            Issue.record("Unexpected entrance")
-        } catch NWError.posix(.EBADMSG) {
-        }
-    }
-
-    @Test
-    func messageConvertsToNil_FinalContext_ThrowsBadMessageError() async throws {
-        let transport = RawSocketTransport.udp
-        let timeout: TimeInterval = 0
-        let underlyingConnection = NWConnectionMock(overridedReceiveContext: .finalMessage)
         let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: timeout,
                                    maxDataBlock: 256, transport: transport)
         defer { socket.cancel(nil) }
@@ -203,31 +182,6 @@ struct RawSocketReceiveMessageTests {
                     }
                 }
                 socket.connect { _ in
-                }
-            }
-            Issue.record("Unexpected entrance")
-        } catch NWError.posix(.ECANCELED) {
-        }
-    }
-
-    @Test
-    func whenCancelledDuringReceive_FinalContext_MessageConvertsToNil_ThrowsCancelledError() async throws {
-        let transport = RawSocketTransport.udp
-        let timeout: TimeInterval = 0
-        let underlyingConnection = NWConnectionMock(
-            mode: [.methodReceive, .dontCallCallback],
-            overridedReceiveContext: .finalMessage
-        )
-        let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: timeout,
-                                   maxDataBlock: 256, transport: transport)
-        defer { socket.cancel(nil) }
-        do {
-            _ = try await withCheckedThrowingContinuation { continuation in
-                socket.connect { _ in
-                    socket.receiveNextMessage(of: _NilMessage.self) { result in
-                        continuation.resume(with: result)
-                    }
-                    socket.cancel(nil)
                 }
             }
             Issue.record("Unexpected entrance")

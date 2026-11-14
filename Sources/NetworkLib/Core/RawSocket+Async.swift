@@ -1,7 +1,6 @@
 import Foundation
 import Network
 
-@available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
 extension RawSocket {
     /// Starts the underlying network connection and returns connection details when it becomes ready.
     ///
@@ -58,6 +57,9 @@ extension RawSocket {
 
     /// Receives the next available raw data block.
     ///
+    /// TCP receives return available bytes, not application-message boundaries. Each block is bounded by
+    /// ``RawSocketConfiguration/maxDataBlock``.
+    ///
     /// Cancelling the surrounding task permanently cancels the socket. The operation then throws the `NWError` produced by
     /// socket cancellation.
     ///
@@ -78,6 +80,9 @@ extension RawSocket {
     }
 
     /// Receives and decodes the next typed message.
+    ///
+    /// Message boundaries come from the transport or configured application protocol. Conforming to
+    /// ``RawSocketReceiveMessage`` doesn't add framing to TCP. A rejected message throws `NWError.posix(.EBADMSG)`.
     ///
     /// Cancelling the surrounding task permanently cancels the socket. The operation then throws the `NWError` produced by
     /// socket cancellation.
@@ -103,7 +108,6 @@ extension RawSocket {
     }
 }
 
-@available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
 private extension RawSocket {
     func withSocketCancellation<T: Sendable>(
         _ operation: (@escaping @Sendable (_ done: Result<T, NWError>) -> Void) -> Void

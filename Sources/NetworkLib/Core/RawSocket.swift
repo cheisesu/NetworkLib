@@ -15,9 +15,8 @@ import Network
 /// print(info.remoteEndpoint, data?.count ?? 0)
 /// await socket.cancel()
 /// ```
-@available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
-public class RawSocket: @unchecked Sendable {
-    enum _InternalState: Int, Sendable, Equatable, Comparable {
+public nonisolated class RawSocket: @unchecked Sendable {
+    nonisolated enum _InternalState: Int, Sendable, Equatable, Comparable {
         case initial
         case connecting
         case connected
@@ -59,7 +58,8 @@ public class RawSocket: @unchecked Sendable {
     /// `delegateQueue`, or on NetworkLib's shared socket delegate queue when `delegateQueue` is `nil`.
     ///
     /// - Parameters:
-    ///   - configuration: The destination, transport, security, proxy, receive-size, and timeout settings.
+    ///   - configuration: The destination, transport, security, proxy, interface, application-protocol,
+    ///     receive-size, and timeout settings.
     ///   - delegateQueue: The queue on which callback-based completions run, or `nil` to use the shared default queue.
     ///   - id: A diagnostic identifier included in debug logging. The default identifies this initializer.
     /// - Throws: An `NWError` if a connection can't be created from `configuration`. In particular, unsupported proxy
@@ -103,7 +103,7 @@ public class RawSocket: @unchecked Sendable {
 
         // - after init
         afterInitSetup()
-        printDebug("[socket] DEINIT", Unmanaged.passUnretained(self).toOpaque())
+        printDebug("[socket] INIT", Unmanaged.passUnretained(self).toOpaque())
     }
 
     deinit {
@@ -186,8 +186,6 @@ public class RawSocket: @unchecked Sendable {
                 self?.timeoutEvent?.detouch()
                 if let error = self?.pendingError {
                     completion?(.failure(error))
-                } else if let error = self?.operationCancelError {
-                    completion?(.failure(error))
                 } else if let error {
                     completion?(.failure(error))
                 } else {
@@ -228,8 +226,6 @@ public class RawSocket: @unchecked Sendable {
         timeoutEvent?.detouch()
         if let error = pendingError {
             completion?(.failure(error))
-        } else if let error = operationCancelError {
-            completion?(.failure(error))
         } else if let error {
             completion?(.failure(error))
         } else {
@@ -238,6 +234,9 @@ public class RawSocket: @unchecked Sendable {
     }
 
     /// Receives the next available raw data block.
+    ///
+    /// For TCP, a block isn't necessarily a complete application message. Its size is bounded by
+    /// ``RawSocketConfiguration/maxDataBlock``. Use an application protocol when you need message framing.
     ///
     /// The result is `.success(data)` when bytes are received, `.success(nil)` when the connection completes cleanly with no
     /// more data, or `.failure` when the receive fails.
@@ -273,6 +272,7 @@ public class RawSocket: @unchecked Sendable {
     private func receiveNextHandler(_ content: Data?, _ isComplete: Bool, _ error: NWError?,
                                     completion: @escaping @Sendable (_ result: Result<Data?, NWError>) -> Void)
     {
+        printDebug("[socket] receive next handler", error, content, isComplete)
         timeoutEvent?.detouch()
         if let content {
             completion(.success(content))
@@ -281,8 +281,6 @@ public class RawSocket: @unchecked Sendable {
             completion(.failure(error))
         } else if isComplete {
             if let error = pendingError {
-                completion(.failure(error))
-            } else if let error = operationCancelError {
                 completion(.failure(error))
             } else {
                 completion(.success(nil))
@@ -333,16 +331,12 @@ public class RawSocket: @unchecked Sendable {
             completion(.failure(error))
         } else if let error = pendingError {
             completion(.failure(error))
-        } else if let error = operationCancelError {
-            completion(.failure(error))
         } else if let contentContext {
             if !isComplete {
                 return completion(.failure(.posix(.EIO)))
             }
             if let message = M.init(from: contentContext, with: content) {
                 completion(.success(message))
-            } else if contentContext.isFinal {
-                completion(.failure(.posix(.EBADMSG)))
             } else {
                 completion(.failure(.posix(.EBADMSG)))
             }
@@ -416,6 +410,8 @@ extension RawSocket {
             cancelUnsafe(manually: false)
         case .preparing: break
         case .ready:
+            // A ready event queued before cancel() may arrive after cancellation has begun.
+            guard internalState == .connecting else { return }
             timeoutEvent?.detouch()
             internalState = .connected
             let info = connection.connectionInfo(with: transport)
@@ -472,12 +468,10 @@ extension RawSocket {
 
     private func clearResourcesUnsafe() {
         timeoutEvent?.cancel()
-        connection.stateUpdateHandler = nil
         selfKeeper = nil
     }
 }
 
-@available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
 private extension RawSocket {
     func delivered<Value: Sendable>(
         _ callback: @Sendable @escaping (_ value: Value) -> Void

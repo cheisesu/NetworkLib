@@ -1,6 +1,6 @@
 import Foundation
 
-struct RawHTTPResponseParser: Sendable {
+nonisolated struct RawHTTPResponseParser: Sendable {
     private var buffer: Data
     private var lastResult: HTTPParserResponseResult?
 

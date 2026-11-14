@@ -69,7 +69,7 @@ func exchangeDatagram() async throws -> String {
 
 UDP doesn't guarantee delivery or ordering. A successful connect doesn't establish that an echo service is listening; a missing reply can result in an error or timeout. This local example uses plaintext UDP. A DTLS-enabled service requires `isSecure: true`.
 
-These protocols don't add framing to a TCP byte stream. For typed messages over TCP, install a suitable Network framework application protocol through the configuration's `additionalProtocols` and supply the metadata that protocol expects.
+These protocols don't add framing to a TCP byte stream. For typed messages over TCP, install a suitable Network framework application protocol through the configuration's `additionalProtocols` and supply the metadata that protocol expects. See <doc:UsingWebSockets> for a concrete example using WebSocket options and opcode metadata.
 
 ### Run the CLI example
 
@@ -100,3 +100,4 @@ The runnable implementation is in `Sources/Examples/TypedMessagesExample.swift`.
 ## See Also
 
 - <doc:SendingAndReceiving>
+- <doc:UsingWebSockets>

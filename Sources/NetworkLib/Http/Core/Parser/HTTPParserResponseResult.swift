@@ -1,6 +1,6 @@
 import Foundation
 
-struct HTTPParserResponseResult: Sendable, Equatable {
+nonisolated struct HTTPParserResponseResult: Sendable, Equatable {
     let versionRaw: String
     let status: Int
     let headers: [HTTPHeaderKey: String]

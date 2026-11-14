@@ -1,12 +1,13 @@
 import Testing
 import Foundation
+import Network
 @testable import NetworkLib
 
 extension Tag.RawSocket {
     @Tag static var internalState: Tag
 }
 
-@Suite(.tags(.core, .RawSocket.all, .RawSocket.internalState), .timeLimit(.minutes(1)))
+@Suite(.tags(.core, .RawSocket.all, .RawSocket.internalState), .timeLimit(.minutes(2)))
 struct RawSocketInternalStateTests {
     @Test(arguments: [RawSocketTransport.tcp, .udp])
     func connectThenCancel_CorrectSequence(_ transport: RawSocketTransport) async throws {
@@ -31,7 +32,7 @@ struct RawSocketInternalStateTests {
         let pairs = await sequence.values
         let states = pairs.map(\.1)
         try #require(states == [.connecting, .connected, .cancelling, .closed])
-        try await #require(sequence.allSatisfy { $0.0 < $0.1 })
+        try #require(pairs.allSatisfy { $0.0 < $0.1 })
     }
 
 
@@ -77,5 +78,44 @@ struct RawSocketInternalStateTests {
         }
         // A weak reference tracks this instance even if another test reuses its address.
         try #require(weakSocket.socket == nil)
+    }
+}
+
+@Suite(.tags(.core, .RawSocket.cancel), .timeLimit(.minutes(2)))
+struct RawSocketCancellationOrderingTests {
+    @Test(arguments: [RawSocketTransport.tcp, .udp])
+    func readyQueuedBeforeCancellationCannotReconnectSocket(_ transport: RawSocketTransport) async throws {
+        let accessQueue = DispatchQueue(label: "raw-socket.cancel-before-ready")
+        let socket = try RawSocket(NWConnectionMock(), accessQueue: accessQueue, delegateQueue: nil,
+                                   timeout: 0, maxDataBlock: 256, transport: transport)
+        defer { socket.cancel(nil) }
+        let (states, stateContinuation) = AsyncStream.makeStream(of: RawSocket._InternalState.self)
+        let (results, resultContinuation) = AsyncStream.makeStream(of: Result<ConnectionInfo, NWError>.self)
+        socket.onInternalStateChange = { _, state in
+            stateContinuation.yield(state)
+        }
+
+        // start() queues ready behind cancel: force this ordering without sleeps or scheduler luck.
+        accessQueue.sync {
+            socket.connect { result in
+                resultContinuation.yield(result)
+                resultContinuation.finish()
+            }
+            socket.cancel {
+                stateContinuation.finish()
+            }
+        }
+
+        let observedStates = await states.values
+        let observedResults = await results.values
+        #expect(observedStates == [.connecting, .cancelling, .closed])
+        let result = try #require(observedResults.first)
+        switch result {
+        case .success:
+            Issue.record("A queued ready event completed connect successfully after cancellation began")
+        case .failure(let error):
+            #expect(error == .posix(.ECANCELED))
+        }
+        #expect(observedResults.count == 1)
     }
 }

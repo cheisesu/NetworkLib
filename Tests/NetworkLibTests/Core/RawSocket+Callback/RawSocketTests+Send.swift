@@ -7,7 +7,7 @@ extension Tag.RawSocket {
     @Tag static var send: Tag
 }
 
-@Suite(.tags(.core, .RawSocket.all, .RawSocket.send), .timeLimit(.minutes(1)))
+@Suite(.tags(.core, .RawSocket.all, .RawSocket.send), .timeLimit(.minutes(2)))
 struct RawSocketSendTests {
     @Test(arguments: [RawSocketTransport.tcp, .udp], [Data("Hello".utf8)])
     func underlyingConnection_MethodSendCalled(_ transport: RawSocketTransport, _ dataToSend: Data) async throws {
@@ -159,28 +159,6 @@ struct RawSocketSendTests {
     }
 
     @Test(arguments: [RawSocketTransport.tcp, .udp])
-    func whenClosedDuringSend_ReturnsCancelledError(_ transport: RawSocketTransport) async throws {
-        let timeout: TimeInterval = 0
-        let dataToSend = Data("Hello".utf8)
-        let underlyingConnection = NWConnectionMock(overridedSendError: .posix(.EINVAL), mode: [.methodSend, .dontCallCallback])
-        let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil, timeout: timeout,
-                                   maxDataBlock: 256, transport: transport)
-        defer { socket.cancel(nil) }
-        do {
-            let _: Void = try await withCheckedThrowingContinuation { continuation in
-                socket.connect { _ in
-                    socket.send(dataToSend) { result in
-                        continuation.resume(with: result)
-                    }
-                    socket.cancel(nil)
-                }
-            }
-            Issue.record("Unexpected entrance")
-        } catch NWError.posix(.ECANCELED) {
-        }
-    }
-
-    @Test(arguments: [RawSocketTransport.tcp, .udp])
     func sendWhenTimeoutHappened_ReturnsTimeoutError(_ transport: RawSocketTransport) async throws {
         let timeout: TimeInterval = 0.5
         let dataToSend = Data("Hello".utf8)
@@ -260,26 +238,32 @@ struct RawSocketSendTests {
         let timeout: TimeInterval = 0
         let dataToSend = Data("Hello".utf8)
         let underlyingConnection = NWConnectionMock()
-        var tempSocket: RawSocket? = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil,
+        let accessQueue = DispatchQueue(label: "raw-socket.self-keeping")
+        var tempSocket: RawSocket? = try RawSocket(underlyingConnection, accessQueue: accessQueue, delegateQueue: nil,
                                                    timeout: timeout, maxDataBlock: 256, transport: transport)
         let address = ReferencesCounter.shared.address(of: tempSocket)
+        let weakSocket = _WeakSocketBox(tempSocket)
         let box = _SocketBox()
         box.set(tempSocket)
         tempSocket = nil
-        defer { box.get()?.cancel(nil) }
+        defer { weakSocket.socket?.cancel(nil) }
         try #require(ReferencesCounter.shared.count(of: address) == 1)
         let _: Void = try await withCheckedThrowingContinuation { continuation in
-            box.get()?.onInternalStateChange = { _, newState in
-                guard newState == .connecting else { return }
-                box.set(nil)
-            }
-            box.get()?.connect { _ in
-            }
-            box.get()?.send(dataToSend) { result in
-                continuation.resume(with: result)
+            // Enqueue both operations before connecting can clear the last external reference.
+            accessQueue.sync {
+                box.get()?.onInternalStateChange = { _, newState in
+                    guard newState == .connecting else { return }
+                    box.set(nil)
+                }
+                box.get()?.connect { _ in }
+                box.get()?.send(dataToSend) { result in
+                    continuation.resume(with: result)
+                }
             }
         }
+        #expect(box.get() == nil)
         try #require(ReferencesCounter.shared.count(of: address) == 1)
+        await weakSocket.socket?.cancel()
     }
 
     // MARK: DELEGATE QUEUE

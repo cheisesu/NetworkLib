@@ -117,6 +117,7 @@ final class NWConnectionMock: @unchecked Sendable, UnderlyingConnection {
         maximumLength: Int,
         completion: @escaping @Sendable (Data?, NWConnection.ContentContext?, Bool, NWError?) -> Void
     ) {
+        let eventsQueue = lock.withLock { self.eventsQueue }
         if mode.contains(.methodReceive) {
             if mode.contains(.dontCallCallback) {
                 lock.withLock {
@@ -125,26 +126,35 @@ final class NWConnectionMock: @unchecked Sendable, UnderlyingConnection {
                     }
                 }
             } else {
-                completion(dataForReceive, nil, overridedReceiveComplete, overridedReceiveError)
+                eventsQueue?.async { [dataForReceive, overridedReceiveComplete, overridedReceiveError] in
+                    completion(dataForReceive, nil, overridedReceiveComplete, overridedReceiveError)
+                }
             }
         } else {
-            completion(dataForReceive, nil, overridedReceiveComplete, overridedReceiveError)
+            eventsQueue?.async { [dataForReceive, overridedReceiveComplete, overridedReceiveError] in
+                completion(dataForReceive, nil, overridedReceiveComplete, overridedReceiveError)
+            }
         }
     }
 
     func receiveMessage(completion: @escaping @Sendable (Data?, NWConnection.ContentContext?, Bool, NWError?) -> Void) {
+        let eventsQueue = lock.withLock { self.eventsQueue }
         if mode.contains(.methodReceive) {
             if mode.contains(.dontCallCallback) {
                 lock.withLock {
                     _pendingCallbacks.append {
-                        completion(nil, nil, true, self.overridedReceiveError)
+                        completion(nil, self.overridedReceiveContext, true, self.overridedReceiveError)
                     }
                 }
             } else {
-                completion(dataForReceive, overridedReceiveContext, overridedReceiveComplete, overridedReceiveError)
+                eventsQueue?.async { [dataForReceive, overridedReceiveContext, overridedReceiveComplete, overridedReceiveError] in
+                    completion(dataForReceive, overridedReceiveContext, overridedReceiveComplete, overridedReceiveError)
+                }
             }
         } else {
-            completion(dataForReceive, overridedReceiveContext, overridedReceiveComplete, overridedReceiveError)
+            eventsQueue?.async { [dataForReceive, overridedReceiveContext, overridedReceiveComplete, overridedReceiveError] in
+                completion(dataForReceive, overridedReceiveContext, overridedReceiveComplete, overridedReceiveError)
+            }
         }
     }
 
@@ -162,6 +172,7 @@ final class NWConnectionMock: @unchecked Sendable, UnderlyingConnection {
             _sendIsComplete = isComplete
         }
 
+        let eventsQueue = lock.withLock { self.eventsQueue }
         switch completion {
         case let .contentProcessed(callback):
             if mode.contains(.methodSend) {
@@ -172,10 +183,14 @@ final class NWConnectionMock: @unchecked Sendable, UnderlyingConnection {
                         }
                     }
                 } else {
-                    callback(overridedSendError)
+                    eventsQueue?.async { [overridedSendError] in
+                        callback(overridedSendError)
+                    }
                 }
             } else {
-                callback(overridedSendError)
+                eventsQueue?.async { [overridedSendError] in
+                    callback(overridedSendError)
+                }
             }
         case .idempotent: break
         @unknown default: break

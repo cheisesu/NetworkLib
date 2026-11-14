@@ -5,8 +5,7 @@ import Network
 ///
 /// Use a conforming value with ``RawSocket/sendMessage(_:_:)`` or ``RawSocket/sendMessage(_:)`` when the connection's
 /// application protocol needs an `NWConnection.ContentContext`.
-@available(iOS 13.0, tvOS 13.0, macOS 10.15, *)
-public protocol RawSocketSendMessage: Sendable {
+public nonisolated protocol RawSocketSendMessage: Sendable {
     /// The Network framework content context that carries protocol metadata and message-completion information.
     var context: NWConnection.ContentContext { get }
 

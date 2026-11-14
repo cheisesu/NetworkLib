@@ -21,7 +21,7 @@
                 Start the Python UDP echo server shown in <doc:TypedMessages>, then run `swift run Examples udp`. Expect the decoded reply and `Echo matched; socket closed.` Stop the server with Control-C afterward. UDP does not guarantee delivery or ordering; a ready connection does not prove that a server is listening.
             }
             @Step {
-                As an exercise, make the echo server reply with invalid UTF-8, then repeat the command and observe the error. For typed messages over TCP, these value protocols alone do not provide framing. Install a suitable Network framework application protocol through additionalProtocols and supply its required metadata. Continue with <doc:ConnectThroughProxy>.
+                As an exercise, make the echo server reply with invalid UTF-8, then repeat the command and observe the error. For typed messages over TCP, these value protocols alone do not provide framing. Install a suitable Network framework application protocol through additionalProtocols and supply its required metadata. Continue with <doc:ExchangeWebSocketMessages> to apply this pattern to WebSocket messages over TLS.
             }
         }
     }

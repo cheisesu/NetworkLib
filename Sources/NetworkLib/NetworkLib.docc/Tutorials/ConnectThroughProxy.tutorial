@@ -1,6 +1,6 @@
 @Tutorial(time: 20) {
     @Intro(title: "Configure Authenticated Proxy Connections") {
-        Combine configuration, TLS, validation, and the existing asynchronous transfer to connect through an HTTP CONNECT proxy. Complete <doc:ExchangeTypedMessages> first. You must supply a running proxy; the CLI does not create one. Requires macOS 12.3 or later.
+        Combine configuration, TLS, validation, and the existing asynchronous transfer to connect through an HTTP CONNECT proxy. Complete <doc:ExchangeWebSocketMessages> first. You must supply a running proxy; the CLI does not create one. Requires macOS 12.3 or later.
     }
 
     @Section(title: "Separate proxy and destination settings") {
@@ -8,12 +8,12 @@
 
         @Steps {
             @Step {
-                Inspect this helper in a scratch file in the Examples target. The destination remains example.com over TLS. The proxy has its own host, port, and security settings. Applying using(proxy:) returns a new destination configuration.
+                Inspect this helper in a scratch file in the Examples target. The destination remains example.com over TLS. The proxy has its own host, port, and security settings. Applying using(proxy:) returns a new destination configuration and preserves its interface requirement. Both direct and proxy initializers accept interface; leave it nil for system selection or pass the NWInterface chosen in <doc:ConfigureASocket>. This selects a local interface, not an interface on the proxy server.
 
                 @Code(name: "ProxyConfiguration.swift", file: "Proxy-01.swift")
             }
             @Step {
-                Open `Sources/Examples/ProxyExample.swift`. Read the environment settings, validate the port and TLS flag, and require both credential fields when authentication is used. Pass the resulting configuration to the shared transfer implementation. Credentials aren't included in the example's progress messages.
+                Open `Sources/Examples/ProxyExample.swift`. Read the environment settings, validate the port and TLS flag, and require both credential fields when authentication is used. Pass the resulting configuration to SendingAndReceivingExample.exchange(using:) from the final snapshot in <doc:TransferBytes>. Keep that helper alongside this snapshot when using it outside the Examples target. The run(interface:) argument is applied to the destination configuration and preserved when adding the proxy. Credentials aren't included in the example's progress messages.
 
                 @Code(name: "ProxyExample.swift", file: "Proxy-02.swift")
             }

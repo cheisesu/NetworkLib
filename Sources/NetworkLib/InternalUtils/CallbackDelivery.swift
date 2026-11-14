@@ -1,6 +1,6 @@
 import Foundation
 
-struct CallbackDelivery: Sendable {
+nonisolated struct CallbackDelivery: Sendable {
     private let queue: DispatchQueue?
 
     init(queue: DispatchQueue? = nil) {

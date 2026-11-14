@@ -16,9 +16,17 @@
                 @Code(name: "Configuration.swift", file: "Configuration-01.swift")
             }
             @Step {
-                Make the choices explicit. Keep `.any` to allow IPv4 or IPv6. Set TLS's server name to the destination hostname, limit each raw receive block to 16 KiB, and choose a 15-second inactivity timeout. The receive limit is not a limit on the full response size.
+                Make the choices explicit. Keep `.any` to allow IPv4 or IPv6. Set TLS's server name to the destination hostname, limit each raw receive block to 16 KiB, and choose a 15-second inactivity timeout. The receive limit is not a limit on the full response size. Keep `interface: nil` to let the system select the network interface; this is also the default when the argument is omitted.
 
                 @Code(name: "Configuration.swift", file: "Configuration-02.swift")
+            }
+            @Step {
+                To require a specific network interface, import Network and accept an NWInterface in your helper. Pass it to the configuration's interface argument. You can obtain an interface from a path's availableInterfaces in an NWPathMonitor update. The snapshot also shows how to find an interface by name in a supplied path and report a missing selection without silently falling back. Choose the actual interface you intend to use; interface accepts an NWInterface instance, not a name such as en0 or an interface type such as .wifi.
+
+                @Code(name: "Configuration.swift", file: "Configuration-03.swift")
+            }
+            @Step {
+                The interface is a requirement, not a preference: NetworkLib assigns it to NWParameters.requiredInterface. The connection cannot fall back to another interface if the selected one is unavailable or cannot reach the destination. For the remaining lessons, use makeConfiguration() from the previous snapshot with interface: nil unless you specifically need this restriction. The complete network examples also accept run(interface:); their default run() uses system selection.
             }
             @Step {
                 Inspect the returned configuration in Xcode. For a local plaintext service, choose `isSecure: false` and that service's port. Selecting `.udp` with security enabled uses DTLS and requires a DTLS-capable peer. Continue with <doc:TransferBytes> to create and connect a socket.

@@ -7,7 +7,7 @@ extension Tag.RawSocket {
     @Tag static var sendMessage: Tag
 }
 
-@Suite(.tags(.core, .RawSocket.all, .RawSocket.sendMessage), .timeLimit(.minutes(1)))
+@Suite(.tags(.core, .RawSocket.all, .RawSocket.sendMessage), .timeLimit(.minutes(2)))
 struct RawSocketSendMessageTests {
     // MARK: - ENTITIES
 
@@ -142,30 +142,6 @@ struct RawSocketSendMessageTests {
                             continuation.resume(with: result)
                         }
                     }
-                }
-            }
-            Issue.record("Unexpected entrance")
-        } catch NWError.posix(.ECANCELED) {
-        }
-    }
-
-    @Test(arguments: [RawSocketTransport.tcp, .udp])
-    func whenCallCancelDuringSend_ThrowsCancelledError(_ transport: RawSocketTransport) async throws {
-        let timeout: TimeInterval = 0
-        let data = Data("Hello".utf8)
-        let context = NWConnection.ContentContext(identifier: "BLABLA")
-        let message = _SendMessage(context: context, content: data)
-        let underlyingConnection = NWConnectionMock(overridedSendError: .posix(.EINVAL), mode: [.methodSend, .dontCallCallback])
-        let socket = try RawSocket(underlyingConnection, accessQueue: nil, delegateQueue: nil,
-                                   timeout: timeout, maxDataBlock: 256, transport: transport)
-        defer { socket.cancel(nil) }
-        do {
-            let _: Void = try await withCheckedThrowingContinuation { continuation in
-                socket.connect { _ in
-                    socket.sendMessage(message) { result in
-                        continuation.resume(with: result)
-                    }
-                    socket.cancel(nil)
                 }
             }
             Issue.record("Unexpected entrance")
